@@ -191,7 +191,7 @@
         "Reports 2 ESP USB devices, BT adapter, WiFi",
         "Non-zero exit on any missing item"
       ],
-      "status": "todo",
+      "status": "done",
       "pr": ""
     },
     {
