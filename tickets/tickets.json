@@ -1,0 +1,982 @@
+{
+  "project": "bootlab-esp",
+  "statuses": [
+    "todo",
+    "doing",
+    "review",
+    "blocked",
+    "done"
+  ],
+  "sizes": {
+    "S": "≤ 0.5 day",
+    "M": "1–2 days",
+    "L": "3–5 days"
+  },
+  "epics": [
+    {
+      "id": "E0",
+      "phase": "P0",
+      "title": "Host & rig setup",
+      "plan": "§2, §3, §8 P0"
+    },
+    {
+      "id": "EL",
+      "phase": "PL",
+      "title": "LABID common library",
+      "plan": "§7.3, §8 PL"
+    },
+    {
+      "id": "E1",
+      "phase": "P1",
+      "title": "ESP32-S3 #2 — ESP-IDF",
+      "plan": "§4.2, §5, §6, §7.2, §8 P1"
+    },
+    {
+      "id": "E2",
+      "phase": "P2",
+      "title": "ESP32-S3 #1 — Zephyr",
+      "plan": "§4.1, §5, §6, §7.1, §8 P2"
+    },
+    {
+      "id": "E3",
+      "phase": "P3",
+      "title": "labflash CLI",
+      "plan": "§8 P3"
+    },
+    {
+      "id": "E4",
+      "phase": "P4",
+      "title": "HIL tests + CI",
+      "plan": "§8 P4"
+    },
+    {
+      "id": "E5",
+      "phase": "P5",
+      "title": "Soak, docs, handover",
+      "plan": "§8 P5"
+    }
+  ],
+  "tickets": [
+    {
+      "id": "BL-001",
+      "epic": "E0",
+      "title": "Repo skeleton + pinned versions",
+      "size": "S",
+      "boards": [
+        "host"
+      ],
+      "deps": [],
+      "desc": "Create the tree from PLAN §3. Pin Zephyr, IDF, MCUboot, ble_ota versions in scripts/versions.env.",
+      "ac": [
+        "Tree matches PLAN §3",
+        "keys/, backups/, *.pem ignored by git",
+        "versions.env lists every pinned dependency"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-002",
+      "epic": "E0",
+      "title": "Install toolchains on RPi4",
+      "size": "M",
+      "boards": [
+        "host"
+      ],
+      "deps": [
+        "BL-001"
+      ],
+      "desc": "Python 3.11+, BlueZ, west + Zephyr SDK, ESP-IDF, imgtool, esptool.",
+      "ac": [
+        "scripts/check_env.sh prints all versions and exits 0",
+        "Versions match versions.env"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-003",
+      "epic": "E0",
+      "title": "Powered USB hub, udev rules by serial, groups",
+      "size": "S",
+      "boards": [
+        "host"
+      ],
+      "deps": [
+        "BL-002"
+      ],
+      "desc": "Both boards share VID:PID; udev symlinks by USB serial. User in bluetooth, dialout, plugdev.",
+      "ac": [
+        "/dev/lab-esp-zephyr and /dev/lab-esp-idf exist",
+        "Symlinks survive replug and port swap",
+        "No brown-out resets over 10 min"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-004",
+      "epic": "E0",
+      "title": "Back up both ESP32-S3 boards",
+      "size": "S",
+      "boards": [
+        "zephyr",
+        "idf"
+      ],
+      "deps": [
+        "BL-003"
+      ],
+      "desc": "esptool read_flash of the current firmware before any erase.",
+      "ac": [
+        "2 backup images in backups/",
+        "docs/recovery.md has the restore command",
+        "Nothing committed to git"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-005",
+      "epic": "E0",
+      "title": "Detect board hardware → rig.yaml",
+      "size": "S",
+      "boards": [
+        "zephyr",
+        "idf"
+      ],
+      "deps": [
+        "BL-003"
+      ],
+      "desc": "Flash size, PSRAM, board revision, RGB LED GPIO (48 or 38), USB serial per board.",
+      "ac": [
+        "host/config/rig.yaml filled for both boards",
+        "LED GPIO confirmed by a quick blink"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-006",
+      "epic": "E0",
+      "title": "Generate lab signing keys",
+      "size": "S",
+      "boards": [
+        "host"
+      ],
+      "deps": [
+        "BL-002"
+      ],
+      "desc": "scripts/gen_keys.sh: zephyr_p256, idf_sbv2. Refuses to overwrite.",
+      "ac": [
+        "2 keys in keys/",
+        "Second run refuses to overwrite",
+        "git status shows no key files"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-007",
+      "epic": "E0",
+      "title": "labflash doctor (stub)",
+      "size": "S",
+      "boards": [
+        "host"
+      ],
+      "deps": [
+        "BL-003"
+      ],
+      "desc": "Minimal environment check.",
+      "ac": [
+        "Reports 2 ESP USB devices, BT adapter, WiFi",
+        "Non-zero exit on any missing item"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-010",
+      "epic": "EL",
+      "title": "LABID C parser, writer, CRC-16",
+      "size": "M",
+      "boards": [
+        "common"
+      ],
+      "deps": [
+        "BL-001"
+      ],
+      "desc": "C99, no malloc, no RTOS calls, fixed buffers, provider callbacks.",
+      "ac": [
+        "Implements PLAN §7.3",
+        "CRC('123456789') == 0x29B1",
+        "-Wall -Wextra -Werror clean"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-011",
+      "epic": "EL",
+      "title": "Golden test vectors + Unity tests",
+      "size": "M",
+      "boards": [
+        "common"
+      ],
+      "deps": [
+        "BL-010"
+      ],
+      "desc": "test_vectors.json: valid frames, bad CRC, too long, unknown keys, garbage.",
+      "ac": [
+        "100 % vectors pass",
+        "Coverage ≥ 90 % line + branch"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-012",
+      "epic": "EL",
+      "title": "LABID parser fuzz target",
+      "size": "S",
+      "boards": [
+        "common"
+      ],
+      "deps": [
+        "BL-010"
+      ],
+      "desc": "libFuzzer + ASan/UBSan.",
+      "ac": [
+        "10 min fuzz, 0 crashes, 0 sanitizer errors"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-013",
+      "epic": "EL",
+      "title": "Python labid.py",
+      "size": "S",
+      "boards": [
+        "host"
+      ],
+      "deps": [
+        "BL-011"
+      ],
+      "desc": "Same framing + CRC in host/labflash/labid.py.",
+      "ac": [
+        "Passes the same test_vectors.json",
+        "mypy clean"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-014",
+      "epic": "EL",
+      "title": "Packaging: Zephyr module + IDF component",
+      "size": "S",
+      "boards": [
+        "common"
+      ],
+      "deps": [
+        "BL-010"
+      ],
+      "desc": "One source, two build integrations.",
+      "ac": [
+        "Builds for Zephyr native_sim and IDF linux target"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-020",
+      "epic": "E1",
+      "title": "IDF blink app + toggles + 5 variants + task WDT",
+      "size": "M",
+      "boards": [
+        "idf"
+      ],
+      "deps": [
+        "BL-005",
+        "BL-014"
+      ],
+      "desc": "FreeRTOS blink task (led_strip), toggles counter, variants per PLAN §5.3, CONFIG_ESP_TASK_WDT_PANIC.",
+      "ac": [
+        "All 5 variants build",
+        "v1 blinks 1 Hz",
+        "hang variant resets within 10 s"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-021",
+      "epic": "E1",
+      "title": "IDF partitions + signing + rollback config",
+      "size": "S",
+      "boards": [
+        "idf"
+      ],
+      "deps": [
+        "BL-020",
+        "BL-006"
+      ],
+      "desc": "partitions.csv (§4.2), sdkconfig.defaults (§6). No eFuse writes.",
+      "ac": [
+        "Signed build succeeds",
+        "Forbidden-config grep passes",
+        "efuse-summary unchanged after flash"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-022",
+      "epic": "E1",
+      "title": "IDF LABID port on USB-Serial-JTAG",
+      "size": "S",
+      "boards": [
+        "idf"
+      ],
+      "deps": [
+        "BL-020",
+        "BL-013"
+      ],
+      "desc": "Driver read task, app/bootloader descriptions, OTA state.",
+      "ac": [
+        "ANNOUNCE ≤ 2 s after reset",
+        "ID?, VER?, STATE? ≤ 100 ms",
+        "Garbage input → ERR, no reset"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-023",
+      "epic": "E1",
+      "title": "IDF self-test + mark valid",
+      "size": "S",
+      "boards": [
+        "idf"
+      ],
+      "deps": [
+        "BL-021"
+      ],
+      "desc": "5 s health check then esp_ota_mark_app_valid_cancel_rollback().",
+      "ac": [
+        "VER? confirmed=1 after 5 s",
+        "no_confirm stays confirmed=0"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-024",
+      "epic": "E1",
+      "title": "IDF WiFi + token provisioning via NVS",
+      "size": "S",
+      "boards": [
+        "idf"
+      ],
+      "deps": [
+        "BL-020"
+      ],
+      "desc": "labflash provision idf writes SSID/PSK/token over USB.",
+      "ac": [
+        "Board joins WiFi after reboot",
+        "No credentials in source or logs"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-025",
+      "epic": "E1",
+      "title": "IDF HTTPS control server (/ota, /version)",
+      "size": "M",
+      "boards": [
+        "idf"
+      ],
+      "deps": [
+        "BL-024"
+      ],
+      "desc": "Bearer token, RPi4 self-signed CA pinned.",
+      "ac": [
+        "GET /version matches LABID VER.app",
+        "Wrong token → 401"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-026",
+      "epic": "E1",
+      "title": "IDF WiFi OTA (esp_https_ota pull)",
+      "size": "M",
+      "boards": [
+        "idf"
+      ],
+      "deps": [
+        "BL-025",
+        "BL-023"
+      ],
+      "desc": "Pull from RPi4 HTTPS server, signature check on update.",
+      "ac": [
+        "v1 → v2 over WiFi, 4 Hz, confirmed=1",
+        "bad_sig rejected, v1 keeps running"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-027",
+      "epic": "E1",
+      "title": "IDF BLE OTA (ble_ota + NimBLE + coexistence)",
+      "size": "L",
+      "boards": [
+        "idf"
+      ],
+      "deps": [
+        "BL-023"
+      ],
+      "desc": "esp-iot-solution ble_ota, NimBLE host, SW coexistence.",
+      "ac": [
+        "v2 → v1 over BLE",
+        "WiFi stays connected during BLE OTA",
+        "Interrupted transfer → old image still running"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-028",
+      "epic": "E1",
+      "title": "IDF phase acceptance run",
+      "size": "S",
+      "boards": [
+        "idf"
+      ],
+      "deps": [
+        "BL-022",
+        "BL-026",
+        "BL-027"
+      ],
+      "desc": "Run all P1 acceptance checks.",
+      "ac": [
+        "All P1 checkboxes ticked with logs in the PR"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-030",
+      "epic": "E2",
+      "title": "Zephyr west + sysbuild MCUboot + swap-with-revert check",
+      "size": "M",
+      "boards": [
+        "zephyr"
+      ],
+      "deps": [
+        "BL-002",
+        "BL-006"
+      ],
+      "desc": "FIRST ticket for Zephyr. Verify revert-capable swap mode on ESP32-S3.",
+      "ac": [
+        "MCUboot + hello app boot on the board",
+        "Swap mode decision written in PLAN §4.1",
+        "ESCALATE to owner if only overwrite-only exists"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-031",
+      "epic": "E2",
+      "title": "Zephyr blink app + toggles + 5 variants + watchdog",
+      "size": "M",
+      "boards": [
+        "zephyr"
+      ],
+      "deps": [
+        "BL-030",
+        "BL-005"
+      ],
+      "desc": "LED strip driver (verify WS2812 backend), toggles, variants, hardware watchdog.",
+      "ac": [
+        "All 5 variants build and sign",
+        "v1 blinks 1 Hz",
+        "hang variant resets within 10 s"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-032",
+      "epic": "E2",
+      "title": "Zephyr LABID port on console",
+      "size": "S",
+      "boards": [
+        "zephyr"
+      ],
+      "deps": [
+        "BL-031",
+        "BL-014"
+      ],
+      "desc": "Console device (USB-Serial-JTAG), irq RX, hwinfo UID, boot API, shell off.",
+      "ac": [
+        "ANNOUNCE ≤ 2 s",
+        "ID?, VER?, STATE? ≤ 100 ms",
+        "1 000 requests under heavy logging, 0 corrupt"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-033",
+      "epic": "E2",
+      "title": "Zephyr self-test + confirm + twister tests",
+      "size": "S",
+      "boards": [
+        "zephyr"
+      ],
+      "deps": [
+        "BL-031"
+      ],
+      "desc": "boot_write_img_confirmed() after 5 s; native_sim tests with mocked boot API.",
+      "ac": [
+        "twister passes",
+        "confirmed=1 on board after 5 s"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-034",
+      "epic": "E2",
+      "title": "Zephyr mcumgr SMP over BLE",
+      "size": "M",
+      "boards": [
+        "zephyr"
+      ],
+      "deps": [
+        "BL-033"
+      ],
+      "desc": "MCUMGR image + os groups over BT.",
+      "ac": [
+        "v1 → v2 over BLE, confirmed",
+        "no_confirm and hang revert",
+        "bad_sig refused by MCUboot"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-035",
+      "epic": "E2",
+      "title": "Zephyr WiFi + SMP over UDP (single build with BT)",
+      "size": "L",
+      "boards": [
+        "zephyr"
+      ],
+      "deps": [
+        "BL-034"
+      ],
+      "desc": "WiFi STA, DHCP, UDP SMP port 1337.",
+      "ac": [
+        "v2 → v1 over UDP",
+        "One build with BT + WiFi, OR documented reason + 2 variants + owner decision"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-036",
+      "epic": "E2",
+      "title": "Zephyr phase acceptance run",
+      "size": "S",
+      "boards": [
+        "zephyr"
+      ],
+      "deps": [
+        "BL-032",
+        "BL-035"
+      ],
+      "desc": "Run all P2 acceptance checks.",
+      "ac": [
+        "All P2 checkboxes ticked with logs in the PR"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-040",
+      "epic": "E3",
+      "title": "labflash core: config, UID resolution, re-enumeration wait",
+      "size": "M",
+      "boards": [
+        "host"
+      ],
+      "deps": [
+        "BL-013",
+        "BL-007"
+      ],
+      "desc": "rig.yaml, resolve ports by UID, wait ≤ 5 s after resets, --json.",
+      "ac": [
+        "Never reuses stale ttyACMx",
+        "Clear error on missing or swapped board"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-041",
+      "epic": "E3",
+      "title": "identify, info, status, measure",
+      "size": "S",
+      "boards": [
+        "host"
+      ],
+      "deps": [
+        "BL-040"
+      ],
+      "desc": "LABID discovery, cross-check, toggle-based Hz.",
+      "ac": [
+        "identify maps both boards",
+        "measure within ± 1 toggle over 5 s"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-042",
+      "epic": "E3",
+      "title": "flash, recover, provision (USB)",
+      "size": "S",
+      "boards": [
+        "host"
+      ],
+      "deps": [
+        "BL-040"
+      ],
+      "desc": "esptool / west / idf.py wrappers with identity check before writing.",
+      "ac": [
+        "Factory flash both boards",
+        "Refuses to flash if board= mismatches"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-043",
+      "epic": "E3",
+      "title": "update idf --transport ble|wifi",
+      "size": "M",
+      "boards": [
+        "host",
+        "idf"
+      ],
+      "deps": [
+        "BL-040",
+        "BL-028"
+      ],
+      "desc": "Python ble_ota client + HTTPS trigger + local HTTPS server.",
+      "ac": [
+        "Both transports update and verify via LABID"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-044",
+      "epic": "E3",
+      "title": "update zephyr --transport ble|udp",
+      "size": "M",
+      "boards": [
+        "host",
+        "zephyr"
+      ],
+      "deps": [
+        "BL-040",
+        "BL-036"
+      ],
+      "desc": "SMP client over BLE and UDP.",
+      "ac": [
+        "Both transports update, SMP version == LABID version"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-045",
+      "epic": "E3",
+      "title": "build + sign orchestration",
+      "size": "S",
+      "boards": [
+        "host"
+      ],
+      "deps": [
+        "BL-040"
+      ],
+      "desc": "labflash build <board|all> --variant.",
+      "ac": [
+        "Builds all 10 images (2 boards × 5 variants)"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-046",
+      "epic": "E3",
+      "title": "labflash mocked unit tests",
+      "size": "M",
+      "boards": [
+        "host"
+      ],
+      "deps": [
+        "BL-041",
+        "BL-042",
+        "BL-043",
+        "BL-044",
+        "BL-045"
+      ],
+      "desc": "pytest with mocked BLE / serial / HTTP.",
+      "ac": [
+        "Line coverage ≥ 80 %",
+        "ruff + mypy clean"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-050",
+      "epic": "E4",
+      "title": "HIL framework: fixtures, markers, artifacts",
+      "size": "M",
+      "boards": [
+        "host"
+      ],
+      "deps": [
+        "BL-046"
+      ],
+      "desc": "rig fixture, factory_reset, btmon capture, JUnit.",
+      "ac": [
+        "Dummy HIL test runs on both boards and restores v1"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-051",
+      "epic": "E4",
+      "title": "HIL T01–T03 boot + update",
+      "size": "S",
+      "boards": [
+        "zephyr",
+        "idf"
+      ],
+      "deps": [
+        "BL-050"
+      ],
+      "desc": "PLAN §8 P4 matrix.",
+      "ac": [
+        "Green on all board/transport combinations"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-052",
+      "epic": "E4",
+      "title": "HIL T04–T09 rollback, security, robustness",
+      "size": "M",
+      "boards": [
+        "zephyr",
+        "idf"
+      ],
+      "deps": [
+        "BL-050"
+      ],
+      "desc": "no_confirm, hang, bad_sig, corrupt, interrupted, token.",
+      "ac": [
+        "Green on all combinations"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-053",
+      "epic": "E4",
+      "title": "HIL T10–T15 LABID + identity + USB",
+      "size": "S",
+      "boards": [
+        "zephyr",
+        "idf"
+      ],
+      "deps": [
+        "BL-050"
+      ],
+      "desc": "identify, UID stability, version consistency, ERR, heavy logging, 50 resets.",
+      "ac": [
+        "All green"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-054",
+      "epic": "E4",
+      "title": "(Stretch) HIL T17 power cut",
+      "size": "M",
+      "boards": [
+        "zephyr",
+        "idf"
+      ],
+      "deps": [
+        "BL-050"
+      ],
+      "desc": "Needs per-port switchable hub.",
+      "ac": [
+        "Recovers every run, or skipped if no hub"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-055",
+      "epic": "E4",
+      "title": "build.yml cloud CI",
+      "size": "M",
+      "boards": [
+        "host"
+      ],
+      "deps": [
+        "BL-028",
+        "BL-036"
+      ],
+      "desc": "Builds, unit tests, fuzz smoke, forbidden-config grep, CI test keys.",
+      "ac": [
+        "Green on main",
+        "Signed artifacts uploaded"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-056",
+      "epic": "E4",
+      "title": "hil.yml self-hosted runner on RPi4",
+      "size": "M",
+      "boards": [
+        "host"
+      ],
+      "deps": [
+        "BL-055",
+        "BL-051"
+      ],
+      "desc": "Private repo, dedicated runner user, concurrency: hil.",
+      "ac": [
+        "HIL job runs on PR",
+        "Runner has no sudo and no access to keys/"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-057",
+      "epic": "E4",
+      "title": "Full HIL suite green 3× in a row",
+      "size": "S",
+      "boards": [
+        "zephyr",
+        "idf"
+      ],
+      "deps": [
+        "BL-051",
+        "BL-052",
+        "BL-053",
+        "BL-056"
+      ],
+      "desc": "Stability gate.",
+      "ac": [
+        "3 consecutive green runs",
+        "Runtime documented"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-060",
+      "epic": "E5",
+      "title": "Overnight soak ×100",
+      "size": "S",
+      "boards": [
+        "zephyr",
+        "idf"
+      ],
+      "deps": [
+        "BL-057"
+      ],
+      "desc": "T16 repeated per board/transport.",
+      "ac": [
+        "Pass rate ≥ 99 %",
+        "Root cause logged for every failure"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-061",
+      "epic": "E5",
+      "title": "README quick start",
+      "size": "S",
+      "boards": [
+        "host"
+      ],
+      "deps": [
+        "BL-057"
+      ],
+      "desc": "< 5 min from clone to first OTA.",
+      "ac": [
+        "Fresh clone reaches T02 green following README only"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-062",
+      "epic": "E5",
+      "title": "Recovery runbook + adding-a-board guide",
+      "size": "S",
+      "boards": [
+        "host"
+      ],
+      "deps": [
+        "BL-057"
+      ],
+      "desc": "docs/recovery.md, docs/adding-a-board.md.",
+      "ac": [
+        "Recovery tested once per board from the docs"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-063",
+      "epic": "E5",
+      "title": "Final PLAN.md update",
+      "size": "S",
+      "boards": [
+        "host"
+      ],
+      "deps": [
+        "BL-060"
+      ],
+      "desc": "Pinned versions, Zephyr partitions, deviations.",
+      "ac": [
+        "PLAN.md matches the delivered repo"
+      ],
+      "status": "todo",
+      "pr": ""
+    }
+  ]
+}
