@@ -91,7 +91,7 @@
         "scripts/check_env.sh prints all versions and exits 0",
         "Versions match versions.env"
       ],
-      "status": "doing",
+      "status": "done",
       "pr": ""
     },
     {
