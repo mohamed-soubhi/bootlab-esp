@@ -5,14 +5,14 @@
 
 ## Overall
 
-`███░░░░░░░░░░░░░░░░░░░░░░░░░░░` **5/47 done (10%)**
+`████░░░░░░░░░░░░░░░░░░░░░░░░░░` **6/47 done (12%)**
 
 ```mermaid
 pie showData title Ticket status
     "todo" : 37
-    "doing" : 2
+    "doing" : 1
     "blocked" : 3
-    "done" : 5
+    "done" : 6
 ```
 
 ## Epics
@@ -20,7 +20,7 @@ pie showData title Ticket status
 | Epic | Phase | Title | Progress | Done | Status | Plan |
 |---|---|---|---|---|---|---|
 | E0 | P0 | Host & rig setup | `█████░░░░░░░` | 3/7 | 🟥 blocked | §2, §3, §8 P0 |
-| EL | PL | LABID common library | `█████░░░░░░░` | 2/5 | 🔵 doing | §7.3, §8 PL |
+| EL | PL | LABID common library | `███████░░░░░` | 3/5 | 🔵 doing | §7.3, §8 PL |
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `░░░░░░░░░░░░` | 0/9 | ⬜ todo | §4.2, §5, §6, §7.2, §8 P1 |
 | E2 | P2 | ESP32-S3 #1 — Zephyr | `░░░░░░░░░░░░` | 0/7 | ⬜ todo | §4.1, §5, §6, §7.1, §8 P2 |
 | E3 | P3 | labflash CLI | `░░░░░░░░░░░░` | 0/7 | ⬜ todo | §8 P3 |
@@ -32,7 +32,7 @@ pie showData title Ticket status
 ```mermaid
 flowchart LR
     E0["P0 Host & rig setup<br/>3/7"]:::blocked
-    EL["PL LABID common library<br/>2/5"]:::doing
+    EL["PL LABID common library<br/>3/5"]:::doing
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>0/9"]:::todo
     E2["P2 ESP32-S3 #1 — Zephyr<br/>0/7"]:::todo
     E3["P3 labflash CLI<br/>0/7"]:::todo
@@ -190,7 +190,7 @@ Minimal environment check.
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
 | ✅ | BL-010 | LABID C parser, writer, CRC-16 | M | common | BL-001 |  |
-| 🔵 | BL-011 | Golden test vectors + Unity tests | M | common | BL-010 |  |
+| ✅ | BL-011 | Golden test vectors + Unity tests | M | common | BL-010 |  |
 | ⬜ | BL-012 | LABID parser fuzz target | S | common | BL-010 |  |
 | ✅ | BL-013 | Python labid.py | S | host | BL-011 |  |
 | ⬜ | BL-014 | Packaging: Zephyr module + IDF component | S | common | BL-010 |  |
@@ -211,7 +211,7 @@ C99, no malloc, no RTOS calls, fixed buffers, provider callbacks.
 
 </details>
 
-<details><summary>🔵 <b>BL-011</b> — Golden test vectors + Unity tests</summary>
+<details><summary>✅ <b>BL-011</b> — Golden test vectors + Unity tests</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** common  
@@ -221,8 +221,8 @@ C99, no malloc, no RTOS calls, fixed buffers, provider callbacks.
 test_vectors.json: valid frames, bad CRC, too long, unknown keys, garbage.
 
 **Acceptance criteria**
-- [ ] 100 % vectors pass
-- [ ] Coverage ≥ 90 % line + branch
+- [x] 100 % vectors pass
+- [x] Coverage ≥ 90 % line + branch
 
 </details>
 
@@ -866,7 +866,7 @@ flowchart TB
     end
     subgraph EL_g["PL LABID common library"]
         BL010["BL-010"]:::done
-        BL011["BL-011"]:::doing
+        BL011["BL-011"]:::done
         BL012["BL-012"]:::todo
         BL013["BL-013"]:::done
         BL014["BL-014"]:::todo

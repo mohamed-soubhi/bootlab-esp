@@ -233,7 +233,7 @@
         "100 % vectors pass",
         "Coverage ≥ 90 % line + branch"
       ],
-      "status": "doing",
+      "status": "done",
       "pr": ""
     },
     {
