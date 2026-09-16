@@ -204,18 +204,18 @@ bootlab-esp/
 - If default slots are too small for a BT + WiFi app: add `app/boards/<board>.overlay` with resized partitions.
 - Record the final addresses here after P2.
 
-### 4.2 ESP32-S3 #2 — ESP-IDF (`partitions.csv`, assumes 8 MB flash)
+### 4.2 ESP32-S3 #2 — ESP-IDF (`partitions.csv`, 16 MB flash — confirmed in P0)
 
 | Name | Type | SubType | Offset | Size |
 |---|---|---|---|---|
 | nvs | data | nvs | 0x9000 | 0x6000 |
 | otadata | data | ota | 0xF000 | 0x2000 |
 | phy_init | data | phy | 0x11000 | 0x1000 |
-| ota_0 | app | ota_0 | 0x20000 | 0x300000 |
-| ota_1 | app | ota_1 | 0x320000 | 0x300000 |
-| storage | data | spiffs | 0x620000 | 0x1E0000 |
+| ota_0 | app | ota_0 | 0x20000 | 0x400000 |
+| ota_1 | app | ota_1 | 0x420000 | 0x400000 |
+| storage | data | spiffs | 0x820000 | 0x7E0000 |
 
-- P0 reads the real flash size (`esptool.py flash_id`). If 4 MB → shrink both OTA slots to 0x1C0000.
+- Both boards: ESP32-S3 (QFN56) rev v0.2, 16 MB quad flash, 8 MB embedded PSRAM (verify octal mode in boot log; if octal, GPIO35–37 are reserved).
 - `CONFIG_PARTITION_TABLE_OFFSET=0x8000`.
 
 ---
@@ -712,7 +712,7 @@ flowchart LR
 
 | # | Question | Default |
 |---|---|---|
-| O1 | Exact ESP32-S3 board model + flash/PSRAM (e.g. DevKitC-1 N8R8)? | Detect in P0 |
+| O1 | ~~Flash/PSRAM~~ answered: 16 MB flash, 8 MB PSRAM, rev v0.2. Board model/LED GPIO still to confirm | Detect LED GPIO in P0 |
 | O2 | Powered hub model? Per-port switchable (for T17)? | Any powered hub; skip T17 |
 | O3 | Build on RPi4 only, or also on the WSL2 laptop? | CI + RPi4 |
 | O4 | Dedicated lab WiFi SSID? | Home SSID |
