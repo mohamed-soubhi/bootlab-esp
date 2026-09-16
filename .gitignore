@@ -1,0 +1,6 @@
+.venv/
+backups/
+keys/
+build/
+*.pem
+__pycache__/
