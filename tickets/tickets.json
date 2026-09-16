@@ -111,7 +111,7 @@
         "Symlinks survive replug and port swap",
         "No brown-out resets over 10 min"
       ],
-      "status": "todo",
+      "status": "done",
       "pr": ""
     },
     {
@@ -132,7 +132,7 @@
         "docs/recovery.md has the restore command",
         "Nothing committed to git"
       ],
-      "status": "todo",
+      "status": "done",
       "pr": ""
     },
     {
