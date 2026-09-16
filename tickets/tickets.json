@@ -91,7 +91,7 @@
         "scripts/check_env.sh prints all versions and exits 0",
         "Versions match versions.env"
       ],
-      "status": "done",
+      "status": "doing",
       "pr": ""
     },
     {
@@ -111,8 +111,9 @@
         "Symlinks survive replug and port swap",
         "No brown-out resets over 10 min"
       ],
-      "status": "done",
-      "pr": ""
+      "status": "blocked",
+      "pr": "",
+      "block_reason": "boards not on USB, hardware criteria unverified"
     },
     {
       "id": "BL-004",
@@ -153,7 +154,8 @@
         "LED GPIO confirmed by a quick blink"
       ],
       "status": "blocked",
-      "pr": ""
+      "pr": "",
+      "block_reason": "needs owner approval to flash; LED GPIO (48/38) and PSRAM quad/octal unverified"
     },
     {
       "id": "BL-006",
@@ -191,8 +193,9 @@
         "Reports 2 ESP USB devices, BT adapter, WiFi",
         "Non-zero exit on any missing item"
       ],
-      "status": "done",
-      "pr": ""
+      "status": "blocked",
+      "pr": "",
+      "block_reason": "boards not on USB, hardware criteria unverified"
     },
     {
       "id": "BL-010",
@@ -230,7 +233,7 @@
         "100 % vectors pass",
         "Coverage ≥ 90 % line + branch"
       ],
-      "status": "done",
+      "status": "doing",
       "pr": ""
     },
     {

@@ -5,21 +5,22 @@
 
 ## Overall
 
-`██████░░░░░░░░░░░░░░░░░░░░░░░░` **9/47 done (19%)**
+`███░░░░░░░░░░░░░░░░░░░░░░░░░░░` **5/47 done (10%)**
 
 ```mermaid
 pie showData title Ticket status
     "todo" : 37
-    "blocked" : 1
-    "done" : 9
+    "doing" : 2
+    "blocked" : 3
+    "done" : 5
 ```
 
 ## Epics
 
 | Epic | Phase | Title | Progress | Done | Status | Plan |
 |---|---|---|---|---|---|---|
-| E0 | P0 | Host & rig setup | `██████████░░` | 6/7 | 🟥 blocked | §2, §3, §8 P0 |
-| EL | PL | LABID common library | `███████░░░░░` | 3/5 | 🔵 doing | §7.3, §8 PL |
+| E0 | P0 | Host & rig setup | `█████░░░░░░░` | 3/7 | 🟥 blocked | §2, §3, §8 P0 |
+| EL | PL | LABID common library | `█████░░░░░░░` | 2/5 | 🔵 doing | §7.3, §8 PL |
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `░░░░░░░░░░░░` | 0/9 | ⬜ todo | §4.2, §5, §6, §7.2, §8 P1 |
 | E2 | P2 | ESP32-S3 #1 — Zephyr | `░░░░░░░░░░░░` | 0/7 | ⬜ todo | §4.1, §5, §6, §7.1, §8 P2 |
 | E3 | P3 | labflash CLI | `░░░░░░░░░░░░` | 0/7 | ⬜ todo | §8 P3 |
@@ -30,8 +31,8 @@ pie showData title Ticket status
 
 ```mermaid
 flowchart LR
-    E0["P0 Host & rig setup<br/>6/7"]:::blocked
-    EL["PL LABID common library<br/>3/5"]:::doing
+    E0["P0 Host & rig setup<br/>3/7"]:::blocked
+    EL["PL LABID common library<br/>2/5"]:::doing
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>0/9"]:::todo
     E2["P2 ESP32-S3 #1 — Zephyr<br/>0/7"]:::todo
     E3["P3 labflash CLI<br/>0/7"]:::todo
@@ -54,12 +55,12 @@ flowchart LR
 
 - **BL-012** LABID parser fuzz target (S) — EL
 - **BL-014** Packaging: Zephyr module + IDF component (S) — EL
-- **BL-030** Zephyr west + sysbuild MCUboot + swap-with-revert check (M) — E2
-- **BL-040** labflash core: config, UID resolution, re-enumeration wait (M) — E3
 
 ## Blocked
 
+- 🟥 **BL-003** Powered USB hub, udev rules by serial, groups 
 - 🟥 **BL-005** Detect board hardware → rig.yaml 
+- 🟥 **BL-007** labflash doctor (stub) 
 
 ## Tickets by epic
 
@@ -68,12 +69,12 @@ flowchart LR
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
 | ✅ | BL-001 | Repo skeleton + pinned versions | S | host | — |  |
-| ✅ | BL-002 | Install toolchains on RPi4 | M | host | BL-001 |  |
-| ✅ | BL-003 | Powered USB hub, udev rules by serial, groups | S | host | BL-002 |  |
+| 🔵 | BL-002 | Install toolchains on RPi4 | M | host | BL-001 |  |
+| 🟥 | BL-003 | Powered USB hub, udev rules by serial, groups | S | host | BL-002 |  |
 | ✅ | BL-004 | Back up both ESP32-S3 boards | S | zephyr, idf | BL-003 |  |
 | 🟥 | BL-005 | Detect board hardware → rig.yaml | S | zephyr, idf | BL-003 |  |
 | ✅ | BL-006 | Generate lab signing keys | S | host | BL-002 |  |
-| ✅ | BL-007 | labflash doctor (stub) | S | host | BL-003 |  |
+| 🟥 | BL-007 | labflash doctor (stub) | S | host | BL-003 |  |
 
 <details><summary>✅ <b>BL-001</b> — Repo skeleton + pinned versions</summary>
 
@@ -91,7 +92,7 @@ Create the tree from PLAN §3. Pin Zephyr, IDF, MCUboot, ble_ota versions in scr
 
 </details>
 
-<details><summary>✅ <b>BL-002</b> — Install toolchains on RPi4</summary>
+<details><summary>🔵 <b>BL-002</b> — Install toolchains on RPi4</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** host  
@@ -101,12 +102,12 @@ Create the tree from PLAN §3. Pin Zephyr, IDF, MCUboot, ble_ota versions in scr
 Python 3.11+, BlueZ, west + Zephyr SDK, ESP-IDF, imgtool, esptool.
 
 **Acceptance criteria**
-- [x] scripts/check_env.sh prints all versions and exits 0
-- [x] Versions match versions.env
+- [ ] scripts/check_env.sh prints all versions and exits 0
+- [ ] Versions match versions.env
 
 </details>
 
-<details><summary>✅ <b>BL-003</b> — Powered USB hub, udev rules by serial, groups</summary>
+<details><summary>🟥 <b>BL-003</b> — Powered USB hub, udev rules by serial, groups</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
@@ -116,9 +117,9 @@ Python 3.11+, BlueZ, west + Zephyr SDK, ESP-IDF, imgtool, esptool.
 Both boards share VID:PID; udev symlinks by USB serial. User in bluetooth, dialout, plugdev.
 
 **Acceptance criteria**
-- [x] /dev/lab-esp-zephyr and /dev/lab-esp-idf exist
-- [x] Symlinks survive replug and port swap
-- [x] No brown-out resets over 10 min
+- [ ] /dev/lab-esp-zephyr and /dev/lab-esp-idf exist
+- [ ] Symlinks survive replug and port swap
+- [ ] No brown-out resets over 10 min
 
 </details>
 
@@ -169,7 +170,7 @@ scripts/gen_keys.sh: zephyr_p256, idf_sbv2. Refuses to overwrite.
 
 </details>
 
-<details><summary>✅ <b>BL-007</b> — labflash doctor (stub)</summary>
+<details><summary>🟥 <b>BL-007</b> — labflash doctor (stub)</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
@@ -179,8 +180,8 @@ scripts/gen_keys.sh: zephyr_p256, idf_sbv2. Refuses to overwrite.
 Minimal environment check.
 
 **Acceptance criteria**
-- [x] Reports 2 ESP USB devices, BT adapter, WiFi
-- [x] Non-zero exit on any missing item
+- [ ] Reports 2 ESP USB devices, BT adapter, WiFi
+- [ ] Non-zero exit on any missing item
 
 </details>
 
@@ -189,7 +190,7 @@ Minimal environment check.
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
 | ✅ | BL-010 | LABID C parser, writer, CRC-16 | M | common | BL-001 |  |
-| ✅ | BL-011 | Golden test vectors + Unity tests | M | common | BL-010 |  |
+| 🔵 | BL-011 | Golden test vectors + Unity tests | M | common | BL-010 |  |
 | ⬜ | BL-012 | LABID parser fuzz target | S | common | BL-010 |  |
 | ✅ | BL-013 | Python labid.py | S | host | BL-011 |  |
 | ⬜ | BL-014 | Packaging: Zephyr module + IDF component | S | common | BL-010 |  |
@@ -210,7 +211,7 @@ C99, no malloc, no RTOS calls, fixed buffers, provider callbacks.
 
 </details>
 
-<details><summary>✅ <b>BL-011</b> — Golden test vectors + Unity tests</summary>
+<details><summary>🔵 <b>BL-011</b> — Golden test vectors + Unity tests</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** common  
@@ -220,8 +221,8 @@ C99, no malloc, no RTOS calls, fixed buffers, provider callbacks.
 test_vectors.json: valid frames, bad CRC, too long, unknown keys, garbage.
 
 **Acceptance criteria**
-- [x] 100 % vectors pass
-- [x] Coverage ≥ 90 % line + branch
+- [ ] 100 % vectors pass
+- [ ] Coverage ≥ 90 % line + branch
 
 </details>
 
@@ -856,16 +857,16 @@ Pinned versions, Zephyr partitions, deviations.
 flowchart TB
     subgraph E0_g["P0 Host & rig setup"]
         BL001["BL-001"]:::done
-        BL002["BL-002"]:::done
-        BL003["BL-003"]:::done
+        BL002["BL-002"]:::doing
+        BL003["BL-003"]:::blocked
         BL004["BL-004"]:::done
         BL005["BL-005"]:::blocked
         BL006["BL-006"]:::done
-        BL007["BL-007"]:::done
+        BL007["BL-007"]:::blocked
     end
     subgraph EL_g["PL LABID common library"]
         BL010["BL-010"]:::done
-        BL011["BL-011"]:::done
+        BL011["BL-011"]:::doing
         BL012["BL-012"]:::todo
         BL013["BL-013"]:::done
         BL014["BL-014"]:::todo

@@ -18,7 +18,7 @@ boards:
     secure_boot: off
     flash_encryption: off
     led_gpio: unknown                     # 48 or 38 (needs flashed test app + BL-005 approval)
-    led_strip: worldseni_ws2812           # per PLAN (blink uses led_strip)
+    led_strip: worldsemi_ws2812           # per PLAN (blink uses led_strip)
 
   idf:
     board_name: lab-esp-idf
@@ -35,4 +35,4 @@ boards:
     secure_boot: off
     flash_encryption: off
     led_gpio: unknown                     # needs flashed test app
-    led_strip: worldseni_ws2812
+    led_strip: worldsemi_ws2812

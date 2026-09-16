@@ -1,5 +1,7 @@
 # bootlab-esp — Zephyr west manifest (pinned)
-# Board #1 uses Zephyr + MCUboot (sysbuild) + mcumgr/SMP.
+# Board #1: Zephyr + MCUboot (sysbuild) + mcumgr/SMP.
+# Zephyr pinned to v4.4.2 (latest 4.4.x). MCUboot comes from Zephyr's west
+# manifest; resolved revision recorded after `west update` (see versions.env).
 manifest:
   remotes:
     - name: zephyrproject-rtos
@@ -7,10 +9,7 @@ manifest:
   projects:
     - name: zephyr
       remote: zephyrproject-rtos
-      revision: v4.1.0
+      revision: v4.4.2
       import: true
-    - name: mcuboot
-      remote: zephyrproject-rtos
-      revision: v2.2.0
   self:
     path: .
