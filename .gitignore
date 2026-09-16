@@ -4,3 +4,9 @@ keys/
 build/
 *.pem
 __pycache__/
+# labflash host artifacts (extend-only; never remove entries above)
+host/**/*.egg-info/
+*.pyc
+*.pyo
+.pytest_cache/
+coverage/

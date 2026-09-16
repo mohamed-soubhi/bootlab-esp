@@ -5,18 +5,19 @@
 
 ## Overall
 
-`░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░` **0/47 done (0%)**
+`█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░` **1/47 done (2%)**
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 47
+    "todo" : 46
+    "done" : 1
 ```
 
 ## Epics
 
 | Epic | Phase | Title | Progress | Done | Status | Plan |
 |---|---|---|---|---|---|---|
-| E0 | P0 | Host & rig setup | `░░░░░░░░░░░░` | 0/7 | ⬜ todo | §2, §3, §8 P0 |
+| E0 | P0 | Host & rig setup | `██░░░░░░░░░░` | 1/7 | 🔵 doing | §2, §3, §8 P0 |
 | EL | PL | LABID common library | `░░░░░░░░░░░░` | 0/5 | ⬜ todo | §7.3, §8 PL |
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `░░░░░░░░░░░░` | 0/9 | ⬜ todo | §4.2, §5, §6, §7.2, §8 P1 |
 | E2 | P2 | ESP32-S3 #1 — Zephyr | `░░░░░░░░░░░░` | 0/7 | ⬜ todo | §4.1, §5, §6, §7.1, §8 P2 |
@@ -28,7 +29,7 @@ pie showData title Ticket status
 
 ```mermaid
 flowchart LR
-    E0["P0 Host & rig setup<br/>0/7"]:::todo
+    E0["P0 Host & rig setup<br/>1/7"]:::doing
     EL["PL LABID common library<br/>0/5"]:::todo
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>0/9"]:::todo
     E2["P2 ESP32-S3 #1 — Zephyr<br/>0/7"]:::todo
@@ -50,7 +51,8 @@ flowchart LR
 
 ## Ready to start now
 
-- **BL-001** Repo skeleton + pinned versions (S) — E0
+- **BL-002** Install toolchains on RPi4 (M) — E0
+- **BL-010** LABID C parser, writer, CRC-16 (M) — EL
 
 ## Tickets by epic
 
@@ -58,7 +60,7 @@ flowchart LR
 
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
-| ⬜ | BL-001 | Repo skeleton + pinned versions | S | host | — |  |
+| ✅ | BL-001 | Repo skeleton + pinned versions | S | host | — |  |
 | ⬜ | BL-002 | Install toolchains on RPi4 | M | host | BL-001 |  |
 | ⬜ | BL-003 | Powered USB hub, udev rules by serial, groups | S | host | BL-002 |  |
 | ⬜ | BL-004 | Back up both ESP32-S3 boards | S | zephyr, idf | BL-003 |  |
@@ -66,7 +68,7 @@ flowchart LR
 | ⬜ | BL-006 | Generate lab signing keys | S | host | BL-002 |  |
 | ⬜ | BL-007 | labflash doctor (stub) | S | host | BL-003 |  |
 
-<details><summary>⬜ <b>BL-001</b> — Repo skeleton + pinned versions</summary>
+<details><summary>✅ <b>BL-001</b> — Repo skeleton + pinned versions</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
@@ -76,9 +78,9 @@ flowchart LR
 Create the tree from PLAN §3. Pin Zephyr, IDF, MCUboot, ble_ota versions in scripts/versions.env.
 
 **Acceptance criteria**
-- [ ] Tree matches PLAN §3
-- [ ] keys/, backups/, *.pem ignored by git
-- [ ] versions.env lists every pinned dependency
+- [x] Tree matches PLAN §3
+- [x] keys/, backups/, *.pem ignored by git
+- [x] versions.env lists every pinned dependency
 
 </details>
 
@@ -846,7 +848,7 @@ Pinned versions, Zephyr partitions, deviations.
 ```mermaid
 flowchart TB
     subgraph E0_g["P0 Host & rig setup"]
-        BL001["BL-001"]:::todo
+        BL001["BL-001"]:::done
         BL002["BL-002"]:::todo
         BL003["BL-003"]:::todo
         BL004["BL-004"]:::todo

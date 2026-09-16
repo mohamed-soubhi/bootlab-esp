@@ -72,7 +72,7 @@
         "keys/, backups/, *.pem ignored by git",
         "versions.env lists every pinned dependency"
       ],
-      "status": "todo",
+      "status": "done",
       "pr": ""
     },
     {
