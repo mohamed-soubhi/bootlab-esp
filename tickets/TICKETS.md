@@ -5,13 +5,13 @@
 
 ## Overall
 
-`█████░░░░░░░░░░░░░░░░░░░░░░░░░` **8/47 done (17%)**
+`██████░░░░░░░░░░░░░░░░░░░░░░░░` **9/47 done (19%)**
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 38
+    "todo" : 37
     "blocked" : 1
-    "done" : 8
+    "done" : 9
 ```
 
 ## Epics
@@ -19,7 +19,7 @@ pie showData title Ticket status
 | Epic | Phase | Title | Progress | Done | Status | Plan |
 |---|---|---|---|---|---|---|
 | E0 | P0 | Host & rig setup | `██████████░░` | 6/7 | 🟥 blocked | §2, §3, §8 P0 |
-| EL | PL | LABID common library | `█████░░░░░░░` | 2/5 | 🔵 doing | §7.3, §8 PL |
+| EL | PL | LABID common library | `███████░░░░░` | 3/5 | 🔵 doing | §7.3, §8 PL |
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `░░░░░░░░░░░░` | 0/9 | ⬜ todo | §4.2, §5, §6, §7.2, §8 P1 |
 | E2 | P2 | ESP32-S3 #1 — Zephyr | `░░░░░░░░░░░░` | 0/7 | ⬜ todo | §4.1, §5, §6, §7.1, §8 P2 |
 | E3 | P3 | labflash CLI | `░░░░░░░░░░░░` | 0/7 | ⬜ todo | §8 P3 |
@@ -31,7 +31,7 @@ pie showData title Ticket status
 ```mermaid
 flowchart LR
     E0["P0 Host & rig setup<br/>6/7"]:::blocked
-    EL["PL LABID common library<br/>2/5"]:::doing
+    EL["PL LABID common library<br/>3/5"]:::doing
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>0/9"]:::todo
     E2["P2 ESP32-S3 #1 — Zephyr<br/>0/7"]:::todo
     E3["P3 labflash CLI<br/>0/7"]:::todo
@@ -53,9 +53,9 @@ flowchart LR
 ## Ready to start now
 
 - **BL-012** LABID parser fuzz target (S) — EL
-- **BL-013** Python labid.py (S) — EL
 - **BL-014** Packaging: Zephyr module + IDF component (S) — EL
 - **BL-030** Zephyr west + sysbuild MCUboot + swap-with-revert check (M) — E2
+- **BL-040** labflash core: config, UID resolution, re-enumeration wait (M) — E3
 
 ## Blocked
 
@@ -191,7 +191,7 @@ Minimal environment check.
 | ✅ | BL-010 | LABID C parser, writer, CRC-16 | M | common | BL-001 |  |
 | ✅ | BL-011 | Golden test vectors + Unity tests | M | common | BL-010 |  |
 | ⬜ | BL-012 | LABID parser fuzz target | S | common | BL-010 |  |
-| ⬜ | BL-013 | Python labid.py | S | host | BL-011 |  |
+| ✅ | BL-013 | Python labid.py | S | host | BL-011 |  |
 | ⬜ | BL-014 | Packaging: Zephyr module + IDF component | S | common | BL-010 |  |
 
 <details><summary>✅ <b>BL-010</b> — LABID C parser, writer, CRC-16</summary>
@@ -239,7 +239,7 @@ libFuzzer + ASan/UBSan.
 
 </details>
 
-<details><summary>⬜ <b>BL-013</b> — Python labid.py</summary>
+<details><summary>✅ <b>BL-013</b> — Python labid.py</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
@@ -249,8 +249,8 @@ libFuzzer + ASan/UBSan.
 Same framing + CRC in host/labflash/labid.py.
 
 **Acceptance criteria**
-- [ ] Passes the same test_vectors.json
-- [ ] mypy clean
+- [x] Passes the same test_vectors.json
+- [x] mypy clean
 
 </details>
 
@@ -867,7 +867,7 @@ flowchart TB
         BL010["BL-010"]:::done
         BL011["BL-011"]:::done
         BL012["BL-012"]:::todo
-        BL013["BL-013"]:::todo
+        BL013["BL-013"]:::done
         BL014["BL-014"]:::todo
     end
     subgraph E1_g["P1 ESP32-S3 #2 — ESP-IDF"]

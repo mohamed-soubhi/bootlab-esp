@@ -267,7 +267,7 @@
         "Passes the same test_vectors.json",
         "mypy clean"
       ],
-      "status": "todo",
+      "status": "done",
       "pr": ""
     },
     {
