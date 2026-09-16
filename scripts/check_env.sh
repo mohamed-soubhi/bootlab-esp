@@ -46,7 +46,8 @@ echo "west: ${WV:-MISSING} (want ${WEST})"
 [ -n "$WV" ] || fail "west missing"
 
 # --- Zephyr workspace: west list resolves zephyr at the pinned tag ---
-WESTROOT="$SCRIPT_DIR/.."
+# Workspace root moved to ~/zephyr-ws (topdir must NOT be the git repo).
+WESTROOT="${ZEPHYR_WS:-$HOME/zephyr-ws}"
 if git -C "$WESTROOT/zephyr" rev-parse --git-dir >/dev/null 2>&1; then
   ZREV=$(git -C "$WESTROOT/zephyr" describe --tags 2>/dev/null || git -C "$WESTROOT/zephyr" rev-parse --short HEAD)
   echo "zephyr repo: $ZREV (want ${ZEPHYR_VERSION})"
@@ -64,11 +65,11 @@ else
 fi
 
 # --- Zephyr SDK: dir exists + xtensa esp32s3 gcc --version runs ---
-ZSDK=""
-for cand in "$HOME/tools/zephyr-sdk-1.0.1" "$HOME/tools/zephyr-sdk-$ZEPHYR_SDK_VERSION"; do
-  [ -d "$cand" ] && { ZSDK="$cand"; break; }
-done
-if [ -n "$ZSDK" ]; then
+# NOTE: the ONLY supported SDK is 1.0.1 installed at ~/tools/zephyr-sdk-1.0.1.
+# A stale 0.17.0 exists at ~/esp_zephyr/zephyr-sdk-0.17.0 from an earlier ad-hoc
+# setup — it is DEPRECATED and must never be referenced. Nothing points to it.
+ZSDK="$HOME/tools/zephyr-sdk-${ZEPHYR_SDK_VERSION}"
+if [ -d "$ZSDK" ]; then
   XGCC=$(find "$ZSDK" -name 'xtensa-espressif_esp32s3_zephyr-elf-gcc' -type f 2>/dev/null | head -1)
   echo "Zephyr SDK: $ZEPHYR_SDK_VERSION  ($ZSDK)"
   if [ -n "$XGCC" ]; then
