@@ -17,6 +17,7 @@ def main():
     w("/* Auto-generated from test_vectors.json by gen_test_vectors_h.py */")
     w("#ifndef TEST_VECTORS_H")
     w("#define TEST_VECTORS_H")
+    w("#include <stddef.h>  /* NULL */")
     # crc check
     cc = vectors["crc_check"]
     w(f'#define CRC_CHECK_INPUT "{cc["input"]}"')
@@ -56,7 +57,9 @@ def main():
     print(f"wrote {sys.argv[2]}")
 
 def esc(s: str) -> str:
-    return s.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+    s = s.replace("\\", "\\\\").replace('"', '\\"')
+    s = s.replace("\r", "\\r").replace("\n", "\\n").replace("\t", "\\t")
+    return s
 
 if __name__ == "__main__":
     main()
