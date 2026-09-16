@@ -172,7 +172,7 @@
         "Second run refuses to overwrite",
         "git status shows no key files"
       ],
-      "status": "todo",
+      "status": "done",
       "pr": ""
     },
     {
