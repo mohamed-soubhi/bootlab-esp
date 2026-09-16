@@ -91,7 +91,7 @@
         "scripts/check_env.sh prints all versions and exits 0",
         "Versions match versions.env"
       ],
-      "status": "todo",
+      "status": "doing",
       "pr": ""
     },
     {
@@ -211,7 +211,7 @@
         "CRC('123456789') == 0x29B1",
         "-Wall -Wextra -Werror clean"
       ],
-      "status": "todo",
+      "status": "done",
       "pr": ""
     },
     {

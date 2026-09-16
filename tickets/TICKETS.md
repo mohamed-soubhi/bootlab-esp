@@ -5,12 +5,13 @@
 
 ## Overall
 
-`█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░` **1/47 done (2%)**
+`█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░` **2/47 done (4%)**
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 46
-    "done" : 1
+    "todo" : 44
+    "doing" : 1
+    "done" : 2
 ```
 
 ## Epics
@@ -18,7 +19,7 @@ pie showData title Ticket status
 | Epic | Phase | Title | Progress | Done | Status | Plan |
 |---|---|---|---|---|---|---|
 | E0 | P0 | Host & rig setup | `██░░░░░░░░░░` | 1/7 | 🔵 doing | §2, §3, §8 P0 |
-| EL | PL | LABID common library | `░░░░░░░░░░░░` | 0/5 | ⬜ todo | §7.3, §8 PL |
+| EL | PL | LABID common library | `██░░░░░░░░░░` | 1/5 | 🔵 doing | §7.3, §8 PL |
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `░░░░░░░░░░░░` | 0/9 | ⬜ todo | §4.2, §5, §6, §7.2, §8 P1 |
 | E2 | P2 | ESP32-S3 #1 — Zephyr | `░░░░░░░░░░░░` | 0/7 | ⬜ todo | §4.1, §5, §6, §7.1, §8 P2 |
 | E3 | P3 | labflash CLI | `░░░░░░░░░░░░` | 0/7 | ⬜ todo | §8 P3 |
@@ -30,7 +31,7 @@ pie showData title Ticket status
 ```mermaid
 flowchart LR
     E0["P0 Host & rig setup<br/>1/7"]:::doing
-    EL["PL LABID common library<br/>0/5"]:::todo
+    EL["PL LABID common library<br/>1/5"]:::doing
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>0/9"]:::todo
     E2["P2 ESP32-S3 #1 — Zephyr<br/>0/7"]:::todo
     E3["P3 labflash CLI<br/>0/7"]:::todo
@@ -51,8 +52,9 @@ flowchart LR
 
 ## Ready to start now
 
-- **BL-002** Install toolchains on RPi4 (M) — E0
-- **BL-010** LABID C parser, writer, CRC-16 (M) — EL
+- **BL-011** Golden test vectors + Unity tests (M) — EL
+- **BL-012** LABID parser fuzz target (S) — EL
+- **BL-014** Packaging: Zephyr module + IDF component (S) — EL
 
 ## Tickets by epic
 
@@ -61,7 +63,7 @@ flowchart LR
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
 | ✅ | BL-001 | Repo skeleton + pinned versions | S | host | — |  |
-| ⬜ | BL-002 | Install toolchains on RPi4 | M | host | BL-001 |  |
+| 🔵 | BL-002 | Install toolchains on RPi4 | M | host | BL-001 |  |
 | ⬜ | BL-003 | Powered USB hub, udev rules by serial, groups | S | host | BL-002 |  |
 | ⬜ | BL-004 | Back up both ESP32-S3 boards | S | zephyr, idf | BL-003 |  |
 | ⬜ | BL-005 | Detect board hardware → rig.yaml | S | zephyr, idf | BL-003 |  |
@@ -84,7 +86,7 @@ Create the tree from PLAN §3. Pin Zephyr, IDF, MCUboot, ble_ota versions in scr
 
 </details>
 
-<details><summary>⬜ <b>BL-002</b> — Install toolchains on RPi4</summary>
+<details><summary>🔵 <b>BL-002</b> — Install toolchains on RPi4</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** host  
@@ -181,13 +183,13 @@ Minimal environment check.
 
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
-| ⬜ | BL-010 | LABID C parser, writer, CRC-16 | M | common | BL-001 |  |
+| ✅ | BL-010 | LABID C parser, writer, CRC-16 | M | common | BL-001 |  |
 | ⬜ | BL-011 | Golden test vectors + Unity tests | M | common | BL-010 |  |
 | ⬜ | BL-012 | LABID parser fuzz target | S | common | BL-010 |  |
 | ⬜ | BL-013 | Python labid.py | S | host | BL-011 |  |
 | ⬜ | BL-014 | Packaging: Zephyr module + IDF component | S | common | BL-010 |  |
 
-<details><summary>⬜ <b>BL-010</b> — LABID C parser, writer, CRC-16</summary>
+<details><summary>✅ <b>BL-010</b> — LABID C parser, writer, CRC-16</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** common  
@@ -197,9 +199,9 @@ Minimal environment check.
 C99, no malloc, no RTOS calls, fixed buffers, provider callbacks.
 
 **Acceptance criteria**
-- [ ] Implements PLAN §7.3
-- [ ] CRC('123456789') == 0x29B1
-- [ ] -Wall -Wextra -Werror clean
+- [x] Implements PLAN §7.3
+- [x] CRC('123456789') == 0x29B1
+- [x] -Wall -Wextra -Werror clean
 
 </details>
 
@@ -849,7 +851,7 @@ Pinned versions, Zephyr partitions, deviations.
 flowchart TB
     subgraph E0_g["P0 Host & rig setup"]
         BL001["BL-001"]:::done
-        BL002["BL-002"]:::todo
+        BL002["BL-002"]:::doing
         BL003["BL-003"]:::todo
         BL004["BL-004"]:::todo
         BL005["BL-005"]:::todo
@@ -857,7 +859,7 @@ flowchart TB
         BL007["BL-007"]:::todo
     end
     subgraph EL_g["PL LABID common library"]
-        BL010["BL-010"]:::todo
+        BL010["BL-010"]:::done
         BL011["BL-011"]:::todo
         BL012["BL-012"]:::todo
         BL013["BL-013"]:::todo
