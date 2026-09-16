@@ -10,3 +10,5 @@ host/**/*.egg-info/
 *.pyo
 .pytest_cache/
 coverage/
+# Vendor test framework (fetched, not committed)
+common/labid/tests/unity/

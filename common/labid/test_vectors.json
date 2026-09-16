@@ -1,0 +1,30 @@
+{
+  "comment": "LABID golden test vectors. CRC-16/CCITT-FALSE (poly 0x1021, init 0xFFFF). Verified: CRC('123456789')=0x29B1. Shared by C (Unity) and Python (labid.py).",
+  "crc_check": {
+    "input": "123456789",
+    "crc": "29B1"
+  },
+  "valid": [
+    "$LAB,ID,board=zephyr,hw=esp32s3_devkitc,mcu=esp32s3,uid=aca7042c3b04,os=zephyr-4.1.0,flash_kb=16384*0A22\n",
+    "$LAB,VER,bl=1.0.0,app=2.0.0,git=9f3c2e1,build=20260916T1030Z,variant=v2,slot=0,confirmed=1*A8C7\n",
+    "$LAB,PONG,n=42*D6A8\n",
+    "$LAB,ANNOUNCE,proto=1,board=zephyr,uid=aca7042c3b04,app=2.0.0*6271\n",
+    "$LAB,ID?,*7DD8\n"
+  ],
+  "bad_crc": [
+    "$LAB,VER,bl=1.0.0,app=2.0.0,variant=v2*0000\n",
+    "$LAB,PONG,n=42*0000\n"
+  ],
+  "too_long": [
+    "$LAB,VER,k0=v0,k1=v1,k2=v2,k3=v3,k4=v4,k5=v5,k6=v6,k7=v7,k8=v8,k9=v9,k10=v10,k11=v11,k12=v12,k13=v13,k14=v14,k15=v15,k16=v16,k17=v17,k18=v18,k19=v19,k20=v20,k21=v21,k22=v22,k23=v23,k24=v24,k25=v25,k26=v26,k27=v27,k28=v28,k29=v29,*A5FE\n"
+  ],
+  "unknown_keys": [
+    "$LAB,ID,board=zephyr,uid=aca7042c3b04,extra=ignore*1632\n"
+  ],
+  "garbage": [
+    "normal log line, not a frame\n",
+    "$LAB*ZZZZ\n",
+    "$LAB,ID?,*GGGG\n",
+    "\r\n\n"
+  ]
+}
