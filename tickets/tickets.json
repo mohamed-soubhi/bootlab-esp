@@ -152,7 +152,7 @@
         "host/config/rig.yaml filled for both boards",
         "LED GPIO confirmed by a quick blink"
       ],
-      "status": "todo",
+      "status": "blocked",
       "pr": ""
     },
     {

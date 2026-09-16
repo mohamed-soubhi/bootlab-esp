@@ -1,0 +1,38 @@
+# bootlab-esp — HIL rig configuration (BL-005)
+# Source of hardware identity + ports. See PLAN §2, §7.3.
+# Two ESP32-S3 boards share VID:PID 303a:1001; distinguished by USB serial.
+
+boards:
+  zephyr:
+    board_name: lab-esp-zephyr
+    mcu: esp32s3
+    hw: esp32s3_devkitc
+    usb_serial: "AC:A7:04:2C:3B:04"     # derived from chip MAC
+    dev_symlink: /dev/lab-esp-zephyr      # udev, by USB serial
+    mac: "ac:a7:04:2c:3b:04"
+    flash_mb: 16
+    flash_mode: quad
+    psram_mb: 8
+    psram_mode: unknown                  # quad or octal (detect via test app)
+    rev: v0.2
+    secure_boot: off
+    flash_encryption: off
+    led_gpio: unknown                     # 48 or 38 (needs flashed test app + BL-005 approval)
+    led_strip: worldseni_ws2812           # per PLAN (blink uses led_strip)
+
+  idf:
+    board_name: lab-esp-idf
+    mcu: esp32s3
+    hw: esp32s3_devkitc
+    usb_serial: "E0:72:A1:AA:23:90"
+    dev_symlink: /dev/lab-esp-idf
+    mac: "e0:72:a1:aa:23:90"
+    flash_mb: 16
+    flash_mode: quad
+    psram_mb: 8
+    psram_mode: unknown
+    rev: v0.2
+    secure_boot: off
+    flash_encryption: off
+    led_gpio: unknown                     # needs flashed test app
+    led_strip: worldseni_ws2812

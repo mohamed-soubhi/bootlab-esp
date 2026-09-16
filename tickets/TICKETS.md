@@ -9,7 +9,8 @@
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 40
+    "todo" : 39
+    "blocked" : 1
     "done" : 7
 ```
 
@@ -17,7 +18,7 @@ pie showData title Ticket status
 
 | Epic | Phase | Title | Progress | Done | Status | Plan |
 |---|---|---|---|---|---|---|
-| E0 | P0 | Host & rig setup | `█████████░░░` | 5/7 | 🔵 doing | §2, §3, §8 P0 |
+| E0 | P0 | Host & rig setup | `█████████░░░` | 5/7 | 🟥 blocked | §2, §3, §8 P0 |
 | EL | PL | LABID common library | `█████░░░░░░░` | 2/5 | 🔵 doing | §7.3, §8 PL |
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `░░░░░░░░░░░░` | 0/9 | ⬜ todo | §4.2, §5, §6, §7.2, §8 P1 |
 | E2 | P2 | ESP32-S3 #1 — Zephyr | `░░░░░░░░░░░░` | 0/7 | ⬜ todo | §4.1, §5, §6, §7.1, §8 P2 |
@@ -29,7 +30,7 @@ pie showData title Ticket status
 
 ```mermaid
 flowchart LR
-    E0["P0 Host & rig setup<br/>5/7"]:::doing
+    E0["P0 Host & rig setup<br/>5/7"]:::blocked
     EL["PL LABID common library<br/>2/5"]:::doing
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>0/9"]:::todo
     E2["P2 ESP32-S3 #1 — Zephyr<br/>0/7"]:::todo
@@ -51,12 +52,15 @@ flowchart LR
 
 ## Ready to start now
 
-- **BL-005** Detect board hardware → rig.yaml (S) — E0
 - **BL-007** labflash doctor (stub) (S) — E0
 - **BL-012** LABID parser fuzz target (S) — EL
 - **BL-013** Python labid.py (S) — EL
 - **BL-014** Packaging: Zephyr module + IDF component (S) — EL
 - **BL-030** Zephyr west + sysbuild MCUboot + swap-with-revert check (M) — E2
+
+## Blocked
+
+- 🟥 **BL-005** Detect board hardware → rig.yaml 
 
 ## Tickets by epic
 
@@ -68,7 +72,7 @@ flowchart LR
 | ✅ | BL-002 | Install toolchains on RPi4 | M | host | BL-001 |  |
 | ✅ | BL-003 | Powered USB hub, udev rules by serial, groups | S | host | BL-002 |  |
 | ✅ | BL-004 | Back up both ESP32-S3 boards | S | zephyr, idf | BL-003 |  |
-| ⬜ | BL-005 | Detect board hardware → rig.yaml | S | zephyr, idf | BL-003 |  |
+| 🟥 | BL-005 | Detect board hardware → rig.yaml | S | zephyr, idf | BL-003 |  |
 | ✅ | BL-006 | Generate lab signing keys | S | host | BL-002 |  |
 | ⬜ | BL-007 | labflash doctor (stub) | S | host | BL-003 |  |
 
@@ -135,7 +139,7 @@ esptool read_flash of the current firmware before any erase.
 
 </details>
 
-<details><summary>⬜ <b>BL-005</b> — Detect board hardware → rig.yaml</summary>
+<details><summary>🟥 <b>BL-005</b> — Detect board hardware → rig.yaml</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** zephyr, idf  
@@ -856,7 +860,7 @@ flowchart TB
         BL002["BL-002"]:::done
         BL003["BL-003"]:::done
         BL004["BL-004"]:::done
-        BL005["BL-005"]:::todo
+        BL005["BL-005"]:::blocked
         BL006["BL-006"]:::done
         BL007["BL-007"]:::todo
     end
