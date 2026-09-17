@@ -6,15 +6,16 @@
 # on-disk directory (common/labid is both the Zephyr module root and the
 # IDF component root):
 #
-#   - ESP-IDF component build (idf_component.yml): IDF_TARGET is defined
-#     by the IDF build system, so we call idf_component_register().
-#   - Zephyr module build (zephyr/module.yml -> cmake: .): IDF_TARGET is
-#     NOT defined; we compile the sources into a Zephyr library when
+#   - ESP-IDF component build (idf_component.yml): the IDF build system
+#     sets ESP_PLATFORM=1 (per Espressif build-system docs), so we call
+#     idf_component_register().
+#   - Zephyr module build (zephyr/module.yml -> cmake: .): ESP_PLATFORM is
+#     not set; we compile the sources into a Zephyr library when
 #     CONFIG_LABID is enabled. Kconfig is at the module root (Kconfig).
 #
 # The two paths are mutually exclusive by construction.
 
-if(DEFINED IDF_TARGET)
+if(ESP_PLATFORM)
   # --- ESP-IDF component ---
   idf_component_register(
     SRCS "src/labid.c"
