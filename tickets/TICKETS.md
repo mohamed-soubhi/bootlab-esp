@@ -113,7 +113,7 @@ Python 3.11+, BlueZ, west + Zephyr SDK, ESP-IDF, imgtool, esptool. Note: these A
 - **Depends on:** BL-002  
 - **Plan:** §2, §3, §8 P0
 
-Both boards share VID:PID; udev symlinks by USB serial. User in bluetooth, dialout, plugdev.
+Powered USB hub, udev rules by serial, groups. [BLOCKED 2026-09-17: AC3 (no brown-out resets over 10min) FAILS — continuous under-voltage, get_throttled=0x50000 on every read, 92 events this boot. Rate INDEPENDENT of attached peripherals: 2 boards ~2.0/min, 1 board ~2.0-2.5/min, 0 boards ~1.0/min => PSU/rail fault, NOT board load. AC1 (both /dev/lab-esp-* symlinks) PASS. AC2 (each symlink resolves to the correct board by USB serial, survives replug/port-shift) PASS. Needs adequate 5V/3A supply or owner redefinition of AC3.]
 
 **Acceptance criteria**
 - [ ] /dev/lab-esp-zephyr and /dev/lab-esp-idf exist
