@@ -57,9 +57,15 @@ else
 fi
 
 # --- MCUboot resolved via west manifest ---
-if git -C "$WESTROOT/modules/lib/mcuboot" rev-parse --git-dir >/dev/null 2>&1; then
-  MCREV=$(git -C "$WESTROOT/modules/lib/mcuboot" describe --tags 2>/dev/null || git -C "$WESTROOT/modules/lib/mcuboot" rev-parse --short HEAD)
-  echo "mcuboot: $MCREV (from west manifest)"
+# west places it at $WESTROOT/bootloader/mcuboot for this manifest. Fall back
+# to the legacy modules/lib path if the layout changes.
+MCB=""
+for cand in "$WESTROOT/bootloader/mcuboot" "$WESTROOT/modules/lib/mcuboot"; do
+  if [ -d "$cand/.git" ]; then MCB="$cand"; break; fi
+done
+if [ -n "$MCB" ]; then
+  MCREV=$(git -C "$MCB" describe --tags 2>/dev/null || git -C "$MCB" rev-parse --short HEAD)
+  echo "mcuboot: $MCREV (from west manifest, $MCB)"
 else
   fail "mcuboot module not checked out (needs west update)"
 fi
