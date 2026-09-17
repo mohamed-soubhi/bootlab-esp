@@ -16,6 +16,8 @@ common/labid/tests/unity/
 # west-managed workspace (fetched deps, not project code)
 .west/
 zephyr/
+# ...but the common/labid/zephyr module packaging dir IS project code
+!common/labid/zephyr/
 
 # LABID fuzz build artifacts (generated, not source)
 common/labid/tests/fuzz_labid

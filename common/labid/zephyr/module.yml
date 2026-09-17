@@ -1,0 +1,8 @@
+name: labid
+
+build:
+  # module.yml lives in zephyr/, but cmake/kconfig resolve relative to the
+  # MODULE ROOT (common/labid), where the single dual-mode CMakeLists.txt
+  # and Kconfig for LABID are located.
+  cmake: .
+  kconfig: Kconfig

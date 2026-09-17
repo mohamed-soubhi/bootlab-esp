@@ -1,0 +1,8 @@
+# LABID common library
+
+menuconfig LABID
+	bool "LABID serial identity protocol"
+	default n
+	help
+	  Portable C99 implementation of the LABID serial identity frame
+	  protocol (PLAN §7.3). No malloc, no RTOS calls, fixed buffers.

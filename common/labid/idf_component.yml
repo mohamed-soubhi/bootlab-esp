@@ -1,0 +1,5 @@
+version: "1.0.0"
+description: "LABID serial identity protocol library (portable C99)"
+
+dependencies:
+  idf: ">=5.0"
