@@ -16,3 +16,8 @@ common/labid/tests/unity/
 # west-managed workspace (fetched deps, not project code)
 .west/
 zephyr/
+
+# LABID fuzz build artifacts (generated, not source)
+common/labid/tests/fuzz_labid
+common/labid/tests/fuzz_ubsan
+common/labid/tests/fuzz_corpus/

@@ -251,7 +251,7 @@
       "ac": [
         "10 min fuzz, 0 crashes, 0 sanitizer errors"
       ],
-      "status": "doing",
+      "status": "done",
       "pr": ""
     },
     {

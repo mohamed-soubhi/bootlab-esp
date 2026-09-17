@@ -33,11 +33,15 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     (void)labid_frame_crc_ok(&p);
 
     /* Also exercise the writer with fuzz-derived keys/values to reach
-     * validation paths (bounded, safe strings). */
+     * validation paths (bounded, safe strings). klen/vlen are bounded by
+     * BOTH the derived value AND the available input size so we never read
+     * past `data` (data[i] for i >= size is out of bounds). */
     char out[LABID_MAX_FRAME];
-    char kb[4], vb[4];
+    char kb[4] = {0}, vb[4] = {0};
     size_t klen = size ? (data[0] % 3) : 0;
-    size_t vlen = size ? (data[size>1?1:0] % 3) : 0;
+    if (klen > size) klen = size;
+    size_t vlen = size > 1 ? (data[1] % 3) : 0;
+    if (vlen > size) vlen = size;
     for (size_t i = 0; i < klen && i < 3; i++) kb[i] = (char)('a' + (data[i] % 26));
     for (size_t i = 0; i < vlen && i < 3; i++) vb[i] = (char)('0' + (data[i] % 10));
     kb[klen] = '\0'; vb[vlen] = '\0';
