@@ -23,3 +23,6 @@ zephyr/
 common/labid/tests/fuzz_labid
 common/labid/tests/fuzz_ubsan
 common/labid/tests/fuzz_corpus/
+
+# ESP-IDF generated config (keep sdkconfig.defaults, not the generated sdkconfig)
+esp_idf/**/sdkconfig

@@ -1,0 +1,2 @@
+# Host (linux target) build for the LABID IDF component test.
+CONFIG_IDF_TARGET="linux"
