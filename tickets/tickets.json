@@ -133,7 +133,7 @@
         "docs/recovery.md has the restore command",
         "Nothing committed to git"
       ],
-      "status": "blocked",
+      "status": "done",
       "pr": ""
     },
     {
