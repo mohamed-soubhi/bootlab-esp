@@ -5,20 +5,21 @@
 
 ## Overall
 
-`████░░░░░░░░░░░░░░░░░░░░░░░░░░` **7/47 done (14%)**
+`████░░░░░░░░░░░░░░░░░░░░░░░░░░` **6/47 done (12%)**
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 37
-    "blocked" : 3
-    "done" : 7
+    "todo" : 36
+    "doing" : 1
+    "blocked" : 4
+    "done" : 6
 ```
 
 ## Epics
 
 | Epic | Phase | Title | Progress | Done | Status | Plan |
 |---|---|---|---|---|---|---|
-| E0 | P0 | Host & rig setup | `███████░░░░░` | 4/7 | 🟥 blocked | §2, §3, §8 P0 |
+| E0 | P0 | Host & rig setup | `█████░░░░░░░` | 3/7 | 🟥 blocked | §2, §3, §8 P0 |
 | EL | PL | LABID common library | `███████░░░░░` | 3/5 | 🔵 doing | §7.3, §8 PL |
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `░░░░░░░░░░░░` | 0/9 | ⬜ todo | §4.2, §5, §6, §7.2, §8 P1 |
 | E2 | P2 | ESP32-S3 #1 — Zephyr | `░░░░░░░░░░░░` | 0/7 | ⬜ todo | §4.1, §5, §6, §7.1, §8 P2 |
@@ -30,7 +31,7 @@ pie showData title Ticket status
 
 ```mermaid
 flowchart LR
-    E0["P0 Host & rig setup<br/>4/7"]:::blocked
+    E0["P0 Host & rig setup<br/>3/7"]:::blocked
     EL["PL LABID common library<br/>3/5"]:::doing
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>0/9"]:::todo
     E2["P2 ESP32-S3 #1 — Zephyr<br/>0/7"]:::todo
@@ -52,13 +53,13 @@ flowchart LR
 
 ## Ready to start now
 
-- **BL-012** LABID parser fuzz target (S) — EL
 - **BL-014** Packaging: Zephyr module + IDF component (S) — EL
 - **BL-030** Zephyr west + sysbuild MCUboot + swap-with-revert check (M) — E2
 
 ## Blocked
 
 - 🟥 **BL-003** Powered USB hub, udev rules by serial, groups 
+- 🟥 **BL-004** Back up both ESP32-S3 boards 
 - 🟥 **BL-005** Detect board hardware → rig.yaml 
 - 🟥 **BL-007** labflash doctor (stub) 
 
@@ -71,7 +72,7 @@ flowchart LR
 | ✅ | BL-001 | Repo skeleton + pinned versions | S | host | — |  |
 | ✅ | BL-002 | Install toolchains on RPi4 | M | host | BL-001 |  |
 | 🟥 | BL-003 | Powered USB hub, udev rules by serial, groups | S | host | BL-002 |  |
-| ✅ | BL-004 | Back up both ESP32-S3 boards | S | zephyr, idf | BL-003 |  |
+| 🟥 | BL-004 | Back up both ESP32-S3 boards | S | zephyr, idf | BL-003 |  |
 | 🟥 | BL-005 | Detect board hardware → rig.yaml | S | zephyr, idf | BL-003 |  |
 | ✅ | BL-006 | Generate lab signing keys | S | host | BL-002 |  |
 | 🟥 | BL-007 | labflash doctor (stub) | S | host | BL-003 |  |
@@ -123,7 +124,7 @@ Both boards share VID:PID; udev symlinks by USB serial. User in bluetooth, dialo
 
 </details>
 
-<details><summary>✅ <b>BL-004</b> — Back up both ESP32-S3 boards</summary>
+<details><summary>🟥 <b>BL-004</b> — Back up both ESP32-S3 boards</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** zephyr, idf  
@@ -133,9 +134,9 @@ Both boards share VID:PID; udev symlinks by USB serial. User in bluetooth, dialo
 esptool read_flash of the current firmware before any erase.
 
 **Acceptance criteria**
-- [x] 2 backup images in backups/
-- [x] docs/recovery.md has the restore command
-- [x] Nothing committed to git
+- [ ] 2 backup images in backups/
+- [ ] docs/recovery.md has the restore command
+- [ ] Nothing committed to git
 
 </details>
 
@@ -191,7 +192,7 @@ Minimal environment check.
 |---|---|---|---|---|---|---|
 | ✅ | BL-010 | LABID C parser, writer, CRC-16 | M | common | BL-001 |  |
 | ✅ | BL-011 | Golden test vectors + Unity tests | M | common | BL-010 |  |
-| ⬜ | BL-012 | LABID parser fuzz target | S | common | BL-010 |  |
+| 🔵 | BL-012 | LABID parser fuzz target | S | common | BL-010 |  |
 | ✅ | BL-013 | Python labid.py | S | host | BL-011 |  |
 | ⬜ | BL-014 | Packaging: Zephyr module + IDF component | S | common | BL-010 |  |
 
@@ -226,7 +227,7 @@ test_vectors.json: valid frames, bad CRC, too long, unknown keys, garbage.
 
 </details>
 
-<details><summary>⬜ <b>BL-012</b> — LABID parser fuzz target</summary>
+<details><summary>🔵 <b>BL-012</b> — LABID parser fuzz target</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** common  
@@ -859,7 +860,7 @@ flowchart TB
         BL001["BL-001"]:::done
         BL002["BL-002"]:::done
         BL003["BL-003"]:::blocked
-        BL004["BL-004"]:::done
+        BL004["BL-004"]:::blocked
         BL005["BL-005"]:::blocked
         BL006["BL-006"]:::done
         BL007["BL-007"]:::blocked
@@ -867,7 +868,7 @@ flowchart TB
     subgraph EL_g["PL LABID common library"]
         BL010["BL-010"]:::done
         BL011["BL-011"]:::done
-        BL012["BL-012"]:::todo
+        BL012["BL-012"]:::doing
         BL013["BL-013"]:::done
         BL014["BL-014"]:::todo
     end

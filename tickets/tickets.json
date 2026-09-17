@@ -133,7 +133,7 @@
         "docs/recovery.md has the restore command",
         "Nothing committed to git"
       ],
-      "status": "done",
+      "status": "blocked",
       "pr": ""
     },
     {
@@ -251,7 +251,7 @@
       "ac": [
         "10 min fuzz, 0 crashes, 0 sanitizer errors"
       ],
-      "status": "todo",
+      "status": "doing",
       "pr": ""
     },
     {
