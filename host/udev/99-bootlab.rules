@@ -1,0 +1,2 @@
+SUBSYSTEM=="tty", ATTRS{idVendor}=="303a", ATTRS{idProduct}=="1001", ATTRS{serial}=="AC:A7:04:2C:3B:04", SYMLINK+="lab-esp-zephyr"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="303a", ATTRS{idProduct}=="1001", ATTRS{serial}=="E0:72:A1:AA:23:90", SYMLINK+="lab-esp-idf"
