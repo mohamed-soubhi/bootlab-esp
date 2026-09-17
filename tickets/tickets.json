@@ -288,7 +288,7 @@
       "ac": [
         "Builds for Zephyr native_sim and IDF linux target"
       ],
-      "status": "todo",
+      "status": "doing",
       "pr": ""
     },
     {

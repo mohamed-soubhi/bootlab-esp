@@ -9,7 +9,8 @@
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 36
+    "todo" : 35
+    "doing" : 1
     "blocked" : 3
     "done" : 8
 ```
@@ -52,7 +53,6 @@ flowchart LR
 
 ## Ready to start now
 
-- **BL-014** Packaging: Zephyr module + IDF component (S) — EL
 - **BL-030** Zephyr west + sysbuild MCUboot + swap-with-revert check (M) — E2
 
 ## Blocked
@@ -192,7 +192,7 @@ Minimal environment check.
 | ✅ | BL-011 | Golden test vectors + Unity tests | M | common | BL-010 |  |
 | ✅ | BL-012 | LABID parser fuzz target | S | common | BL-010 |  |
 | ✅ | BL-013 | Python labid.py | S | host | BL-011 |  |
-| ⬜ | BL-014 | Packaging: Zephyr module + IDF component | S | common | BL-010 |  |
+| 🔵 | BL-014 | Packaging: Zephyr module + IDF component | S | common | BL-010 |  |
 
 <details><summary>✅ <b>BL-010</b> — LABID C parser, writer, CRC-16</summary>
 
@@ -254,7 +254,7 @@ Same framing + CRC in host/labflash/labid.py.
 
 </details>
 
-<details><summary>⬜ <b>BL-014</b> — Packaging: Zephyr module + IDF component</summary>
+<details><summary>🔵 <b>BL-014</b> — Packaging: Zephyr module + IDF component</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** common  
@@ -868,7 +868,7 @@ flowchart TB
         BL011["BL-011"]:::done
         BL012["BL-012"]:::done
         BL013["BL-013"]:::done
-        BL014["BL-014"]:::todo
+        BL014["BL-014"]:::doing
     end
     subgraph E1_g["P1 ESP32-S3 #2 — ESP-IDF"]
         BL020["BL-020"]:::todo
