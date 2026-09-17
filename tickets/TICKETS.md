@@ -98,7 +98,7 @@ Create the tree from PLAN §3. Pin Zephyr, IDF, MCUboot, ble_ota versions in scr
 - **Depends on:** BL-001  
 - **Plan:** §2, §3, §8 P0
 
-Python 3.11+, BlueZ, west + Zephyr SDK, ESP-IDF, imgtool, esptool.
+Python 3.11+, BlueZ, west + Zephyr SDK, ESP-IDF, imgtool, esptool. Note: these ACs verify toolchain presence/version only, not that a build succeeds. Actual Zephyr build capability is a separate open question, tracked under the Zephyr esptool re-test (build gate).
 
 **Acceptance criteria**
 - [x] scripts/check_env.sh prints all versions and exits 0

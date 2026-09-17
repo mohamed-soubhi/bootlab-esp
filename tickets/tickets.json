@@ -86,7 +86,7 @@
       "deps": [
         "BL-001"
       ],
-      "desc": "Python 3.11+, BlueZ, west + Zephyr SDK, ESP-IDF, imgtool, esptool.",
+      "desc": "Python 3.11+, BlueZ, west + Zephyr SDK, ESP-IDF, imgtool, esptool. Note: these ACs verify toolchain presence/version only, not that a build succeeds. Actual Zephyr build capability is a separate open question, tracked under the Zephyr esptool re-test (build gate).",
       "ac": [
         "scripts/check_env.sh prints all versions and exits 0",
         "Versions match versions.env"
