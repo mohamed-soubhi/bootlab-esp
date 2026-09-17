@@ -284,11 +284,11 @@
       "deps": [
         "BL-010"
       ],
-      "desc": "One source, two build integrations.",
+      "desc": "One source, two build integrations. [BLOCKED: AC requires Zephyr native_sim + IDF linux builds; Zephyr path on hold + throttle != 0x0]",
       "ac": [
         "Builds for Zephyr native_sim and IDF linux target"
       ],
-      "status": "doing",
+      "status": "blocked",
       "pr": ""
     },
     {
