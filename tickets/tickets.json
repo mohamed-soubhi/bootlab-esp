@@ -188,7 +188,7 @@
       "deps": [
         "BL-003"
       ],
-      "desc": "Minimal environment check.",
+      "desc": "Minimal environment check. [EVIDENCE 2026-09-17: doctor verified OK while both boards were attached — output: 'ESP USB devices : 2/2  OK / Bluetooth : OK / WiFi : OK / Result: ALL OK', exit 0. Non-zero-exit path previously proven (exit 1 with 0 boards). Cannot be flipped to done yet: dep-gated behind BL-003 (blocked on AC3/PSU).]",
       "ac": [
         "Reports 2 ESP USB devices, BT adapter, WiFi",
         "Non-zero exit on any missing item"

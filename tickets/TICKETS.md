@@ -176,7 +176,7 @@ scripts/gen_keys.sh: zephyr_p256, idf_sbv2. Refuses to overwrite.
 - **Depends on:** BL-003  
 - **Plan:** §2, §3, §8 P0
 
-Minimal environment check.
+Minimal environment check. [EVIDENCE 2026-09-17: doctor verified OK while both boards were attached — output: 'ESP USB devices : 2/2  OK / Bluetooth : OK / WiFi : OK / Result: ALL OK', exit 0. Non-zero-exit path previously proven (exit 1 with 0 boards). Cannot be flipped to done yet: dep-gated behind BL-003 (blocked on AC3/PSU).]
 
 **Acceptance criteria**
 - [ ] Reports 2 ESP USB devices, BT adapter, WiFi
