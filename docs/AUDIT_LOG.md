@@ -119,3 +119,50 @@ PLAN §3's repo tree does **not** include `bootloader/`, `tools/`, or `package.j
 - Origin of `bootloader/`, `tools/`, `package.json` unknown — need owner confirmation: intentional or accidental clutter.
 - Whether the Zephyr PATH-shadowing fix is durable across runs — unconfirmed here.
 - mypy not installed on this host — BL-013's "mypy clean" AC unconfirmed either way.
+
+---
+
+## AC3 Observation — 10-minute brown-out window
+**Timestamp:** 2026-09-19 (measured window 22:01:27 → 22:11:10, host `msa-linuxRPi4`)
+**Duration:** 602.3 s wall / 582.2 s to final sample — 30 samples @ 20 s interval
+**Observer:** agent session on the project RPi4 (real host: `vcgencmd`, `journalctl`, boards present)
+**Source data:** `scripts/evidence/bl003_ac3_observation.jsonl` (raw per-sample JSONL, committed alongside this entry)
+
+### Result: FAIL
+
+Raw data:
+```
+uv_start: 224, uv_end: 231   ->  7 NEW under-voltage events
+usb_resets: 0 -> 0           ->  0 new resets
+temp range: 38.4-42.8 C
+throttled: 0x50000 (every sample, all 30)
+```
+
+Event timestamps: 22:02, 22:03, 22:04, 22:05, 22:06, 22:09, 22:11
+Progression (monotonic UV counter within window):
+```
+t+40s -> 225, t+160s -> 227, t+261s -> 228, t+321s -> 229, t+502s -> 230, t+582s -> 231
+```
+Rate: ~1 event / 85 s, sustained across the full window.
+
+### AC3 wording note (recorded so it is not re-litigated)
+AC3 = "no brown-out resets over 10 min".
+- Literal reading (device resets): **0 resets -> would pass narrowly**
+- Intent reading (power-rail integrity): **7 UV events -> fails clearly**
+**Recorded as FAIL.** The AC exists to prove power integrity, not merely the
+absence of a reset. A rail that dips ~7x per 10 min is not a clean rail.
+
+### Data caveat
+`uv_start = 224` here vs `231` observed at an earlier 21:32 check — the absolute
+counter appears to have *decreased*, which is impossible for a monotonic counter.
+Cause: journal rotation (152.8 MB of journals; `journalctl -b` output is being
+vacuumed). Absolute totals are therefore NOT comparable across long spans.
+The in-window counter is monotonic and reliable — which is all the measurement used.
+
+### Conclusion
+Power fault persists, load-independent (see the earlier 0/1/2-board experiment:
+rate unchanged with 0, 1, or 2 boards attached). ~1/min under-voltage dips.
+No clean power -> no flash. Burn recommendation stands: perform the bootloader
+burn on WSL2 (stable power), not on this rig.
+
+**BL-003 status: unchanged** (left exactly as recorded; this entry is evidence only).
