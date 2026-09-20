@@ -53,9 +53,6 @@ flowchart LR
 ## Ready to start now
 
 - **BL-030** Zephyr west + sysbuild MCUboot + swap-with-revert check (M) — E2
-- **BL-041** identify, info, status, measure (S) — E3
-- **BL-042** flash, recover, provision (USB) (S) — E3
-- **BL-045** build + sign orchestration (S) — E3
 
 ## Blocked
 
@@ -548,11 +545,11 @@ Run all P2 acceptance checks.
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
 | ✅ | BL-040 | labflash core: config, UID resolution, re-enumeration wait | M | host | BL-013, BL-007 |  |
-| ⬜ | BL-041 | identify, info, status, measure | S | host | BL-040 |  |
-| ⬜ | BL-042 | flash, recover, provision (USB) | S | host | BL-040 |  |
+| ⬜ | BL-041 | identify, info, status, measure | S | host | BL-040, BL-020, BL-022 |  |
+| ⬜ | BL-042 | flash, recover, provision (USB) | S | host | BL-040, BL-020, BL-021 |  |
 | ⬜ | BL-043 | update idf --transport ble|wifi | M | host, idf | BL-040, BL-028 |  |
 | ⬜ | BL-044 | update zephyr --transport ble|udp | M | host, zephyr | BL-040, BL-036 |  |
-| ⬜ | BL-045 | build + sign orchestration | S | host | BL-040 |  |
+| ⬜ | BL-045 | build + sign orchestration | S | host | BL-040, BL-020, BL-021, BL-030, BL-031 |  |
 | ⬜ | BL-046 | labflash mocked unit tests | M | host | BL-041, BL-042, BL-043, BL-044, BL-045 |  |
 
 <details><summary>✅ <b>BL-040</b> — labflash core: config, UID resolution, re-enumeration wait</summary>
@@ -574,10 +571,10 @@ rig.yaml, resolve ports by UID, wait ≤ 5 s after resets, --json. [DONE 2026-09
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
-- **Depends on:** BL-040  
+- **Depends on:** BL-040, BL-020, BL-022  
 - **Plan:** §8 P3
 
-LABID discovery, cross-check, toggle-based Hz.
+LABID discovery, cross-check, toggle-based Hz. Deps corrected 2026-09-20: AC needs real LABID+blink firmware, not just host code -- BL-020/BL-022 (IDF blink+LABID) are the minimum for IDF-side real verification. Full closure (both boards) additionally needs BL-031/BL-032 (Zephyr blink+LABID), which stay on hold until the Zephyr path resumes; this ticket may be closable IDF-only in the meantime with Zephyr verification deferred.
 
 **Acceptance criteria**
 - [ ] identify maps both boards
@@ -589,10 +586,10 @@ LABID discovery, cross-check, toggle-based Hz.
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
-- **Depends on:** BL-040  
+- **Depends on:** BL-040, BL-020, BL-021  
 - **Plan:** §8 P3
 
-esptool / west / idf.py wrappers with identity check before writing.
+esptool / west / idf.py wrappers with identity check before writing. Deps corrected 2026-09-20: "Factory flash both boards" needs an actual signed image to flash -- BL-020/BL-021 (IDF blink app + partitions/signing) are the minimum for IDF-side real verification. Full closure (both boards) additionally needs BL-030/BL-031 (Zephyr bootloader+blink), which stay on hold until the Zephyr path resumes.
 
 **Acceptance criteria**
 - [ ] Factory flash both boards
@@ -632,10 +629,10 @@ SMP client over BLE and UDP.
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
-- **Depends on:** BL-040  
+- **Depends on:** BL-040, BL-020, BL-021, BL-030, BL-031  
 - **Plan:** §8 P3
 
-labflash build <board|all> --variant.
+labflash build <board|all> --variant. Deps corrected 2026-09-20: AC ("Builds all 10 images, 2 boards x 5 variants") explicitly requires both boards' app code and signing to exist -- BL-020/BL-021 (IDF) and BL-030/BL-031 (Zephyr), unlike BL-041/BL-042 this ticket cannot be partially satisfied IDF-only, so it stays effectively blocked until the Zephyr path resumes.
 
 **Acceptance criteria**
 - [ ] Builds all 10 images (2 boards × 5 variants)
@@ -958,12 +955,20 @@ flowchart TB
     BL013 --> BL040
     BL007 --> BL040
     BL040 --> BL041
+    BL020 --> BL041
+    BL022 --> BL041
     BL040 --> BL042
+    BL020 --> BL042
+    BL021 --> BL042
     BL040 --> BL043
     BL028 --> BL043
     BL040 --> BL044
     BL036 --> BL044
     BL040 --> BL045
+    BL020 --> BL045
+    BL021 --> BL045
+    BL030 --> BL045
+    BL031 --> BL045
     BL041 --> BL046
     BL042 --> BL046
     BL043 --> BL046
