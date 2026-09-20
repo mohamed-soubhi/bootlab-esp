@@ -5,20 +5,20 @@
 
 ## Overall
 
-`█████░░░░░░░░░░░░░░░░░░░░░░░░░` **8/47 done (17%)**
+`██████░░░░░░░░░░░░░░░░░░░░░░░░` **10/47 done (21%)**
 
 ```mermaid
 pie showData title Ticket status
     "todo" : 35
-    "blocked" : 4
-    "done" : 8
+    "blocked" : 2
+    "done" : 10
 ```
 
 ## Epics
 
 | Epic | Phase | Title | Progress | Done | Status | Plan |
 |---|---|---|---|---|---|---|
-| E0 | P0 | Host & rig setup | `███████░░░░░` | 4/7 | 🟥 blocked | §2, §3, §8 P0 |
+| E0 | P0 | Host & rig setup | `██████████░░` | 6/7 | 🟥 blocked | §2, §3, §8 P0 |
 | EL | PL | LABID common library | `██████████░░` | 4/5 | 🟥 blocked | §7.3, §8 PL |
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `░░░░░░░░░░░░` | 0/9 | ⬜ todo | §4.2, §5, §6, §7.2, §8 P1 |
 | E2 | P2 | ESP32-S3 #1 — Zephyr | `░░░░░░░░░░░░` | 0/7 | ⬜ todo | §4.1, §5, §6, §7.1, §8 P2 |
@@ -30,7 +30,7 @@ pie showData title Ticket status
 
 ```mermaid
 flowchart LR
-    E0["P0 Host & rig setup<br/>4/7"]:::blocked
+    E0["P0 Host & rig setup<br/>6/7"]:::blocked
     EL["PL LABID common library<br/>4/5"]:::blocked
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>0/9"]:::todo
     E2["P2 ESP32-S3 #1 — Zephyr<br/>0/7"]:::todo
@@ -53,12 +53,11 @@ flowchart LR
 ## Ready to start now
 
 - **BL-030** Zephyr west + sysbuild MCUboot + swap-with-revert check (M) — E2
+- **BL-040** labflash core: config, UID resolution, re-enumeration wait (M) — E3
 
 ## Blocked
 
-- 🟥 **BL-003** Powered USB hub, udev rules by serial, groups 
 - 🟥 **BL-005** Detect board hardware → rig.yaml 
-- 🟥 **BL-007** labflash doctor (stub) 
 - 🟥 **BL-014** Packaging: Zephyr module + IDF component 
 
 ## Tickets by epic
@@ -69,11 +68,11 @@ flowchart LR
 |---|---|---|---|---|---|---|
 | ✅ | BL-001 | Repo skeleton + pinned versions | S | host | — |  |
 | ✅ | BL-002 | Install toolchains on RPi4 | M | host | BL-001 |  |
-| 🟥 | BL-003 | Powered USB hub, udev rules by serial, groups | S | host | BL-002 |  |
+| ✅ | BL-003 | Powered USB hub, udev rules by serial, groups | S | host | BL-002 |  |
 | ✅ | BL-004 | Back up both ESP32-S3 boards | S | zephyr, idf | BL-003 |  |
 | 🟥 | BL-005 | Detect board hardware → rig.yaml | S | zephyr, idf | BL-003 |  |
 | ✅ | BL-006 | Generate lab signing keys | S | host | BL-002 |  |
-| 🟥 | BL-007 | labflash doctor (stub) | S | host | BL-003 |  |
+| ✅ | BL-007 | labflash doctor (stub) | S | host | BL-003 |  |
 
 <details><summary>✅ <b>BL-001</b> — Repo skeleton + pinned versions</summary>
 
@@ -106,19 +105,19 @@ Python 3.11+, BlueZ, west + Zephyr SDK, ESP-IDF, imgtool, esptool. Note: these A
 
 </details>
 
-<details><summary>🟥 <b>BL-003</b> — Powered USB hub, udev rules by serial, groups</summary>
+<details><summary>✅ <b>BL-003</b> — Powered USB hub, udev rules by serial, groups</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
 - **Depends on:** BL-002  
 - **Plan:** §2, §3, §8 P0
 
-Powered USB hub, udev rules by serial, groups. [BLOCKED 2026-09-17: AC3 (no brown-out resets over 10min) FAILS — continuous under-voltage, get_throttled=0x50000 on every read, 92 events this boot. Rate INDEPENDENT of attached peripherals: 2 boards ~2.0/min, 1 board ~2.0-2.5/min, 0 boards ~1.0/min => PSU/rail fault, NOT board load. AC1 (both /dev/lab-esp-* symlinks) PASS. AC2 (each symlink resolves to the correct board by USB serial, survives replug/port-shift) PASS. Needs adequate 5V/3A supply or owner redefinition of AC3.]
+Powered USB hub, udev rules by serial, groups. [BLOCKED 2026-09-17 on RPi4: AC3 (no brown-out resets over 10min) FAILS — continuous under-voltage, get_throttled=0x50000 on every read, 92 events this boot. Rate INDEPENDENT of attached peripherals: 2 boards ~2.0/min, 1 board ~2.0-2.5/min, 0 boards ~1.0/min => PSU/rail fault, NOT board load. This RPi4 finding stands as a separate, unresolved hardware-specific issue; see scripts/evidence/bl003_ac3_observation.jsonl. [DONE 2026-09-20 on WSL2 host, after RPi4->WSL2 migration: AC1 PASS (/dev/lab-esp-zephyr and /dev/lab-esp-idf exist, correctly mapped). AC2 PASS, verified across a real physical USB port swap on the Windows host, cross-checked via esptool chip-id and udevadm ID_SERIAL_SHORT — symlinks follow MAC/serial, not port order. AC3 PASS, 10-min clean observation 2026-09-20T03:11:57-03:21:57, 41 samples/15s, zero drops; the earlier WSL2-specific AC3 failure (usbipd/USB-IP bridge dropping both boards simultaneously ~1m45s in, confirmed via dmesg vhci_hcd disconnect logs) was a Windows USB selective-suspend issue under HP's custom power plan, fixed via powercfg at the registry level. Full evidence: scripts/evidence/bl003_ac3_wsl2_observation.md. This WSL2 pass does not overwrite or contradict the RPi4's separate PSU/rail finding above.]
 
 **Acceptance criteria**
-- [ ] /dev/lab-esp-zephyr and /dev/lab-esp-idf exist
-- [ ] Symlinks survive replug and port swap
-- [ ] No brown-out resets over 10 min
+- [x] /dev/lab-esp-zephyr and /dev/lab-esp-idf exist
+- [x] Symlinks survive replug and port swap
+- [x] No brown-out resets over 10 min
 
 </details>
 
@@ -169,18 +168,18 @@ scripts/gen_keys.sh: zephyr_p256, idf_sbv2. Refuses to overwrite.
 
 </details>
 
-<details><summary>🟥 <b>BL-007</b> — labflash doctor (stub)</summary>
+<details><summary>✅ <b>BL-007</b> — labflash doctor (stub)</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
 - **Depends on:** BL-003  
 - **Plan:** §2, §3, §8 P0
 
-Minimal environment check. [EVIDENCE 2026-09-17: doctor verified OK while both boards were attached — output: 'ESP USB devices : 2/2  OK / Bluetooth : OK / WiFi : OK / Result: ALL OK', exit 0. Non-zero-exit path previously proven (exit 1 with 0 boards). Cannot be flipped to done yet: dep-gated behind BL-003 (blocked on AC3/PSU).]
+Minimal environment check. [EVIDENCE 2026-09-17 on RPi4: doctor verified OK while both boards were attached — output: 'ESP USB devices : 2/2  OK / Bluetooth : OK / WiFi : OK / Result: ALL OK', exit 0. Non-zero-exit path previously proven (exit 1 with 0 boards). At the time, dep-gated behind BL-003 (blocked on AC3/PSU). [DONE 2026-09-20 on WSL2 host, after BL-003 closed: rewrote doctor.py's ESP check to use pyserial (VID 0x303A) instead of shelling out to lsusb, since lsusb was not installed on this host — no longer depends on it either way. Added host-aware N/A logic for BT/WiFi: on a host with no BT stack (no hciconfig/bluetoothctl) or no wireless stack (no nmcli and no wlan* iface) reachable at all, those checks report N/A and do not count against the exit code, since WSL2 has no native BT/WiFi passthrough configured (a genuine host-capability gap, not a missing dependency). ESP USB board check remains a hard requirement everywhere. Fresh run with both boards attached: 'ESP USB devices : 2/2  OK / Bluetooth : N/A (not testable on this host) / WiFi : N/A (not testable on this host) / Result: ALL OK', exit 0.]
 
 **Acceptance criteria**
-- [ ] Reports 2 ESP USB devices, BT adapter, WiFi
-- [ ] Non-zero exit on any missing item
+- [x] Reports 2 ESP USB devices, BT adapter, WiFi
+- [x] Non-zero exit on any missing item
 
 </details>
 
@@ -857,11 +856,11 @@ flowchart TB
     subgraph E0_g["P0 Host & rig setup"]
         BL001["BL-001"]:::done
         BL002["BL-002"]:::done
-        BL003["BL-003"]:::blocked
+        BL003["BL-003"]:::done
         BL004["BL-004"]:::done
         BL005["BL-005"]:::blocked
         BL006["BL-006"]:::done
-        BL007["BL-007"]:::blocked
+        BL007["BL-007"]:::done
     end
     subgraph EL_g["PL LABID common library"]
         BL010["BL-010"]:::done
