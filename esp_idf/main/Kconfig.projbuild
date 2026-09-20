@@ -1,0 +1,34 @@
+menu "bootlab-esp app config (BL-020)"
+
+    choice APP_VARIANT
+        prompt "Build variant (PLAN Sec 5.3)"
+        default APP_VARIANT_V1
+        help
+            Selects which of the 5 build variants this image is. Each
+            variant is a separate build (labflash build <board> --variant
+            builds all 5, per BL-045).
+
+        config APP_VARIANT_V1
+            bool "v1 -- 1 Hz blink, confirms (factory image, downgrade tests)"
+        config APP_VARIANT_V2
+            bool "v2 -- 4 Hz blink, confirms (upgrade tests)"
+        config APP_VARIANT_NO_CONFIRM
+            bool "no_confirm -- blinks, never confirms (rollback tests)"
+        config APP_VARIANT_HANG
+            bool "hang -- blocks all tasks after boot, watchdog reset within 10s"
+        config APP_VARIANT_BAD_SIG
+            bool "bad_sig -- signed with the wrong key (security tests)"
+    endchoice
+
+    config APP_LED_GPIO
+        int "LED strip (WS2812) GPIO"
+        default 48
+        help
+            UNCONFIRMED -- host/config/rig.yaml and PLAN Sec 4 both list this
+            as "unknown" pending BL-005's flashed blink test. ESP32-S3-
+            DevKitC-1 uses GPIO48 on most revisions, GPIO38 on some. This
+            default is NOT a verified fact for this specific board -- do not
+            treat it as confirmed. Override at build time once BL-005
+            determines the real value.
+
+endmenu

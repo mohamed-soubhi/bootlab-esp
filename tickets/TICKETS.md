@@ -9,8 +9,8 @@
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 33
-    "blocked" : 3
+    "todo" : 32
+    "blocked" : 4
     "done" : 11
 ```
 
@@ -20,7 +20,7 @@ pie showData title Ticket status
 |---|---|---|---|---|---|---|
 | E0 | P0 | Host & rig setup | `██████████░░` | 6/7 | 🟥 blocked | §2, §3, §8 P0 |
 | EL | PL | LABID common library | `██████████░░` | 4/5 | 🟥 blocked | §7.3, §8 PL |
-| E1 | P1 | ESP32-S3 #2 — ESP-IDF | `░░░░░░░░░░░░` | 0/9 | ⬜ todo | §4.2, §5, §6, §7.2, §8 P1 |
+| E1 | P1 | ESP32-S3 #2 — ESP-IDF | `░░░░░░░░░░░░` | 0/9 | 🟥 blocked | §4.2, §5, §6, §7.2, §8 P1 |
 | E2 | P2 | ESP32-S3 #1 — Zephyr | `░░░░░░░░░░░░` | 0/7 | ⬜ todo | §4.1, §5, §6, §7.1, §8 P2 |
 | E3 | P3 | labflash CLI | `██░░░░░░░░░░` | 1/7 | 🟥 blocked | §8 P3 |
 | E4 | P4 | HIL tests + CI | `░░░░░░░░░░░░` | 0/8 | ⬜ todo | §8 P4 |
@@ -32,7 +32,7 @@ pie showData title Ticket status
 flowchart LR
     E0["P0 Host & rig setup<br/>6/7"]:::blocked
     EL["PL LABID common library<br/>4/5"]:::blocked
-    E1["P1 ESP32-S3 #2 — ESP-IDF<br/>0/9"]:::todo
+    E1["P1 ESP32-S3 #2 — ESP-IDF<br/>0/9"]:::blocked
     E2["P2 ESP32-S3 #1 — Zephyr<br/>0/7"]:::todo
     E3["P3 labflash CLI<br/>1/7"]:::blocked
     E4["P4 HIL tests + CI<br/>0/8"]:::todo
@@ -58,6 +58,7 @@ flowchart LR
 
 - 🟥 **BL-005** Detect board hardware → rig.yaml 
 - 🟥 **BL-014** Packaging: Zephyr module + IDF component 
+- 🟥 **BL-020** IDF blink app + toggles + 5 variants + task WDT 
 - 🟥 **BL-041** identify, info, status, measure 
 
 ## Tickets by epic
@@ -271,7 +272,7 @@ One source, two build integrations. [BLOCKED: AC requires Zephyr native_sim + ID
 
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
-| ⬜ | BL-020 | IDF blink app + toggles + 5 variants + task WDT | M | idf | BL-005, BL-014 |  |
+| 🟥 | BL-020 | IDF blink app + toggles + 5 variants + task WDT | M | idf | BL-005, BL-014 |  |
 | ⬜ | BL-021 | IDF partitions + signing + rollback config | S | idf | BL-020, BL-006 |  |
 | ⬜ | BL-022 | IDF LABID port on USB-Serial-JTAG | S | idf | BL-020, BL-013 |  |
 | ⬜ | BL-023 | IDF self-test + mark valid | S | idf | BL-021 |  |
@@ -281,14 +282,14 @@ One source, two build integrations. [BLOCKED: AC requires Zephyr native_sim + ID
 | ⬜ | BL-027 | IDF BLE OTA (ble_ota + NimBLE + coexistence) | L | idf | BL-023 |  |
 | ⬜ | BL-028 | IDF phase acceptance run | S | idf | BL-022, BL-026, BL-027 |  |
 
-<details><summary>⬜ <b>BL-020</b> — IDF blink app + toggles + 5 variants + task WDT</summary>
+<details><summary>🟥 <b>BL-020</b> — IDF blink app + toggles + 5 variants + task WDT</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** idf  
 - **Depends on:** BL-005, BL-014  
 - **Plan:** §4.2, §5, §6, §7.2, §8 P1
 
-FreeRTOS blink task (led_strip), toggles counter, variants per PLAN §5.3, CONFIG_ESP_TASK_WDT_PANIC.
+FreeRTOS blink task (led_strip), toggles counter, variants per PLAN §5.3, CONFIG_ESP_TASK_WDT_PANIC. [BLOCKED 2026-09-20: esp_idf/main/ written in full -- app_main.c (blink task, toggles counter via app_get_toggle_count(), variant identity via app_get_variant() as BL-022's future LABID integration points, task-WDT hang variant), app_blink_timing.c/.h (pure blink-rate math, factored out specifically to be host-testable without the toolchain), Kconfig.projbuild (APP_VARIANT choice for all 5 variants, APP_LED_GPIO explicitly marked UNCONFIRMED per BL-005/R13, default 48 not treated as verified), CMakeLists.txt, idf_component.yml (espressif/led_strip pinned to 3.0.3, the real current version verified via the component registry API), sdkconfig.defaults (CONFIG_ESP_TASK_WDT_PANIC=y, TIMEOUT_S=5, default single-app partition table -- OTA partitions.csv is BL-021's scope). Host-side verification done: app_blink_timing.c compiled standalone with gcc -Wall -Wextra -Werror (exit 0) and unit-verified -- v1/no_confirm/bad_sig half-period=500ms (1Hz), v2 half-period=125ms (4Hz), both exact. Cannot close -- (1) ESP-IDF v6.0.3 is not installed on this host (~/tools/esp-idf absent, idf.py not found, confirmed at session start and re-confirmed now), so 'all 5 variants build' cannot be verified for real; (2) 'hang variant resets within 10s' and the R13 AC both require a real flash, not authorized yet. Toolchain install is a separate go/no-go from the flash go-ahead -- flagged to the owner.]
 
 **Acceptance criteria**
 - [ ] All 5 variants build
@@ -872,7 +873,7 @@ flowchart TB
         BL014["BL-014"]:::blocked
     end
     subgraph E1_g["P1 ESP32-S3 #2 — ESP-IDF"]
-        BL020["BL-020"]:::todo
+        BL020["BL-020"]:::blocked
         BL021["BL-021"]:::todo
         BL022["BL-022"]:::todo
         BL023["BL-023"]:::todo

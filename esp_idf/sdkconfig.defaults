@@ -1,0 +1,14 @@
+# bootlab-esp — BL-020 sdkconfig defaults
+#
+# Task watchdog must PANIC (reset the chip), not just log, so the "hang"
+# variant actually resets within 10s per PLAN Sec 5.3.
+CONFIG_ESP_TASK_WDT_PANIC=y
+CONFIG_ESP_TASK_WDT_TIMEOUT_S=5
+
+# Board: ESP32-S3, 16MB quad flash, 8MB embedded PSRAM (rig.yaml)
+CONFIG_IDF_TARGET="esp32s3"
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+
+# Default (single-app) partition table for BL-020's build/blink/watchdog
+# verification only. BL-021 replaces this with the real OTA partitions.csv
+# (ota_0/ota_1/otadata) -- deliberately out of scope here.

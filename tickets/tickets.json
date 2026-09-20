@@ -301,15 +301,16 @@
         "BL-005",
         "BL-014"
       ],
-      "desc": "FreeRTOS blink task (led_strip), toggles counter, variants per PLAN §5.3, CONFIG_ESP_TASK_WDT_PANIC.",
+      "desc": "FreeRTOS blink task (led_strip), toggles counter, variants per PLAN §5.3, CONFIG_ESP_TASK_WDT_PANIC. [BLOCKED 2026-09-20: esp_idf/main/ written in full -- app_main.c (blink task, toggles counter via app_get_toggle_count(), variant identity via app_get_variant() as BL-022's future LABID integration points, task-WDT hang variant), app_blink_timing.c/.h (pure blink-rate math, factored out specifically to be host-testable without the toolchain), Kconfig.projbuild (APP_VARIANT choice for all 5 variants, APP_LED_GPIO explicitly marked UNCONFIRMED per BL-005/R13, default 48 not treated as verified), CMakeLists.txt, idf_component.yml (espressif/led_strip pinned to 3.0.3, the real current version verified via the component registry API), sdkconfig.defaults (CONFIG_ESP_TASK_WDT_PANIC=y, TIMEOUT_S=5, default single-app partition table -- OTA partitions.csv is BL-021's scope). Host-side verification done: app_blink_timing.c compiled standalone with gcc -Wall -Wextra -Werror (exit 0) and unit-verified -- v1/no_confirm/bad_sig half-period=500ms (1Hz), v2 half-period=125ms (4Hz), both exact. Cannot close -- (1) ESP-IDF v6.0.3 is not installed on this host (~/tools/esp-idf absent, idf.py not found, confirmed at session start and re-confirmed now), so 'all 5 variants build' cannot be verified for real; (2) 'hang variant resets within 10s' and the R13 AC both require a real flash, not authorized yet. Toolchain install is a separate go/no-go from the flash go-ahead -- flagged to the owner.]",
       "ac": [
         "All 5 variants build",
         "v1 blinks 1 Hz",
         "hang variant resets within 10 s",
         "USB device serial descriptor is set to the chip MAC in normal run mode (not just bootloader mode) -- see PLAN §9 R13; labflash resolve_board() must still resolve this board after a normal boot, not only while in the ROM bootloader"
       ],
-      "status": "todo",
-      "pr": ""
+      "status": "blocked",
+      "pr": "",
+      "block_reason": "ESP-IDF toolchain not installed on this host (compile unverified); real flash not yet authorized (hang/R13 ACs need it)"
     },
     {
       "id": "BL-021",

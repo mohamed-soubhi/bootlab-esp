@@ -1,0 +1,5 @@
+dependencies:
+  # Latest stable as of 2026-09-20 (verified via
+  # https://components.espressif.com/api/components/espressif/led_strip),
+  # pinned exact per project convention (see scripts/versions.env).
+  espressif/led_strip: "3.0.3"
