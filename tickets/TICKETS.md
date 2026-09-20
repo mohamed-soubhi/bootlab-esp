@@ -296,6 +296,7 @@ FreeRTOS blink task (led_strip), toggles counter, variants per PLAN §5.3, CONFI
 - [ ] All 5 variants build
 - [ ] v1 blinks 1 Hz
 - [ ] hang variant resets within 10 s
+- [ ] USB device serial descriptor is set to the chip MAC in normal run mode (not just bootloader mode) -- see PLAN §9 R13; labflash resolve_board() must still resolve this board after a normal boot, not only while in the ROM bootloader
 
 </details>
 
@@ -462,6 +463,7 @@ LED strip driver (verify WS2812 backend), toggles, variants, hardware watchdog.
 - [ ] All 5 variants build and sign
 - [ ] v1 blinks 1 Hz
 - [ ] hang variant resets within 10 s
+- [ ] USB device serial descriptor is set to the chip MAC in normal run mode (not just bootloader mode) -- see PLAN §9 R13; labflash resolve_board() must still resolve this board after a normal boot, not only while in the ROM bootloader
 
 </details>
 

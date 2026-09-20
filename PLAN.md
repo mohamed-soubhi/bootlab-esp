@@ -686,6 +686,7 @@ flowchart LR
 | R10 | Console shell / stdin eats RX bytes | Lost requests | Shell off (Zephyr); driver read (IDF) |
 | R11 | Self-hosted runner exposure | RPi4 compromise | Private repo, dedicated user, no secrets in logs |
 | R12 | Self-reported blink hides a real LED fault | False pass | Accepted for dev |
+| R13 | USB-serial-as-MAC identification is bootloader-mode-only | `resolve_board()`/labflash lose board identity once app firmware boots normally, not just during flashing | App firmware must explicitly set the USB device serial descriptor to the chip MAC (IDF: `tusb_desc_strings`/USB descriptor config; Zephyr: equivalent USB device stack config) so the OS-visible serial stays MAC-based post-boot, not a generic placeholder. Confirmed live on 2026-09-20: after a normal board reset, idf's board enumerated with USB serial `123456` instead of its MAC, and `resolve_board()` correctly failed closed rather than misattributing it (see BL-040 evidence). Must become an explicit AC on BL-020/BL-031, not rediscovered when flashing real firmware. |
 
 ---
 
