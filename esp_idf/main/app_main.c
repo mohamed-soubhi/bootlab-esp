@@ -76,6 +76,10 @@ static void blink_task(void *arg)
     const TickType_t half_period = pdMS_TO_TICKS(app_blink_half_period_ms(0));
 #endif
 
+    /* "Blink" for this WS2812/addressable RGB LED means toggling between a
+     * fixed dim-white pixel (R=G=B=16 out of 255 -- deliberately dim, not a
+     * default/arbitrary value) and off, at the rate from
+     * app_blink_half_period_ms() above. */
     bool on = false;
     for (;;) {
         on = !on;
