@@ -67,8 +67,14 @@ static void blink_task(void *arg)
     }
 #endif
 
-    const TickType_t half_period = pdMS_TO_TICKS(
-        app_blink_half_period_ms(CONFIG_APP_VARIANT_V2));
+    /* Kconfig choice macros for unselected options aren't defined as 0 --
+     * they're simply undeclared, so CONFIG_APP_VARIANT_V2 can only be used
+     * inside a preprocessor conditional, not passed as a runtime value. */
+#if CONFIG_APP_VARIANT_V2
+    const TickType_t half_period = pdMS_TO_TICKS(app_blink_half_period_ms(1));
+#else
+    const TickType_t half_period = pdMS_TO_TICKS(app_blink_half_period_ms(0));
+#endif
 
     bool on = false;
     for (;;) {

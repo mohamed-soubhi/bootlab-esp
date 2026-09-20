@@ -26,3 +26,9 @@ common/labid/tests/fuzz_corpus/
 
 # ESP-IDF generated config (keep sdkconfig.defaults, not the generated sdkconfig)
 esp_idf/**/sdkconfig
+esp_idf/**/sdkconfig.old
+
+# ESP-IDF per-variant build dirs (BL-020: 5 variants, each its own -B dir)
+# and fetched/generated component-manager artifacts (not source)
+esp_idf/build*/
+esp_idf/managed_components/
