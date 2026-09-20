@@ -24,17 +24,15 @@ menu "bootlab-esp app config (BL-020)"
         int "LED strip (WS2812) GPIO"
         default 48
         help
-            UNCONFIRMED -- host/config/rig.yaml and PLAN Sec 4 both list this
-            as "unknown" pending BL-005's flashed blink test. ESP32-S3-
-            DevKitC-1 uses GPIO48 on most revisions, GPIO38 on some.
-            Reverted to 48 (2026-09-20) per independent devicetree evidence
-            for this exact board family (Zephyr overlay: worldsemi,ws2812-i2s
-            on I2S0_O_SD_GPIO48). GPIO38 was tried in between and produced an
-            ambiguous "steady, non-blinking light" result that could not be
-            confirmed as the real WS2812 responding (vs. RMT signal noise on
-            a floating pin) due to unrelated serial-monitoring issues on this
-            host -- see PLAN Sec 9 R13 history / BL-020 evidence. Still NOT a
-            verified fact for this specific board pending a real timed
-            physical check.
+            CONFIRMED 48 via physical power-cycle test on 2026-09-20 --
+            GPIO38 was tried based on a false signal (R14's reset-into-
+            bootloader made a single latched WS2812 frame look like "wrong
+            pin, steady light"; a true physical power-cycle (unplug/replug,
+            not a USB/software reset) confirmed 48 was correct all along --
+            lab-esp-idf blinked white at 1Hz, counted and confirmed by the
+            owner). See host/config/rig.yaml and PLAN Sec 9 R14. Do not
+            revisit this pin without re-testing via a real physical
+            power-cycle, not a USB reset (esptool/idf_monitor resets are
+            unreliable on this host, see R14).
 
 endmenu
