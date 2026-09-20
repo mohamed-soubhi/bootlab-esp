@@ -9,8 +9,8 @@
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 34
-    "blocked" : 2
+    "todo" : 33
+    "blocked" : 3
     "done" : 11
 ```
 
@@ -22,7 +22,7 @@ pie showData title Ticket status
 | EL | PL | LABID common library | `██████████░░` | 4/5 | 🟥 blocked | §7.3, §8 PL |
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `░░░░░░░░░░░░` | 0/9 | ⬜ todo | §4.2, §5, §6, §7.2, §8 P1 |
 | E2 | P2 | ESP32-S3 #1 — Zephyr | `░░░░░░░░░░░░` | 0/7 | ⬜ todo | §4.1, §5, §6, §7.1, §8 P2 |
-| E3 | P3 | labflash CLI | `██░░░░░░░░░░` | 1/7 | 🔵 doing | §8 P3 |
+| E3 | P3 | labflash CLI | `██░░░░░░░░░░` | 1/7 | 🟥 blocked | §8 P3 |
 | E4 | P4 | HIL tests + CI | `░░░░░░░░░░░░` | 0/8 | ⬜ todo | §8 P4 |
 | E5 | P5 | Soak, docs, handover | `░░░░░░░░░░░░` | 0/4 | ⬜ todo | §8 P5 |
 
@@ -34,7 +34,7 @@ flowchart LR
     EL["PL LABID common library<br/>4/5"]:::blocked
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>0/9"]:::todo
     E2["P2 ESP32-S3 #1 — Zephyr<br/>0/7"]:::todo
-    E3["P3 labflash CLI<br/>1/7"]:::doing
+    E3["P3 labflash CLI<br/>1/7"]:::blocked
     E4["P4 HIL tests + CI<br/>0/8"]:::todo
     E5["P5 Soak, docs, handover<br/>0/4"]:::todo
     E0 --> EL
@@ -58,6 +58,7 @@ flowchart LR
 
 - 🟥 **BL-005** Detect board hardware → rig.yaml 
 - 🟥 **BL-014** Packaging: Zephyr module + IDF component 
+- 🟥 **BL-041** identify, info, status, measure 
 
 ## Tickets by epic
 
@@ -545,7 +546,7 @@ Run all P2 acceptance checks.
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
 | ✅ | BL-040 | labflash core: config, UID resolution, re-enumeration wait | M | host | BL-013, BL-007 |  |
-| ⬜ | BL-041 | identify, info, status, measure | S | host | BL-040, BL-020, BL-022 |  |
+| 🟥 | BL-041 | identify, info, status, measure | S | host | BL-040, BL-020, BL-022 |  |
 | ⬜ | BL-042 | flash, recover, provision (USB) | S | host | BL-040, BL-020, BL-021 |  |
 | ⬜ | BL-043 | update idf --transport ble|wifi | M | host, idf | BL-040, BL-028 |  |
 | ⬜ | BL-044 | update zephyr --transport ble|udp | M | host, zephyr | BL-040, BL-036 |  |
@@ -567,14 +568,14 @@ rig.yaml, resolve ports by UID, wait ≤ 5 s after resets, --json. [DONE 2026-09
 
 </details>
 
-<details><summary>⬜ <b>BL-041</b> — identify, info, status, measure</summary>
+<details><summary>🟥 <b>BL-041</b> — identify, info, status, measure</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
 - **Depends on:** BL-040, BL-020, BL-022  
 - **Plan:** §8 P3
 
-LABID discovery, cross-check, toggle-based Hz. Deps corrected 2026-09-20: AC needs real LABID+blink firmware, not just host code -- BL-020/BL-022 (IDF blink+LABID) are the minimum for IDF-side real verification. Full closure (both boards) additionally needs BL-031/BL-032 (Zephyr blink+LABID), which stay on hold until the Zephyr path resumes; this ticket may be closable IDF-only in the meantime with Zephyr verification deferred.
+LABID discovery, cross-check, toggle-based Hz. Deps corrected 2026-09-20: AC needs real LABID+blink firmware, not just host code -- BL-020/BL-022 (IDF blink+LABID) are the minimum for IDF-side real verification. Full closure (both boards) additionally needs BL-031/BL-032 (Zephyr blink+LABID), which stay on hold until the Zephyr path resumes; this ticket may be closable IDF-only in the meantime with Zephyr verification deferred. [BLOCKED 2026-09-20: host/labflash/identify.py implemented (wait_for_announce, query, identify, get_version, get_state, cross_check_identity, measure_toggles, SerialLineTransport) per PLAN §7.3's exact frame protocol. Host-side logic verified via a mocked LABID transport -- identify() correctly maps both boards' ID frames to rig.yaml by uid/mac and correctly rejects a mismatched cross-check; measure_toggles() correctly computes a toggle delta within ± 1 of a simulated 1Hz blinker's expected count over a 5s window. Cannot close -- AC requires live board evidence from BL-020+BL-022 (IDF blink+LABID firmware), which don't exist yet; SerialLineTransport (the real, non-mocked path) is written but untested against real hardware for the same reason. Will re-verify against real hardware once that firmware is flashed.]
 
 **Acceptance criteria**
 - [ ] identify maps both boards
@@ -892,7 +893,7 @@ flowchart TB
     end
     subgraph E3_g["P3 labflash CLI"]
         BL040["BL-040"]:::done
-        BL041["BL-041"]:::todo
+        BL041["BL-041"]:::blocked
         BL042["BL-042"]:::todo
         BL043["BL-043"]:::todo
         BL044["BL-044"]:::todo
