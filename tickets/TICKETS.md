@@ -5,13 +5,13 @@
 
 ## Overall
 
-`██████░░░░░░░░░░░░░░░░░░░░░░░░` **10/47 done (21%)**
+`███████░░░░░░░░░░░░░░░░░░░░░░░` **11/47 done (23%)**
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 35
+    "todo" : 34
     "blocked" : 2
-    "done" : 10
+    "done" : 11
 ```
 
 ## Epics
@@ -22,7 +22,7 @@ pie showData title Ticket status
 | EL | PL | LABID common library | `██████████░░` | 4/5 | 🟥 blocked | §7.3, §8 PL |
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `░░░░░░░░░░░░` | 0/9 | ⬜ todo | §4.2, §5, §6, §7.2, §8 P1 |
 | E2 | P2 | ESP32-S3 #1 — Zephyr | `░░░░░░░░░░░░` | 0/7 | ⬜ todo | §4.1, §5, §6, §7.1, §8 P2 |
-| E3 | P3 | labflash CLI | `░░░░░░░░░░░░` | 0/7 | ⬜ todo | §8 P3 |
+| E3 | P3 | labflash CLI | `██░░░░░░░░░░` | 1/7 | 🔵 doing | §8 P3 |
 | E4 | P4 | HIL tests + CI | `░░░░░░░░░░░░` | 0/8 | ⬜ todo | §8 P4 |
 | E5 | P5 | Soak, docs, handover | `░░░░░░░░░░░░` | 0/4 | ⬜ todo | §8 P5 |
 
@@ -34,7 +34,7 @@ flowchart LR
     EL["PL LABID common library<br/>4/5"]:::blocked
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>0/9"]:::todo
     E2["P2 ESP32-S3 #1 — Zephyr<br/>0/7"]:::todo
-    E3["P3 labflash CLI<br/>0/7"]:::todo
+    E3["P3 labflash CLI<br/>1/7"]:::doing
     E4["P4 HIL tests + CI<br/>0/8"]:::todo
     E5["P5 Soak, docs, handover<br/>0/4"]:::todo
     E0 --> EL
@@ -53,7 +53,9 @@ flowchart LR
 ## Ready to start now
 
 - **BL-030** Zephyr west + sysbuild MCUboot + swap-with-revert check (M) — E2
-- **BL-040** labflash core: config, UID resolution, re-enumeration wait (M) — E3
+- **BL-041** identify, info, status, measure (S) — E3
+- **BL-042** flash, recover, provision (USB) (S) — E3
+- **BL-045** build + sign orchestration (S) — E3
 
 ## Blocked
 
@@ -543,7 +545,7 @@ Run all P2 acceptance checks.
 
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
-| ⬜ | BL-040 | labflash core: config, UID resolution, re-enumeration wait | M | host | BL-013, BL-007 |  |
+| ✅ | BL-040 | labflash core: config, UID resolution, re-enumeration wait | M | host | BL-013, BL-007 |  |
 | ⬜ | BL-041 | identify, info, status, measure | S | host | BL-040 |  |
 | ⬜ | BL-042 | flash, recover, provision (USB) | S | host | BL-040 |  |
 | ⬜ | BL-043 | update idf --transport ble|wifi | M | host, idf | BL-040, BL-028 |  |
@@ -551,18 +553,18 @@ Run all P2 acceptance checks.
 | ⬜ | BL-045 | build + sign orchestration | S | host | BL-040 |  |
 | ⬜ | BL-046 | labflash mocked unit tests | M | host | BL-041, BL-042, BL-043, BL-044, BL-045 |  |
 
-<details><summary>⬜ <b>BL-040</b> — labflash core: config, UID resolution, re-enumeration wait</summary>
+<details><summary>✅ <b>BL-040</b> — labflash core: config, UID resolution, re-enumeration wait</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** host  
 - **Depends on:** BL-013, BL-007  
 - **Plan:** §8 P3
 
-rig.yaml, resolve ports by UID, wait ≤ 5 s after resets, --json.
+rig.yaml, resolve ports by UID, wait ≤ 5 s after resets, --json. [DONE 2026-09-20: host/labflash/core.py (load_rig_config, resolve_board, resolve_all_boards, BoardResolutionError), wired as `labflash resolve [--json] [--wait N]`. AC1 (never reuses stale ttyACMx): mocked test proves re-scan on every call — first call returns /dev/ttyACM0, second call (simulated reset reassigning the same board to /dev/ttyACM3) returns /dev/ttyACM3, not the memoized first value; also a mocked physical-port-swap case resolves both boards to their correct new paths by serial. AC2 (clear error on missing or swapped board): mocked missing-board and swapped-board cases both raise BoardResolutionError naming the board key, expected serial, and what's actually present. Live evidence, real boards: initial resolve_all_boards() correctly mapped {'zephyr': '/dev/ttyACM0', 'idf': '/dev/ttyACM1'}, matching prior MAC identification. A later real re-run, after the owner reset both boards out of bootloader mode, hit a genuine (not mocked) instance of AC2: idf's board enumerated with USB serial '123456' instead of its MAC E0:72:A1:AA:23:90, and resolve_board() correctly reported \"board 'idf' ... not found ... Devices present: 123456, AC:A7:04:2C:3B:04\" rather than misattributing the wrong device — exact real-world confirmation of the AC, not staged. See PLAN.md §9 R13 for the architectural gap this real failure exposed (USB-serial-as-MAC is bootloader-mode-only; app firmware must explicitly set it).]
 
 **Acceptance criteria**
-- [ ] Never reuses stale ttyACMx
-- [ ] Clear error on missing or swapped board
+- [x] Never reuses stale ttyACMx
+- [x] Clear error on missing or swapped board
 
 </details>
 
@@ -890,7 +892,7 @@ flowchart TB
         BL036["BL-036"]:::todo
     end
     subgraph E3_g["P3 labflash CLI"]
-        BL040["BL-040"]:::todo
+        BL040["BL-040"]:::done
         BL041["BL-041"]:::todo
         BL042["BL-042"]:::todo
         BL043["BL-043"]:::todo
