@@ -120,10 +120,23 @@ else
 fi
 
 echo "--- plain ---"
-$PY -m labflash resolve 2>&1 | sed 's/^/  /'
+PYTHONPATH="$REPO/host" $PY -m labflash resolve 2>&1 | sed 's/^/  /'
+plain_rc=$?
+if [ "$plain_rc" -eq 0 ]; then
+    pass "labflash resolve (plain) exit 0"
+else
+    fail "labflash resolve (plain) exit $plain_rc"
+fi
 echo
+
 echo "--- --json ---"
-$PY -m labflash resolve --json 2>&1 | sed 's/^/  /'
+PYTHONPATH="$REPO/host" $PY -m labflash resolve --json 2>&1 | sed 's/^/  /'
+json_rc=$?
+if [ "$json_rc" -eq 0 ]; then
+    pass "labflash resolve (--json) exit 0"
+else
+    fail "labflash resolve (--json) exit $json_rc"
+fi
 echo
 
 echo "=== Summary ==="
