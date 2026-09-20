@@ -26,9 +26,15 @@ menu "bootlab-esp app config (BL-020)"
         help
             UNCONFIRMED -- host/config/rig.yaml and PLAN Sec 4 both list this
             as "unknown" pending BL-005's flashed blink test. ESP32-S3-
-            DevKitC-1 uses GPIO48 on most revisions, GPIO38 on some. This
-            default is NOT a verified fact for this specific board -- do not
-            treat it as confirmed. Override at build time once BL-005
-            determines the real value.
+            DevKitC-1 uses GPIO48 on most revisions, GPIO38 on some.
+            Reverted to 48 (2026-09-20) per independent devicetree evidence
+            for this exact board family (Zephyr overlay: worldsemi,ws2812-i2s
+            on I2S0_O_SD_GPIO48). GPIO38 was tried in between and produced an
+            ambiguous "steady, non-blinking light" result that could not be
+            confirmed as the real WS2812 responding (vs. RMT signal noise on
+            a floating pin) due to unrelated serial-monitoring issues on this
+            host -- see PLAN Sec 9 R13 history / BL-020 evidence. Still NOT a
+            verified fact for this specific board pending a real timed
+            physical check.
 
 endmenu

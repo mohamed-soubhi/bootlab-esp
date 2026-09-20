@@ -12,3 +12,11 @@ CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
 # Default (single-app) partition table for BL-020's build/blink/watchdog
 # verification only. BL-021 replaces this with the real OTA partitions.csv
 # (ota_0/ota_1/otadata) -- deliberately out of scope here.
+
+# Console over USB-Serial-JTAG, not the default UART0 -- this is the only
+# console physically reachable over the boards' USB connector, and matches
+# PLAN Sec 7.3.4's intent (LABID/console read directly from USB-Serial-JTAG,
+# not UART0/stdin). Without this, all esp_log/printf output -- including
+# the standard IDF boot banner -- goes to physical UART0 pins nobody is
+# connected to, which is what happened on this project's first real flash.
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
