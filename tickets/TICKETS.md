@@ -10,8 +10,8 @@
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 25
-    "blocked" : 11
+    "todo" : 24
+    "blocked" : 12
     "done" : 11
 ```
 
@@ -67,6 +67,7 @@ flowchart LR
 - 🟥 **BL-025** IDF HTTPS control server (/ota, /version) 
 - 🟥 **BL-026** IDF WiFi OTA (esp_https_ota pull) 
 - 🟥 **BL-027** IDF BLE OTA (ble_ota + NimBLE + coexistence) 
+- 🟥 **BL-028** IDF phase acceptance run 
 - 🟥 **BL-041** identify, info, status, measure 
 
 ## Tickets by epic
@@ -288,7 +289,7 @@ One source, two build integrations. [BLOCKED: AC requires Zephyr native_sim + ID
 | 🟥 | BL-025 | IDF HTTPS control server (/ota, /version) | M | idf | BL-024 |  |
 | 🟥 | BL-026 | IDF WiFi OTA (esp_https_ota pull) | M | idf | BL-025, BL-023 |  |
 | 🟥 | BL-027 | IDF BLE OTA (ble_ota + NimBLE + coexistence) | L | idf | BL-023 |  |
-| ⬜ | BL-028 | IDF phase acceptance run | S | idf | BL-022, BL-026, BL-027 |  |
+| 🟥 | BL-028 | IDF phase acceptance run | S | idf | BL-022, BL-026, BL-027 |  |
 
 <details><summary>🟥 <b>BL-020</b> — IDF blink app + toggles + 5 variants + task WDT</summary>
 
@@ -415,14 +416,14 @@ esp-iot-solution ble_ota, NimBLE host, SW coexistence. [PROGRESS 2026-09-21 -- S
 
 </details>
 
-<details><summary>⬜ <b>BL-028</b> — IDF phase acceptance run</summary>
+<details><summary>🟥 <b>BL-028</b> — IDF phase acceptance run</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** idf  
 - **Depends on:** BL-022, BL-026, BL-027  
 - **Plan:** §4.2, §5, §6, §7.2, §8 P1
 
-Run all P1 acceptance checks.
+Run all P1 acceptance checks. [RESULT 2026-09-21 -- ALL 6 PLAN P1 CHECKBOXES PASS on the FINAL P1 firmware (WiFi+HTTPS OTA+BLE OTA+LABID+colour LED), evidence in scripts/evidence/bl028_idf_phase_acceptance.md, PLAN 8 P1 boxes ticked. (1) v1 1.00 Hz; ANNOUNCE ~1003 ms, ID?/VER?/STATE? max 5.6 ms, 4 garbage frames -> ERR, no reset. (2) WiFi OTA v1->v2: LABID VER? app=2.0.0 slot=1 confirmed=1, 4.10 Hz. (3) BLE OTA v2->v1: VER? app=1.0.0 slot=0 confirmed=1, 1.00 Hz. (4) hang: full console (task WDT panic at 5138 ms, then 'Loaded app ... 0x420000' = previous slot), back on v2 in 17 s with no manual reset; no_confirm: still confirmed=false after 12 s, after a hardware RST the board reports 2.0.0 slot 1 confirmed -- proven by state, NOT by a bootloader log line (a hardware RST drops the USB port for ~600 ms so the capture missed the bootloader). (5) bad_sig: foreign-key image refused over WiFi and BLE with console evidence, no reboot. (6) efuse summary identical to the pre-project backup, checked mid-run and LAST (SHA-256 match, 187 lines). Tooling fixed: labid_check assumed the port drops on reset, but a software reset (OTA reboot, WDT) does not drop the ESP32-S3 USB port; it now waits for the boot ANNOUNCE (--wait). Added labid_query.py. Board left on v1 1.0.0 slot 0 confirmed.]
 
 **Acceptance criteria**
 - [ ] All P1 checkboxes ticked with logs in the PR
@@ -889,7 +890,7 @@ flowchart TB
         BL025["BL-025"]:::blocked
         BL026["BL-026"]:::blocked
         BL027["BL-027"]:::blocked
-        BL028["BL-028"]:::todo
+        BL028["BL-028"]:::blocked
     end
     subgraph E2_g["P2 ESP32-S3 #1 — Zephyr"]
         BL030["BL-030"]:::todo

@@ -18,8 +18,23 @@ Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
   - BL-041: host code done + mock-verified; live LABID firmware now running on IDF board.
   - BL-026: both ACs PASS with live on-target console evidence (2026-09-21); blocked only on deps BL-023/BL-025.
   - BL-027: all 3 ACs PASS with live on-target console evidence (2026-09-21); blocked only on dep BL-023.
-- TODO, IDF chain: BL-028 (IDF phase acceptance run: all P1 checkboxes with logs).
+  - BL-028: all 6 PLAN P1 checkboxes PASS on the final firmware (2026-09-21); blocked only on deps BL-022/026/027.
+- IDF phase P1 is COMPLETE in evidence. What still gates the formal `done`s is two tickets, BL-005 and BL-014
+  (they block 33 and 29 tickets; see `tickets/GANTT.md` "Root blockers"). Both are Zephyr/hardware-gated: BL-005 needs the
+  zephyr led_gpio + PSRAM mode on both boards, BL-014 needs a Zephyr native_sim build. The IDF halves are verifiable now;
+  finishing them means either lifting the Zephyr hold or splitting/re-scoping those tickets (an OWNER decision).
+- Ready to start (no unfinished deps): BL-030 (Zephyr, on hold). Everything else is behind BL-005/BL-014 or the Zephyr chain.
 - Zephyr chain (BL-030 ...) stays on hold.
+
+## BL-028 status (COMPLETE in evidence — all 6 P1 checkboxes PASS; `scripts/evidence/bl028_idf_phase_acceptance.md`)
+Board left on **v1** (1.0.0, slot 0, confirmed). PLAN §8 P1 boxes are ticked. Key points:
+- hang rollback proven by the full console (WDT panic, then the bootloader loads the previous slot 0x420000, 17 s, no manual reset);
+  no_confirm proven by STATE only (a hardware RST drops the ESP32-S3 USB port ~600 ms, so the bootloader line is not captured).
+- efuse summary identical to `backups/efuse_E072A1AA2390.txt` mid-run and last. Nothing was ever burned.
+- TRAP: a SOFTWARE reset (esp_restart: OTA reboot, watchdog panic) does NOT drop the USB port; only a hardware reset (RST
+  button, replug) does. Tools must not wait for the port to disappear. `labid_check.py --wait N` waits for the boot ANNOUNCE.
+- Tools (all Windows-native via powershell.exe, see scripts/README.md): `labid_check.py`, `labid_query.py`, `rate_check.py`,
+  `ota_check.py --console-log`, `idf_ble_ota.py`, `serial_watch.py`, `tcp_forwarder.py`. Sample `/version` sparsely during transfers.
 
 ## BL-027 status (COMPLETE — all 3 ACs PASS on target; evidence: `scripts/evidence/bl027_ble_ota_acceptance.md`)
 Board left on **v1** (1.0.0, slot 0, confirmed), now running the BLE-enabled firmware. Results (2026-09-21):

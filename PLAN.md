@@ -553,12 +553,14 @@ flowchart LR
 8. `ble_ota` + NimBLE + coexistence.
 
 **Acceptance**
-- [ ] USB flash v1 → `measure` 1 Hz, `ANNOUNCE` ≤ 2 s.
-- [ ] WiFi OTA v1 → v2 → 4 Hz, `$LAB,VER?` shows `app=2.x slot=1 confirmed=1`.
-- [ ] BLE OTA v2 → v1 → 1 Hz.
-- [ ] `no_confirm` and `hang` → previous version after reset.
-- [ ] `bad_sig` rejected in `esp_ota_end()`, old version keeps running.
-- [ ] `idf.py efuse-summary` unchanged vs backup.
+All six checked on the final P1 firmware, 2026-09-21; logs in `scripts/evidence/bl028_idf_phase_acceptance.md`
+(and `bl026_ota_acceptance.md`, `bl027_ble_ota_acceptance.md`).
+- [x] USB flash v1 → `measure` 1 Hz, `ANNOUNCE` ≤ 2 s. (1.00 Hz; ANNOUNCE at ~1003 ms, measured on a fresh boot)
+- [x] WiFi OTA v1 → v2 → 4 Hz, `$LAB,VER?` shows `app=2.x slot=1 confirmed=1`. (4.10 Hz; VER? `app=2.0.0 slot=1 confirmed=1`)
+- [x] BLE OTA v2 → v1 → 1 Hz. (1.00 Hz; VER? `app=1.0.0 slot=0 confirmed=1`)
+- [x] `no_confirm` and `hang` → previous version after reset. (hang: full console incl. watchdog panic; no_confirm: proven by confirmed state before/after a hardware RST, no bootloader log line)
+- [x] `bad_sig` rejected in `esp_ota_end()`, old version keeps running. (WiFi and BLE, foreign-key image; console evidence)
+- [x] `idf.py efuse-summary` unchanged vs backup. (identical, checked mid-run and last)
 
 ---
 

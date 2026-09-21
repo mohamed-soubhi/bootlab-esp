@@ -471,12 +471,13 @@
         "BL-026",
         "BL-027"
       ],
-      "desc": "Run all P1 acceptance checks.",
+      "desc": "Run all P1 acceptance checks. [RESULT 2026-09-21 -- ALL 6 PLAN P1 CHECKBOXES PASS on the FINAL P1 firmware (WiFi+HTTPS OTA+BLE OTA+LABID+colour LED), evidence in scripts/evidence/bl028_idf_phase_acceptance.md, PLAN 8 P1 boxes ticked. (1) v1 1.00 Hz; ANNOUNCE ~1003 ms, ID?/VER?/STATE? max 5.6 ms, 4 garbage frames -> ERR, no reset. (2) WiFi OTA v1->v2: LABID VER? app=2.0.0 slot=1 confirmed=1, 4.10 Hz. (3) BLE OTA v2->v1: VER? app=1.0.0 slot=0 confirmed=1, 1.00 Hz. (4) hang: full console (task WDT panic at 5138 ms, then 'Loaded app ... 0x420000' = previous slot), back on v2 in 17 s with no manual reset; no_confirm: still confirmed=false after 12 s, after a hardware RST the board reports 2.0.0 slot 1 confirmed -- proven by state, NOT by a bootloader log line (a hardware RST drops the USB port for ~600 ms so the capture missed the bootloader). (5) bad_sig: foreign-key image refused over WiFi and BLE with console evidence, no reboot. (6) efuse summary identical to the pre-project backup, checked mid-run and LAST (SHA-256 match, 187 lines). Tooling fixed: labid_check assumed the port drops on reset, but a software reset (OTA reboot, WDT) does not drop the ESP32-S3 USB port; it now waits for the boot ANNOUNCE (--wait). Added labid_query.py. Board left on v1 1.0.0 slot 0 confirmed.]",
       "ac": [
         "All P1 checkboxes ticked with logs in the PR"
       ],
-      "status": "todo",
-      "pr": ""
+      "status": "blocked",
+      "pr": "",
+      "block_reason": "All 6 P1 acceptance checkboxes PASS on target (2026-09-21). Cannot be marked done only because deps BL-022, BL-026, BL-027 are not done (they wait on BL-020, which waits on BL-005/BL-014: Zephyr/hardware-gated)."
     },
     {
       "id": "BL-030",

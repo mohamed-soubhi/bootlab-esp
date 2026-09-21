@@ -9,9 +9,9 @@
 `███████░░░░░░░░░░░░░░░░░░░░░░░` **11/47 done**
 
 - ✅ done: **11**
-- 🔵 acceptance criteria PASS, waiting only on a dependency: **8**
+- 🔵 acceptance criteria PASS, waiting only on a dependency: **9**
 - 🟥 blocked, work outstanding: **3**
-- ⬜ todo: **25**
+- ⬜ todo: **24**
 
 | Epic | Phase | Progress | Done | State |
 |---|---|---|---|---|
@@ -54,7 +54,7 @@ gantt
     BL-025 IDF HTTPS control server (/ota /version) :active, bl025, 2026-09-24, 2d
     BL-026 IDF WiFi OTA (esp_https_ota pull) :active, bl026, 2026-09-26, 2d
     BL-027 IDF BLE OTA (ble_ota + NimBLE + coexistence) :active, bl027, 2026-09-25, 4d
-    BL-028 IDF phase acceptance run :bl028, 2026-09-29, 1d
+    BL-028 IDF phase acceptance run :active, bl028, 2026-09-29, 1d
     section P2 ESP32-S3 1 — Zephyr
     BL-030 Zephyr west + sysbuild MCUboot + swap-with-re :bl030, 2026-09-20, 2d
     BL-031 Zephyr blink app + toggles + 5 variants + wat :bl031, 2026-09-22, 2d
@@ -116,7 +116,7 @@ Blocked tickets with **nothing unfinished beneath them**. Finishing (or explicit
 | BL-025 IDF HTTPS control server (/ota /version) | 🟥 blocked | BL-024 🟥 |
 | BL-026 IDF WiFi OTA (esp_https_ota pull) | 🟥 blocked | BL-025 🟥, BL-023 🟥 |
 | BL-027 IDF BLE OTA (ble_ota + NimBLE + coexistence) | 🟥 blocked | BL-023 🟥 |
-| BL-028 IDF phase acceptance run | ⬜ todo | BL-022 🟥, BL-026 🟥, BL-027 🟥 |
+| BL-028 IDF phase acceptance run | 🟥 blocked | BL-022 🟥, BL-026 🟥, BL-027 🟥 |
 | BL-030 Zephyr west + sysbuild MCUboot + swap-with-revert ch | ⬜ todo | — |
 | BL-031 Zephyr blink app + toggles + 5 variants + watchdog | ⬜ todo | BL-030 ⬜, BL-005 🟥 |
 | BL-032 Zephyr LABID port on console | ⬜ todo | BL-031 ⬜, BL-014 🟥 |
@@ -126,7 +126,7 @@ Blocked tickets with **nothing unfinished beneath them**. Finishing (or explicit
 | BL-036 Zephyr phase acceptance run | ⬜ todo | BL-032 ⬜, BL-035 ⬜ |
 | BL-041 identify info status measure | 🟥 blocked | BL-020 🟥, BL-022 🟥 |
 | BL-042 flash recover provision (USB) | ⬜ todo | BL-020 🟥, BL-021 🟥 |
-| BL-043 update idf --transport ble|wifi | ⬜ todo | BL-028 ⬜ |
+| BL-043 update idf --transport ble|wifi | ⬜ todo | BL-028 🟥 |
 | BL-044 update zephyr --transport ble|udp | ⬜ todo | BL-036 ⬜ |
 | BL-045 build + sign orchestration | ⬜ todo | BL-020 🟥, BL-021 🟥, BL-030 ⬜, BL-031 ⬜ |
 | BL-046 labflash mocked unit tests | ⬜ todo | BL-041 🟥, BL-042 ⬜, BL-043 ⬜, BL-044 ⬜, BL-045 ⬜ |
@@ -135,7 +135,7 @@ Blocked tickets with **nothing unfinished beneath them**. Finishing (or explicit
 | BL-052 HIL T04–T09 rollback security robustness | ⬜ todo | BL-050 ⬜ |
 | BL-053 HIL T10–T15 LABID + identity + USB | ⬜ todo | BL-050 ⬜ |
 | BL-054 (Stretch) HIL T17 power cut | ⬜ todo | BL-050 ⬜ |
-| BL-055 build.yml cloud CI | ⬜ todo | BL-028 ⬜, BL-036 ⬜ |
+| BL-055 build.yml cloud CI | ⬜ todo | BL-028 🟥, BL-036 ⬜ |
 | BL-056 hil.yml self-hosted runner on RPi4 | ⬜ todo | BL-055 ⬜, BL-051 ⬜ |
 | BL-057 Full HIL suite green 3× in a row | ⬜ todo | BL-051 ⬜, BL-052 ⬜, BL-053 ⬜, BL-056 ⬜ |
 | BL-060 Overnight soak ×100 | ⬜ todo | BL-057 ⬜ |
