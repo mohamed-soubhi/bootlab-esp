@@ -2,6 +2,7 @@
 
 > Generated from `tickets.json` by `tickets_tool.py render`. **Do not edit by hand.**
 > Plan reference: `PLAN.md`. Legend: ⬜ todo · 🔵 doing · 🟣 review · 🟥 blocked · ✅ done
+> **Schedule, progress and what blocks what: see [GANTT.md](GANTT.md).**
 
 ## Overall
 

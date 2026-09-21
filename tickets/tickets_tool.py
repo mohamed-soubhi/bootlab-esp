@@ -6,15 +6,18 @@ Commands
   next                       list tickets whose deps are all done and status is todo
   set <ID> <status> [--pr URL]   update a ticket, then re-render TICKETS.md
   render                     regenerate TICKETS.md (progress, diagrams, details)
+  gantt                      regenerate GANTT.md (Gantt, progress, root blockers, waiting-on table)
   csv                        write tickets.csv (Jira / spreadsheet import)
   gh [--apply]               create GitHub labels, milestones, issues (dry-run by default)
 """
 import argparse
 import csv
 import json
+import re
 import subprocess
 import sys
 from collections import defaultdict
+from datetime import date, timedelta
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -106,7 +109,8 @@ def render(d):
     w = out.append
     w(f"# {d['project']} — Tickets & Progress\n")
     w("> Generated from `tickets.json` by `tickets_tool.py render`. **Do not edit by hand.**")
-    w("> Plan reference: `PLAN.md`. Legend: ⬜ todo · 🔵 doing · 🟣 review · 🟥 blocked · ✅ done\n")
+    w("> Plan reference: `PLAN.md`. Legend: ⬜ todo · 🔵 doing · 🟣 review · 🟥 blocked · ✅ done")
+    w("> **Schedule, progress and what blocks what: see [GANTT.md](GANTT.md).**\n")
     w("## Overall\n")
     w(f"`{bar(done, total, 30)}` **{done}/{total} done ({100*done//total}%)**\n")
     w("```mermaid")
@@ -288,12 +292,190 @@ def gh(d, apply):
         print("\nDry run only. Re-run with --apply inside the repo to create them.")
 
 
+# ---------------------------------------------------------------- Gantt (GANTT.md)
+GANTT_MD = HERE / "GANTT.md"
+GANTT_START = date(2026, 9, 16)            # first commit of the project
+GANTT_DAYS = {"S": 1, "M": 2, "L": 4}      # tickets.json sizes: <=0.5 d, 1-2 d, 3-5 d
+GANTT_LABEL_MAX = 52
+_MERMAID_BAD = str.maketrans({":": " ", ";": " ", ",": " ", "#": " "})
+
+
+def gantt_id(tid):
+    return tid.lower().replace("-", "")
+
+
+def gantt_label(t):
+    text = " ".join(f"{t['id']} {t['title']}".translate(_MERMAID_BAD).split())
+    return text[:GANTT_LABEL_MAX].rstrip()
+
+
+def _acs_pass(t):
+    """A blocked ticket whose own acceptance criteria are already met (only a dependency holds it)."""
+    return t["status"] == "blocked" and "PASS" in (t.get("block_reason") or "")
+
+
+def gantt_tag(t):
+    if t["status"] == "done":
+        return "done"
+    if _acs_pass(t) or t["status"] in ("doing", "review"):
+        return "active"
+    if t["status"] == "blocked":
+        return "crit"
+    return ""
+
+
+def gantt_schedule(d, start=GANTT_START):
+    """Planned (start, end) per ticket: size -> days, starting after the latest dependency."""
+    ids = by_id(d)
+    memo = {}
+
+    def plan(tid):
+        if tid not in memo:
+            t = ids[tid]
+            begin = max((plan(x)[1] for x in t["deps"]), default=start)
+            memo[tid] = (begin, begin + timedelta(days=GANTT_DAYS[t["size"]]))
+        return memo[tid]
+
+    for tid in ids:
+        plan(tid)
+    return memo
+
+
+def _unfinished_dependents(d):
+    """id -> set of unfinished tickets that depend on it, directly or transitively."""
+    direct = defaultdict(set)
+    for t in d["tickets"]:
+        for dep in t["deps"]:
+            direct[dep].add(t["id"])
+    ids = by_id(d)
+    out = {}
+    for tid in ids:
+        seen, stack = set(), list(direct[tid])
+        while stack:
+            cur = stack.pop()
+            if cur not in seen:
+                seen.add(cur)
+                stack.extend(direct[cur])
+        out[tid] = {x for x in seen if ids[x]["status"] != "done"}
+    return out
+
+
+def gantt_root_blockers(d):
+    """Blocked tickets with nothing unfinished beneath them: what actually gates the rest."""
+    ids = by_id(d)
+    downstream = _unfinished_dependents(d)
+    roots = [t for t in d["tickets"] if t["status"] == "blocked"
+             and all(ids[x]["status"] == "done" for x in t["deps"])]
+    def why(t):
+        reason = (t.get("block_reason") or "").strip()
+        if reason:
+            return reason
+        note = re.search(r"\[BLOCKED[:\s][^\]]*\]", t.get("desc") or "")   # older tickets keep it in desc
+        return note.group(0).strip("[]") if note else ""
+
+    rows = [{"id": t["id"], "title": t["title"], "unblocks": len(downstream[t["id"]]),
+             "why": why(t)} for t in roots]
+    return sorted(rows, key=lambda r: (-r["unblocks"], r["id"]))
+
+
+def _short(text, n=150):
+    text = " ".join(text.split())
+    return text if len(text) <= n else text[:n - 1].rstrip() + "…"
+
+
+def gantt_text(d, start=GANTT_START):
+    ids = by_id(d)
+    sched = gantt_schedule(d, start)
+    total = len(d["tickets"])
+    done = [t for t in d["tickets"] if t["status"] == "done"]
+    waiting = [t for t in d["tickets"] if _acs_pass(t)]
+    blocked = [t for t in d["tickets"] if t["status"] == "blocked" and not _acs_pass(t)]
+    todo = [t for t in d["tickets"] if t["status"] == "todo"]
+    lines = [
+        "# Gantt — schedule, progress and dependencies",
+        "",
+        "> Generated from `tickets.json` by `python3 tickets/tickets_tool.py gantt` (also refreshed by `set`).",
+        "> **Do not edit.** Bar **colours are the actual status**; bar **positions are a plan** computed from ticket",
+        f"> size (S=1 d, M=2 d, L=4 d) and dependencies, starting {start.isoformat()} — not a record of when work ran.",
+        "",
+        "## Progress",
+        "",
+        f"`{bar(len(done), total, 30)}` **{len(done)}/{total} done**",
+        "",
+        f"- ✅ done: **{len(done)}**",
+        f"- 🔵 acceptance criteria PASS, waiting only on a dependency: **{len(waiting)}**",
+        f"- 🟥 blocked, work outstanding: **{len(blocked)}**",
+        f"- ⬜ todo: **{len(todo)}**",
+        "",
+        "| Epic | Phase | Progress | Done | State |",
+        "|---|---|---|---|---|",
+    ]
+    for e in d["epics"]:
+        ts = [t for t in d["tickets"] if t["epic"] == e["id"]]
+        n_done = sum(t["status"] == "done" for t in ts)
+        lines.append(f"| {e['id']} {e['title']} | {e['phase']} | `{bar(n_done, len(ts), 12)}` | "
+                     f"{n_done}/{len(ts)} | {ICON[epic_status(ts)]} {epic_status(ts)} |")
+    lines += [
+        "",
+        "## Gantt",
+        "",
+        "```mermaid",
+        "gantt",
+        "    title bootlab-esp — tickets (colour = actual status, position = planned schedule)",
+        "    dateFormat YYYY-MM-DD",
+        "    axisFormat %d %b",
+        "    todayMarker stroke-width:3px,stroke:#f80,opacity:0.7",
+    ]
+    for e in d["epics"]:
+        title = " ".join(f"{e['phase']} {e['title']}".translate(_MERMAID_BAD).split())
+        lines.append(f"    section {title}")
+        for t in sorted((x for x in d["tickets"] if x["epic"] == e["id"]), key=lambda x: x["id"]):
+            begin, end = sched[t["id"]]
+            tag = gantt_tag(t)
+            prefix = f"{tag}, " if tag else ""
+            lines.append(f"    {gantt_label(t)} :{prefix}{gantt_id(t['id'])}, {begin.isoformat()}, {(end - begin).days}d")
+    lines += [
+        "```",
+        "",
+        "**Legend:** grey/green = ✅ done · blue = 🔵 acceptance criteria pass, held only by a dependency · "
+        "red = 🟥 blocked · plain = ⬜ todo · orange line = today.",
+        "",
+        "## Root blockers — what actually gates the rest",
+        "",
+        "Blocked tickets with **nothing unfinished beneath them**. Finishing (or explicitly re-scoping) these is what "
+        "moves the blue tickets to done.",
+        "",
+        "| Ticket | Blocks | Why it is blocked |",
+        "|---|---|---|",
+    ]
+    for r in gantt_root_blockers(d):
+        lines.append(f"| **{r['id']}** {gantt_label({'id': '', 'title': r['title']})} | "
+                     f"{r['unblocks']} tickets | {_short(r['why']) or '—'} |")
+    lines += ["", "## Ready to start (todo, every dependency done)", ""]
+    ready_now = ready(d)
+    lines += [f"- **{t['id']}** [{t['size']}] {t['title']}" for t in ready_now] or ["- none"]
+    lines += ["", "## Waiting-on table", "",
+              "| Ticket | Status | Waiting on (unfinished dependencies) |", "|---|---|---|"]
+    for t in d["tickets"]:
+        if t["status"] == "done":
+            continue
+        open_deps = [f"{x} {ICON[ids[x]['status']]}" for x in t["deps"] if ids[x]["status"] != "done"]
+        lines.append(f"| {t['id']} {gantt_label({'id': '', 'title': t['title']})} | "
+                     f"{ICON[t['status']]} {t['status']} | {', '.join(open_deps) or '—'} |")
+    return "\n".join(lines) + "\n"
+
+
+def write_gantt(d):
+    GANTT_MD.write_text(gantt_text(d), encoding="utf-8")
+
+
 def main():
     p = argparse.ArgumentParser()
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("check")
     sub.add_parser("next")
     sub.add_parser("render")
+    sub.add_parser("gantt")
     sub.add_parser("csv")
     s = sub.add_parser("set")
     s.add_argument("id")
@@ -317,6 +499,9 @@ def main():
     elif a.cmd == "render":
         render(d)
         print(f"wrote {MD.name}")
+    elif a.cmd == "gantt":
+        write_gantt(d)
+        print(f"wrote {GANTT_MD.name}")
     elif a.cmd == "csv":
         to_csv(d)
         print(f"wrote {CSV.name}")
@@ -336,6 +521,7 @@ def main():
             t["pr"] = a.pr
         save(d)
         render(d)
+        write_gantt(d)
         print(f"{a.id} -> {a.status}")
     elif a.cmd == "gh":
         gh(d, a.apply)
