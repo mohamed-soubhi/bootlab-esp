@@ -22,6 +22,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 @pytest.mark.idf
 def test_t04_no_confirm_rollback_simulation(hil_rig: HilRig) -> None:
     """T04: no_confirm variant boots unconfirmed, reverts to v1 on next boot."""
+    if not hil_rig.is_mock:
+        pytest.skip("live T04 not automated: needs a host-driven board reset (no power hub); NOT verified on hardware")
     # Verify starting state
     status = hil_rig.query_http_version()
     if status is not None:
@@ -46,6 +48,8 @@ def test_t04_no_confirm_rollback_simulation(hil_rig: HilRig) -> None:
 @pytest.mark.idf
 def test_t05_hang_watchdog_rollback_simulation(hil_rig: HilRig) -> None:
     """T05: hang variant triggers Task Watchdog panic and rolls back to v1."""
+    if not hil_rig.is_mock:
+        pytest.skip("live T05 not automated: needs raw image send + reset handling; NOT verified on hardware")
     if hil_rig.is_mock:
         hil_rig.mock_version = "1.0.0-hang"
         # WDT triggers reboot
@@ -66,23 +70,15 @@ def test_t06_bad_sig_rejected(hil_rig: HilRig) -> None:
         ver = check_image(data, "ble")
         assert ver == "1.0.0-badsig"
 
-    # Pre-state
-    st_before = hil_rig.query_http_version()
+    st_before = hil_rig.state()
 
-    # Attempting to update with bad_sig must fail or be rejected
-    if hil_rig.is_mock:
-        rejected = True
-    else:
-        # Live negative check already proven: update_ota returns False or raises
-        rejected = not hil_rig.update_ota("bad_sig", "ble")
-
+    # Live: really send the foreign-signed image; the board must refuse it (short timeout: it never gets a new version).
+    rejected = True if hil_rig.is_mock else not hil_rig.update_ota("bad_sig", "wifi", timeout_s=45.0)
     assert rejected, "Expected bad_sig to be rejected"
 
-    # Running image must be untouched
-    st_after = hil_rig.query_http_version()
-    if st_before and st_after:
-        assert st_before.get("version") == st_after.get("version")
-        assert st_before.get("slot") == st_after.get("slot")
+    st_after = hil_rig.state()
+    for key in ("app", "slot", "confirmed"):
+        assert st_before.get(key) == st_after.get(key), f"running image changed ({key}): {st_before} -> {st_after}"
 
     hil_rig.log_artifact("t06_bad_sig.txt", "T06 bad_sig foreign key rejection verified\n")
 
@@ -112,6 +108,8 @@ def test_t07_corrupted_truncated_rejected(hil_rig: HilRig) -> None:
 @pytest.mark.idf
 def test_t08_interrupted_transfer_retry(hil_rig: HilRig) -> None:
     """T08: Interrupted transfer is discarded, subsequent retry succeeds."""
+    if not hil_rig.is_mock:
+        pytest.skip("live T08 not implemented (no interrupted-transfer driver); NOT verified on hardware")
     # Simulates transfer abort at 50%
     st_before = hil_rig.query_http_version()
 
@@ -130,11 +128,13 @@ def test_t09_wrong_token_401(hil_rig: HilRig) -> None:
     code = hil_rig.trigger_http_ota(token="completely-wrong-bearer-token-999")
     assert code == 401, f"Expected HTTP 401, got {code}"
 
-    status = hil_rig.query_http_version()
-    if status is not None:
-        version = status.get("version") or status.get("app")
-        assert version == "1.0.0", f"Board should remain on v1, but reports {version}"
-        assert status.get("slot") == 0
+    st_before = hil_rig.state()
+    code = hil_rig.trigger_http_ota(token="completely-wrong-bearer-token-999")
+    assert code == 401, f"Expected HTTP 401 on repeat, got {code}"
+    st_after = hil_rig.state()
+    assert (st_after.get("app"), st_after.get("slot")) == (st_before.get("app"), st_before.get("slot")), \
+        f"a rejected request changed the board: {st_before} -> {st_after}"
+    assert str(st_after.get("app")).startswith("1."), f"Board should remain on v1, reports {st_after.get('app')}"
 
     hil_rig.log_artifact("t09_token_401.txt", f"T09 wrong token rejected: HTTP {code}\n")
 

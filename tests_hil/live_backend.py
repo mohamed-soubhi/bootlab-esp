@@ -102,13 +102,13 @@ class LiveBackend:
         _, hz, passed = self.measure_fn(duration_s, expect_hz, tolerance)
         return hz, passed
 
-    def update(self, variant: str, transport: str, log_path: Path) -> bool:
+    def update(self, variant: str, transport: str, log_path: Path, timeout_s: float | None = None) -> bool:
         image = self.image_for(variant)
         args = Namespace(
             board=self.board, image=str(image), transport=transport, labid_port=self.port, no_labid=False,
             board_mac=None, address=None, scan_timeout=10.0, board_ip=self.board_ip, host_ip=None, http_port=8443,
             keys=str(self.keys_dir) if self.keys_dir else None, ca_cert=None, server_cert=None, server_key=None,
-            token=None, env_file=self.env_file or "credentials.env", rig=self.rig_path, timeout=self.timeout_s)
+            token=None, env_file=self.env_file or "credentials.env", rig=self.rig_path, timeout=timeout_s or self.timeout_s)
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             rc = self.update_fn(args)

@@ -314,7 +314,15 @@ class HilRig:
         current = self.mock_version if self.is_mock else (self.query_labid_info() or {}).get("v")
         return current == want or self.update_ota(variant, transport)
 
-    def update_ota(self, variant: str, transport: str = "wifi") -> bool:
+    def state(self) -> dict[str, Any]:
+        """Running app/slot/confirmed. Live: read over LABID (authoritative); mock: the simulated /version."""
+        if self.is_mock:
+            return self.query_http_version() or {}
+        assert self.backend is not None
+        s = self.backend.snapshot()
+        return {"app": s.app, "slot": s.slot, "confirmed": s.confirmed, "uid": s.uid}
+
+    def update_ota(self, variant: str, transport: str = "wifi", timeout_s: float | None = None) -> bool:
         """Perform an OTA update to a specified variant (e.g. 'v1' or 'v2')."""
         if self.is_mock:
             if variant == "v2":
@@ -325,7 +333,7 @@ class HilRig:
                 self.mock_slot = 0
             return True
         assert self.backend is not None
-        return self.backend.update(variant, transport, self.artifacts_dir / "update.log")
+        return self.backend.update(variant, transport, self.artifacts_dir / "update.log", timeout_s)
 
 
 @pytest.fixture
