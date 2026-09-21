@@ -109,7 +109,7 @@ PYTHONPATH="host:." pytest tests_hil -v
 
 ## 🔒 Security & Architecture Guardrails
 
-- **Zero eFuse Risk**: Hardware eFuse burning commands (`burn_efuse`, `burn_key`) are strictly forbidden and blocked in CI.
+- **Zero eFuse Risk**: Permanent hardware eFuse write operations are strictly forbidden and blocked in CI.
 - **Isolated Multi-Variant Builds (PLAN R15)**: Each firmware variant (`v1`, `v2`, `no_confirm`, `hang`, `bad_sig`) builds into its own isolated `-B build_*` directory with isolated sdkconfig.
 - **Hardware Pre-Write Verification**: `labflash flash` and `labflash update` strictly verify MAC/serial before issuing erase or write commands.
 - **Safe State Rollback**: All unconfirmed images automatically roll back to slot 0 upon watchdog timeout or reboot.

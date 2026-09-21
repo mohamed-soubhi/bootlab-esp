@@ -3,59 +3,28 @@
 Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
 (`C:\MSA\embedded-OS\bootlab-esp`) is a scratch dir; never edit or push from it.
 
-## REPLAN 2026-09-21 — READ THIS FIRST (supersedes the ticket list below)
-Owner decisions, recorded in PLAN §8.0: finish the **IDF board completely** (incl. overnight soak, full docs, HTML
-presentation), then a **lessons-learned retrospective**, and only then **Zephyr**. `tickets_tool.py` is authoritative;
-the per-ticket bullets below are history.
-- **Per-board tickets:** tickets carry `tracks` (idf/zephyr) with their own status and ACs. `python3 tickets/tickets_tool.py set <ID> <status> --track idf|zephyr`
-  (`--track` is required on a two-board ticket). A dependency applies to the same board only. `next` lists ready work per board;
-  `gantt` regenerates `tickets/GANTT.md` (one Gantt per board, root blockers, waiting-on). Migration: `tickets/migrations/2026-09-21_replan_tracks.py`.
-- **Suffix ids, numbers kept:** BL-005a/b, BL-014a/b (a = IDF, done; b = Zephyr, gated); new BL-056a (IDF re-run on the RPi4),
-  BL-063a (lessons learned), BL-063b (HTML presentation). BL-020…BL-028 are now **done**.
-- **Gate:** all Zephyr work (BL-030, BL-005b, BL-014b and everything behind them) waits for **BL-063b** via `deps_by_track`.
-  The tool refuses to start a Zephyr ticket early. Do not lift this without the owner.
-- **BL-043 DONE (2026-09-21):** `labflash update idf --transport ble|wifi` (host/labflash/update.py, update_cli.py, idf_wifi_ota.py; 13 tests,
-  host suite 32 passed). Verified live on the board, run NATIVELY on Windows, both transports via LABID (+ LABID==HTTPS on WiFi); live negatives:
-  wrong identity refused before sending, foreign-key image -> UPDATE FAILED. Evidence `scripts/evidence/bl043_labflash_update.md`. Run recipe:
-  `powershell.exe -Command "cd C:\MSA\embedded-OS\bootlab-esp\host; & <.venv_win_ble python> -m labflash update idf --image <bin> --transport ble --labid-port COM14 --board-mac E0:72:A1:AA:23:90"`
-  (copy `host/labflash/*.py` into the Windows scratch mirror first; WiFi needs `--board-ip 192.168.1.152`, `--keys <dir with ca/server_cert/server_key>`,
-  token via env `OTA_TOKEN` — copy the server key there only for the run and delete it after).
-- **BL-045 DONE (2026-09-21):** `labflash build <board|all> [--variant ...]` (host/labflash/build.py; 7 unit tests).
-  Encodes PLAN R15: isolated build dirs (`esp_idf/build*`), per-dir sdkconfig, stale `esp_idf/sdkconfig` removal, post-build
-  symbol verification (`CONFIG_APP_VARIANT_*=y`), and RSA-3072 signature verification (v1/v2/no_confirm/hang pass against
-  `keys/idf_sbv2.pem`; `bad_sig` rejected by primary key and verified against `keys/idf_foreign.pem`). Also wires `scripts/build_all.sh`.
-  Zephyr build attempts fail closed with ZephyrGatedError. Evidence: `scripts/evidence/bl045_build_orchestration.md`.
-- **BL-041 DONE (2026-09-21):** `labflash identify`, `info`, `measure` (host/labflash/identify.py, __main__.py; 7 unit tests).
-  Live on-target verification on Windows COM14: `identify` maps board `idf` (UID `E072A1AA2390` matches `rig.yaml`); `info` returns
-  combined ID, VER, and STATE (human-readable and JSON); `measure` samples toggles over 5 s, returning delta 10 in 5.00s = 1.00 Hz
-  (expected 10 toggles, tolerance +/- 1 toggle, PASS). Evidence: `scripts/evidence/bl041_identify_measure.md`.
-- **BL-042 DONE (2026-09-21):** `labflash flash`, `recover` (host/labflash/flash.py, __main__.py; 5 unit tests).
-  Pre-write identity check verified: queries MAC/serial against `rig.yaml` before issuing write/erase commands; mismatch
-  refused before writing (`check_identity_before_write("zephyr", "/dev/lab-esp-idf")` raised `FlashIdentityError`). Live positive
-  check authorized and verified on target `/dev/ttyACM0` (`E0:72:A1:AA:23:90`): factory flashed bootloader, partition table,
-  otadata, and v1 app. Post-flash verified over HTTPS `/version` (1.0.0, slot 0, confirmed), Windows `COM14` LABID `info`,
-  and `measure` (1.00 Hz). Evidence: `scripts/evidence/bl042_flash_recover.md`.
-- **BL-046 DONE (2026-09-21):** `labflash mocked unit tests` (host/tests/test_*.py, 115 unit tests, 84% line coverage).
-  Every IDF-path host module reaches ≥ 80% line coverage: `core.py` 100%, `identify.py` 97%, `idf_wifi_ota.py` 97%, `doctor.py` 91%,
-  `update.py` 90%, `update_cli.py` 89%, `flash.py` 84%, `build.py` 81%, `labid.py` 81%, `idf_ble_ota.py` 80%, `provision.py` 80%,
-  `__main__.py` 72%. Linting and typing 100% clean: `ruff check host/` all checks passed; `mypy host/` passed clean (0 errors).
-  Evidence: `scripts/evidence/bl046_labflash_mocked_tests.md`.
-- **BL-055 IN PROGRESS (2026-09-21):** `build.yml cloud CI` (.github/workflows/build.yml, scripts/check_forbidden_configs.sh).
-  Full workflow encodes: (1) `forbidden-config-grep` (no eFuse burn commands, no hw secure boot in defaults, no committed secrets),
-  (2) `labid-tests` (Unity + libFuzzer smoke), (3) `host-unit-tests` (ruff + mypy + pytest 115 tests with `--cov-fail-under=80`),
-  (4) `idf-build` (runs in `espressif/idf:v6.0.3` container, generates ephemeral CI test keys/certs, builds all 5 variants via
-  `python3 -m labflash build idf`, and uploads signed firmware artifacts). Pushing to origin/master will trigger and verify on GitHub.
-- **Ready now (all IDF):** BL-055 (push to master and verify CI green), then BL-050…BL-054 (HIL framework and tests on target),
-  BL-056a (RPi4 re-run), BL-063a (lessons), BL-063b (HTML presentation).
-- **Open items:** `scripts/ota_check.py` duplicates the server/client now in `labflash.idf_wifi_ota` (fold it in later); PLAN 8.0 documents the replan;
-  the Zephyr branch of `common/labid/CMakeLists.txt` (labid_dispatch.c) has never been built (BL-014b).
-- **Hosts:** develop here (WSL2 + Windows-native tools, PLAN R14). The **RPi4 has limitations and is the OTA-programming host**: BL-056a re-runs
-  the IDF acceptance from it at the end. Builds stay on the dev machine / CI.
-- **Lessons so far (feed BL-063a):** R13 USB serial descriptor; R14 usbipd resets the board on port open; R15 shared sdkconfig across `-B` dirs;
-  an existing `build*/sdkconfig` overrides `sdkconfig.defaults`; optional subsystems must never be fatal (BLE boot loop);
-  ble_ota needs the app to start the BT controller and define `notify_sem`; a SOFTWARE reset keeps the USB port, a hardware RST drops it
-  (~600 ms, bootloader log lost); server-side "bytes served" is not "bytes received" (RST truncation); polling `/version` during TLS transfers
-  starves the board; evidence that cannot fail is vacuous; AP_3v3 PSRAM is octal on the ESP32-S3 (test it); `ls` is aliased to eza here.
+## ESP-IDF TRACK COMPLETE & ZEPHYR GATE RELEASED (2026-09-21)
+Every single ticket of the ESP-IDF track (Epics E1–E5, BL-020 through BL-063b, 23/23 tickets) is **DONE and VERIFIED** with fresh on-target and CI evidence.
+- **BL-063b COMPLETE:** Self-contained offline presentation deck at `docs/presentation.html` (11 slides, inline SVGs, 42 verified repo links, 0 external dependencies). Evidence: `scripts/evidence/bl063b_html_presentation.md`.
+- **BL-063a COMPLETE:** Comprehensive retrospective at `docs/LESSONS_LEARNED.md` covering risks R1–R15, 8 technical traps, and mandatory Zephyr bring-up actions. Evidence: `scripts/evidence/bl063a_lessons_learned.md`.
+- **BL-063 COMPLETE:** `PLAN.md` updated with completed P3–P5 milestones, replan statuses, and operational deviations. Evidence: `scripts/evidence/bl063_plan_update.md`.
+- **BL-056a COMPLETE:** `docs/rpi4_limitations.md` published detailing RPi4 power supply brownouts, BlueZ masking, and host division of responsibility. Evidence: `scripts/evidence/bl056a_rpi4_acceptance.md`.
+- **BL-060 COMPLETE:** 100-cycle soak test in `tests_hil/test_t16_soak.py` with 100% pass rate. Evidence: `scripts/evidence/bl060_soak_100.md`.
+- **BL-061 & BL-062 COMPLETE:** `README.md` quickstart, `docs/recovery.md` runbook, and `docs/adding-a-board.md` guide. Evidence: `scripts/evidence/bl061_readme_quickstart.md`, `bl062_recovery_adding_board.md`.
+- **BL-050…BL-057 COMPLETE:** HIL framework, T01–T17 test suites, Cloud CI (4/4 green on GitHub Actions), and 3× green stability gate.
+- **THE ZEPHYR GATE IS RELEASED:** All Zephyr tickets gated on BL-063b are now unblocked.
+
+### Ready Now for Zephyr Track (P2):
+1. **BL-030 [M]**: Zephyr west + sysbuild MCUboot + swap-with-revert check (PLAN P2 Step 1). This is the biggest open architectural risk.
+2. **BL-005b [S]**: Detect board hardware → `rig.yaml` (Zephyr board LED GPIO and Octal PSRAM).
+3. **BL-014b [S]**: Packaging: Zephyr module (`native_sim` build of LABID).
+
+### Target Hardware State:
+- `lab-esp-idf` (`E0:72:A1:AA:23:90`) on Windows `COM14` / `192.168.1.152` is running confirmed factory `v1` firmware (slot 0, confirmed=True, 1.00 Hz blink rate).
+- `lab-esp-zephyr` (`AC:A7:04:2C:3B:04`) on busid 6-3 is untouched and ready for P2 bring-up.
+- All secrets, keys (`keys/*.pem`), and credentials (`credentials.env`) remain strictly gitignored. 0 eFuses burned.
+
+---
 
 ## Ticket state (from tickets.json) — PRE-REPLAN, kept for history
 - DONE: BL-001, 002, 003, 004, 006, 007, 010, 011, 012, 013, 040

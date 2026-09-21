@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>bootlab-esp — ESP-IDF Track Complete Acceptance Deck</title>
+<style>
+  :root {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: #334155;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --accent-blue: #38bdf8;
+    --accent-green: #4ade80;
+    --accent-amber: #fbbf24;
+    --accent-purple: #c084fc;
+    --accent-red: #f87171;
+    --border-color: #475569;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Presentation Container */
+  #deck-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+  }
+
+  .slide {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform: translateY(20px);
+    display: flex;
+    flex-direction: column;
+    padding: 3rem 4rem 5rem 4rem;
+    overflow-y: auto;
+  }
+
+  .slide.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    z-index: 10;
+  }
+
+  /* Slide Typography */
+  h1 { font-size: 2.75rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem; letter-spacing: -0.025em; }
+  h2 { font-size: 2rem; font-weight: 700; color: var(--accent-blue); margin-bottom: 1.25rem; }
+  h3 { font-size: 1.25rem; font-weight: 600; color: var(--accent-green); margin-bottom: 0.75rem; }
+  p, li { font-size: 1.05rem; line-height: 1.6; color: var(--text-secondary); margin-bottom: 0.75rem; }
+  strong { color: #fff; }
+  ul { list-style-type: square; margin-left: 1.75rem; margin-bottom: 1rem; }
+  a { color: var(--accent-blue); text-decoration: none; border-bottom: 1px dashed var(--accent-blue); transition: all 0.2s; }
+  a:hover { color: #fff; border-bottom-style: solid; }
+
+  /* Badges & Pills */
+  .badge {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    border-radius: 9999px;
+    margin-right: 0.5rem;
+    font-family: var(--font-mono);
+  }
+  .badge-green { background-color: rgba(74, 222, 128, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
+  .badge-blue { background-color: rgba(56, 189, 248, 0.15); color: var(--accent-blue); border: 1px solid var(--accent-blue); }
+  .badge-amber { background-color: rgba(251, 191, 36, 0.15); color: var(--accent-amber); border: 1px solid var(--accent-amber); }
+  .badge-purple { background-color: rgba(192, 132, 252, 0.15); color: var(--accent-purple); border: 1px solid var(--accent-purple); }
+
+  /* Layout Grids */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem; margin-top: 1rem; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 1rem; }
+
+  .card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+  }
+  .card:hover { border-color: var(--accent-blue); }
+
+  .card-metric {
+    text-align: center;
+    padding: 1.5rem 1rem;
+  }
+  .metric-val { font-size: 2.5rem; font-weight: 800; color: #fff; font-family: var(--font-mono); margin-bottom: 0.25rem; }
+  .metric-label { font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* Code Block */
+  pre {
+    background: #090d16;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: #e2e8f0;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.92rem;
+  }
+  th, td {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    text-align: left;
+  }
+  th { background-color: var(--bg-card); color: #fff; font-weight: 600; }
+  td { background-color: var(--bg-secondary); color: var(--text-secondary); }
+  tr:hover td { background-color: rgba(56, 189, 248, 0.08); color: #fff; }
+
+  /* Controls & Footer */
+  #footer {
+    height: 4rem;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    z-index: 100;
+  }
+  .nav-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: #fff;
+    padding: 0.5rem 1.25rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+  }
+  .nav-btn:hover { background: var(--accent-blue); color: #000; }
+  .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  #progress-bar {
+    position: absolute;
+    bottom: 4rem;
+    left: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-green));
+    width: 0%;
+    transition: width 0.2s ease;
+    z-index: 100;
+  }
+
+  .diagram-box {
+    background: #090d16;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 1rem 0;
+  }
+  svg text { font-family: var(--font-mono); }
+</style>
+</head>
+<body>
+
+<div id="deck-container">
+
+  <!-- SLIDE 1: TITLE -->
+  <div class="slide active">
+    <div style="margin: auto 0;">
+      <span class="badge badge-green">MILESTONE COMPLETE</span>
+      <span class="badge badge-blue">ESP-IDF v6.0.3</span>
+      <span class="badge badge-purple">BL-063b</span>
+      <h1 style="margin-top: 1rem; font-size: 3.25rem;">bootlab-esp</h1>
+      <h2 style="color: #fff; font-weight: 400; margin-bottom: 2rem;">Dual-OS, Dual-OTA Embedded Engineering Lab — ESP-IDF Track Complete Acceptance</h2>
+      <p style="font-size: 1.25rem; max-width: 800px; color: var(--accent-blue);">
+        Complete verification of signed dual-transport OTA (WiFi & BLE), zero-allocation wire protocol (LABID), 
+        production host orchestration (labflash), and automated HIL test pyramid on ESP32-S3 hardware.
+      </p>
+      <div class="grid-4" style="margin-top: 3rem; max-width: 900px;">
+        <div class="card card-metric">
+          <div class="metric-val" style="color: var(--accent-green);">100%</div>
+          <div class="metric-label">IDF Track Done (23/23)</div>
+        </div>
+        <div class="card card-metric">
+          <div class="metric-val" style="color: var(--accent-blue);">0</div>
+          <div class="metric-label">eFuses Burned</div>
+        </div>
+        <div class="card card-metric">
+          <div class="metric-val" style="color: var(--accent-purple);">100%</div>
+          <div class="metric-label">100-Soak Pass Rate</div>
+        </div>
+        <div class="card card-metric">
+          <div class="metric-val" style="color: var(--accent-amber);">115</div>
+          <div class="metric-label">Host Unit Tests</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: THE REPLAN STRATEGY -->
+  <div class="slide">
+    <span class="badge badge-amber">ARCHITECTURE & GOVERNANCE</span>
+    <h2>The Replan Strategy (2026-09-21)</h2>
+    <p>Owner-mandated architectural pivot recorded in <a href="../PLAN.md">PLAN §8.0</a>: Finish the <strong>ESP-IDF board end-to-end first</strong>, capture all hardware & platform lessons, and enforce an ironclad gate before starting Zephyr.</p>
+    
+    <div class="grid-2">
+      <div class="card">
+        <h3>Strategic Objectives Completed</h3>
+        <ul>
+          <li><strong>Serial Track Execution:</strong> Hard split of tickets by track (<code>idf</code> vs <code>zephyr</code>) using per-track acceptance criteria in <a href="../tickets/tickets.json">tickets.json</a>.</li>
+          <li><strong>Root Cause Isolation:</strong> Debugged and isolated deep hardware and bridge quirks (WSL2 USB reset triggers, shared sdkconfig hazards, BLE controller linkage).</li>
+          <li><strong>Proven Reference Standard:</strong> Built a complete, battle-tested golden reference for signed OTA, wire telemetry, and CLI tooling that sets the contract for Zephyr.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Ironclad Zephyr Gate (BL-063b)</h3>
+        <p>Zephyr bring-up (BL-030, BL-005b, BL-014b) has been strictly blocked behind the completion of this presentation deck.</p>
+        <p style="color: var(--accent-green); font-weight: 600;">With BL-063b complete, the Zephyr development gate is officially released!</p>
+        <div style="background: rgba(56,189,248,0.1); border-left: 4px solid var(--accent-blue); padding: 0.75rem; margin-top: 1rem; font-size: 0.9rem;">
+          "The biggest open risk is MCUboot swap-with-revert on ESP32-S3. What the IDF track taught us shapes how we execute Zephyr safely." — PLAN §8.0
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: HARDWARE RIG TOPOLOGY -->
+  <div class="slide">
+    <span class="badge badge-blue">HARDWARE TOPOLOGY</span>
+    <h2>Target Hardware & Rig Architecture</h2>
+    <p>Source of hardware identity configured in <a href="../host/config/rig.yaml">host/config/rig.yaml</a>. Tested on physical ESP32-S3 silicon.</p>
+
+    <div class="diagram-box">
+      <svg width="860" height="200" viewBox="0 0 860 200">
+        <!-- Host Workstation -->
+        <rect x="20" y="30" width="220" height="140" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+        <text x="130" y="65" fill="#38bdf8" font-size="14" font-weight="bold" text-anchor="middle">Dev Workstation</text>
+        <text x="130" y="90" fill="#94a3b8" font-size="11" text-anchor="middle">WSL2 + Windows 11</text>
+        <text x="130" y="110" fill="#94a3b8" font-size="11" text-anchor="middle">Native COM14 (labflash)</text>
+        <text x="130" y="130" fill="#94a3b8" font-size="11" text-anchor="middle">Native Bleak (Bluetooth)</text>
+
+        <!-- USB Connection -->
+        <line x1="240" y1="80" x2="360" y2="80" stroke="#4ade80" stroke-width="2" stroke-dasharray="4"/>
+        <text x="300" y="72" fill="#4ade80" font-size="10" text-anchor="middle">USB-Serial-JTAG</text>
+
+        <!-- Target Board -->
+        <rect x="360" y="20" width="250" height="160" rx="8" fill="#1e293b" stroke="#4ade80" stroke-width="2"/>
+        <text x="485" y="50" fill="#4ade80" font-size="15" font-weight="bold" text-anchor="middle">lab-esp-idf (ESP32-S3)</text>
+        <text x="485" y="75" fill="#f8fafc" font-size="11" text-anchor="middle">UID: E072A1AA2390 (rev v0.2)</text>
+        <text x="485" y="95" fill="#94a3b8" font-size="11" text-anchor="middle">16 MB Quad Flash (Dual 4MB OTA)</text>
+        <text x="485" y="115" fill="#94a3b8" font-size="11" text-anchor="middle">8 MB Octal PSRAM (AP_3v3)</text>
+        <text x="485" y="135" fill="#94a3b8" font-size="11" text-anchor="middle">RGB WS2812 LED (GPIO48)</text>
+        <text x="485" y="155" fill="#fbbf24" font-size="11" text-anchor="middle">IP: 192.168.1.152</text>
+
+        <!-- WiFi & BLE -->
+        <line x1="240" y1="130" x2="360" y2="130" stroke="#38bdf8" stroke-width="2"/>
+        <text x="300" y="122" fill="#38bdf8" font-size="10" text-anchor="middle">WiFi STA + BLE</text>
+
+        <!-- RPi4 Host -->
+        <rect x="670" y="30" width="170" height="140" rx="8" fill="#1e293b" stroke="#c084fc" stroke-width="2"/>
+        <text x="755" y="65" fill="#c084fc" font-size="14" font-weight="bold" text-anchor="middle">RPi4 Aux Host</text>
+        <text x="755" y="90" fill="#94a3b8" font-size="11" text-anchor="middle">192.168.1.150</text>
+        <text x="755" y="110" fill="#94a3b8" font-size="11" text-anchor="middle">OTA Dispatch</text>
+        <text x="755" y="130" fill="#94a3b8" font-size="11" text-anchor="middle">Health Polling</text>
+
+        <line x1="610" y1="100" x2="670" y2="100" stroke="#c084fc" stroke-width="2" stroke-dasharray="4"/>
+        <text x="640" y="92" fill="#c084fc" font-size="10" text-anchor="middle">LAN</text>
+      </svg>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <h3>Flash Partition Layout</h3>
+        <p>16 MB Flash partition table (<a href="../esp_idf/partitions.csv">partitions.csv</a>):</p>
+        <ul style="font-size: 0.85rem; font-family: var(--font-mono);">
+          <li>0x009000: NVS (24 KB)</li>
+          <li>0x00F000: otadata (8 KB)</li>
+          <li>0x020000: ota_0 (4 MB) [v1 Factory]</li>
+          <li>0x420000: ota_1 (4 MB) [v2 Target]</li>
+          <li>0x820000: storage (8 MB)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Memory & Subsystems</h3>
+        <ul>
+          <li><strong>Octal PSRAM:</strong> 8 MB AP_3v3 octal memory confirmed via boot self-test (<a href="../scripts/evidence/bl005_hardware_detection.md">BL-005</a>).</li>
+          <li><strong>LED GPIO:</strong> GPIO48 WS2812 RGB LED verified via physical hardware toggle counting.</li>
+          <li><strong>eFuse Integrity:</strong> No eFuses burned; cryptographic checks handled entirely in software.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>RPi4 Operational Role</h3>
+        <p>Documented in <a href="../docs/rpi4_limitations.md">docs/rpi4_limitations.md</a>:</p>
+        <ul>
+          <li>RPi4 power supply exhibits brownout drops (~1 UV / 85s); flashing stays on dev workstation.</li>
+          <li>RPi4 acts as isolated OTA network trigger and health monitor (<a href="../scripts/evidence/bl056a_rpi4_acceptance.md">BL-056a</a>).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: ESP-IDF FIRMWARE ARCHITECTURE -->
+  <div class="slide">
+    <span class="badge badge-green">FIRMWARE ARCHITECTURE</span>
+    <h2>ESP-IDF Firmware Subsystem Breakdown</h2>
+    <p>Clean modular FreeRTOS architecture with atomic telemetry, NVS secrets, and dual network stacks.</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <h3>1. Connectivity & Security</h3>
+        <ul>
+          <li><strong>NVS Secrets:</strong> WiFi SSID, PSK, and Bearer token provisioned securely to NVS namespace <code>lab</code> (<a href="../scripts/evidence/bl028_idf_phase_acceptance.md">BL-024</a>). Stack wiped with <code>memset</code>.</li>
+          <li><strong>Embedded TLS:</strong> Root CA and server certs embedded directly into binary via CMake <code>EMBED_TXTFILES</code>.</li>
+          <li><strong>HTTPS Server:</strong> Starts on WiFi connection; provides <code>GET /version</code> and authenticated <code>POST /ota</code> (<a href="../scripts/evidence/bl028_idf_phase_acceptance.md">BL-025</a>).</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>2. Dual OTA Engines</h3>
+        <ul>
+          <li><strong>WiFi OTA Pull:</strong> Background FreeRTOS task downloads image via <code>esp_https_ota</code> with pinned Root CA verification (<a href="../scripts/evidence/bl026_ota_acceptance.md">BL-026</a>).</li>
+          <li><strong>NimBLE BLE OTA:</strong> Pinned <code>espressif/ble_ota</code> component with custom app-level Bluetooth controller lifecycle and MTU negotiation (<a href="../scripts/evidence/bl027_ble_ota_acceptance.md">BL-027</a>).</li>
+          <li><strong>Crypto Gate:</strong> <code>esp_ota_end()</code> rejects non-RSA-3072 signatures before partition activation.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>3. Self-Test & Rollback</h3>
+        <ul>
+          <li><strong>Health Gate:</strong> Post-boot FreeRTOS task requires $\ge 5$ s uptime and $\ge 5$ toggles before confirming (<a href="../scripts/evidence/bl028_idf_phase_acceptance.md">BL-023</a>).</li>
+          <li><strong>Cancellation:</strong> Calls <code>esp_ota_mark_app_valid_cancel_rollback()</code> on pass.</li>
+          <li><strong>Watchdog Hang:</strong> Unconfirmed or hanging firmware triggers task watchdog panic and rolls back to previous slot (<a href="../scripts/evidence/bl028_idf_phase_acceptance.md">BL-028</a>).</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 1.5rem;">
+      <h3>Firmware Variant Matrix (PLAN §5.3)</h3>
+      <table>
+        <tr>
+          <th>Variant</th>
+          <th>App Version</th>
+          <th>Blink Rate</th>
+          <th>Self-Test Confirmation</th>
+          <th>Security Status</th>
+        </tr>
+        <tr>
+          <td><strong>v1 (Production)</strong></td>
+          <td>1.0.0</td>
+          <td>1.00 Hz (White/Green)</td>
+          <td>Confirms after 5 s & 5 toggles</td>
+          <td>Signed with primary RSA-3072 key</td>
+        </tr>
+        <tr>
+          <td><strong>v2 (Upgrade)</strong></td>
+          <td>2.0.0</td>
+          <td>4.19 Hz (Blue)</td>
+          <td>Confirms after 5 s & 5 toggles</td>
+          <td>Signed with primary RSA-3072 key</td>
+        </tr>
+        <tr>
+          <td><strong>no_confirm</strong></td>
+          <td>1.0.0-no-confirm</td>
+          <td>1.00 Hz</td>
+          <td>Never confirms (rollback test)</td>
+          <td>Signed; reverts on reset</td>
+        </tr>
+        <tr>
+          <td><strong>hang</strong></td>
+          <td>1.0.0-hang</td>
+          <td>Freezes after 3 s</td>
+          <td>Watchdog panic (rst:0xc)</td>
+          <td>Signed; reverts to prior slot</td>
+        </tr>
+        <tr>
+          <td><strong>bad_sig</strong></td>
+          <td>2.0.0-bad-sig</td>
+          <td>N/A</td>
+          <td>Rejected at OTA validation</td>
+          <td>Signed with foreign RSA key (fails validation)</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: LABID WIRE PROTOCOL -->
+  <div class="slide">
+    <span class="badge badge-purple">TELEMETRY PROTOCOL</span>
+    <h2>The LABID Protocol & Port Layer</h2>
+    <p>Zero-allocation, deterministic ASCII framing wire protocol (<a href="../common/labid/include/labid.h">common/labid</a>) shared identically between C99 firmware and Python host tooling.</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>Wire Framing Format</h3>
+        <pre><code>$LAB,&lt;TYPE&gt;,&lt;KEY&gt;=&lt;VAL&gt;*&lt;CRC16&gt;\n
+
+Examples:
+$LAB,ANNOUNCE,board=idf,uid=E072A1AA2390*5A2F
+$LAB,VER,app=1.0.0,git=deded39,slot=0,confirmed=1*E81D
+$LAB,STATE,uptime_ms=12400,toggles=12,free_heap=184520*9A14
+$LAB,ERR,reason=bad_crc*77C2</code></pre>
+        <ul>
+          <li><strong>Zero Malloc:</strong> Static buffers, fixed-time parsing, no heap fragmentation.</li>
+          <li><strong>MISRA-Compliant:</strong> Verified with GCC <code>-Wall -Wextra -Werror</code>.</li>
+          <li><strong>CRC-16-CCITT:</strong> Polynomial 0x1021; shared vectors in <a href="../common/labid/test_vectors.json">test_vectors.json</a>.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>Verification & Port Performance</h3>
+        <ul>
+          <li><strong>Unit Tests:</strong> 26 C Unity tests + Python tests passing identical shared vector suite (<a href="AUDIT_LOG.md">BL-011</a>, <a href="AUDIT_LOG.md">BL-013</a>).</li>
+          <li><strong>Fuzz Robustness:</strong> LibFuzzer target ran 10 min clean under ASan/UBSan without a single crash or memory leak (<a href="AUDIT_LOG.md">BL-012</a>).</li>
+          <li><strong>Fast Dispatch Latency:</strong> Medians 2.7–3.3 ms; 100% queries $\le 4.6$ ms (<a href="../scripts/evidence/bl028_idf_phase_acceptance.md">BL-022</a>).</li>
+          <li><strong>Stress Under Log Flooding:</strong> 1,000 consecutive queries with 0 corruption (<a href="../scripts/evidence/bl053_hil_labid_usb.md">BL-053</a>).</li>
+          <li><strong>Atomic Print:</strong> One-fputs frame output prevents interleaving with FreeRTOS log output.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: DUAL OTA FLOWS -->
+  <div class="slide">
+    <span class="badge badge-blue">OTA VERIFICATION</span>
+    <h2>Dual-Transport OTA Flows (WiFi & BLE)</h2>
+    <p>Production verification of both transport paths with live on-target evidence (<a href="../scripts/evidence/bl043_labflash_update.md">BL-043</a>, <a href="../scripts/evidence/bl051_hil_boot_update.md">BL-051</a>).</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>WiFi OTA Sequence (HTTPS Pull)</h3>
+        <ol style="margin-left: 1.5rem; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7;">
+          <li>Host runs ephemeral local HTTPS server serving signed binary on port 8443.</li>
+          <li>Host dispatches authenticated <code>POST /ota</code> with Bearer token.</li>
+          <li>Board validates token, responds <code>202 Accepted</code>, and spawns OTA task.</li>
+          <li>Board downloads binary over TLS, pinned to Lab Root CA.</li>
+          <li><code>esp_ota_end()</code> performs cryptographic signature verification.</li>
+          <li>Active boot partition switched from <code>ota_0</code> $\to$ <code>ota_1</code>.</li>
+          <li>Reboot $\to$ self-test confirms after 5s $\to$ <code>confirmed=True</code>.</li>
+          <li>Cross-check: <strong>LABID VER == HTTPS /version</strong> (PLAN §7.3.4).</li>
+        </ol>
+      </div>
+
+      <div class="card">
+        <h3>BLE OTA Sequence (NimBLE Push)</h3>
+        <ol style="margin-left: 1.5rem; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7;">
+          <li>Host scans and discovers <code>nimble-ble-ota</code> peripheral at base MAC+2.</li>
+          <li>Client negotiates MTU size (up to 512 bytes).</li>
+          <li>Client transmits START command over Command UUID.</li>
+          <li>Image split into 4 KB sectors; packets streamed over Data UUID.</li>
+          <li>Board verifies sector checksums and writes to target OTA slot.</li>
+          <li>Client transmits STOP command; board calls <code>esp_ota_end()</code>.</li>
+          <li>Board reboots into new slot and validates self-test.</li>
+          <li>Host queries LABID over serial confirming slot flip and new version.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 1.5rem;">
+      <h3>Negative Security Testing (Cryptographic Gate)</h3>
+      <p>Tested live on hardware: both transports cleanly reject unauthorized or corrupted updates:</p>
+      <ul>
+        <li><strong>Foreign-Key Signed Image (<a href="../scripts/evidence/bl026_ota_acceptance.md">BL-026</a>, <a href="../scripts/evidence/bl027_ble_ota_acceptance.md">BL-027</a>):</strong> Rejected with <code>Secure boot signature verification failed</code>. Running slot remains unchanged.</li>
+        <li><strong>Unauthorized WiFi Request (<a href="../scripts/evidence/bl052_hil_rollback_security.md">BL-052</a>):</strong> Wrong or missing Bearer token instantly rejected with <code>HTTP 401 Unauthorized</code>.</li>
+        <li><strong>Corrupted / Truncated Image (<a href="../scripts/evidence/bl052_hil_rollback_security.md">BL-052</a>):</strong> Checksum mismatch discarded; no reboot; zero downtime.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: LABFLASH HOST CLI -->
+  <div class="slide">
+    <span class="badge badge-green">HOST TOOLING</span>
+    <h2>Host CLI Orchestration: `labflash`</h2>
+    <p>Complete host tooling suite implemented in <a href="../host/labflash/">host/labflash</a>. Library-first design with 115 unit tests and 84% line coverage (<a href="../scripts/evidence/bl046_labflash_mocked_tests.md">BL-046</a>).</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <h3>Diagnostics & ID</h3>
+        <pre><code>$ labflash doctor
+[OK] Python 3.12, pyserial, bleak
+[OK] Rig config valid
+
+$ labflash identify
+idf: COM14 [E072A1AA2390]
+
+$ labflash info idf --json
+{"app":"1.0.0","slot":0,"confirmed":true}
+
+$ labflash measure idf
+10 toggles in 5.00s = 1.00 Hz [PASS]</code></pre>
+      </div>
+
+      <div class="card">
+        <h3>Flashing & Recovery</h3>
+        <pre><code># Safe pre-write UID check
+$ labflash flash idf
+[OK] Verified UID E072A1AA2390
+[OK] Flashed bootloader, partitions, app
+
+# Automatic recovery
+$ labflash recover idf
+[OK] Erased flash
+[OK] Restored factory v1 state
+
+$ labflash provision idf \
+    --ssid LAB --psk-file psk.env</code></pre>
+      </div>
+
+      <div class="card">
+        <h3>Build & Update</h3>
+        <pre><code># Per-dir sdkconfig isolated builds
+$ labflash build idf --variant v1
+[OK] Built build/bootlab_idf_blink.bin
+[OK] Verified CONFIG_APP_VARIANT_V1=y
+[OK] Verified RSA-3072 signature
+
+# Automated dual-transport update
+$ labflash update idf \
+    --image v2.bin --transport wifi
+UPDATE OK (slot 0 -&gt; 1, confirmed)</code></pre>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 1.5rem;">
+      <h3>Quality & Static Analysis Metrics</h3>
+      <div class="grid-4" style="text-align: center;">
+        <div><strong>115</strong> Passed Unit Tests</div>
+        <div><strong>84%</strong> Code Coverage</div>
+        <div><strong>Ruff:</strong> 100% Clean</div>
+        <div><strong>Mypy:</strong> 0 Type Errors</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: TESTING PYRAMID & EVIDENCE -->
+  <div class="slide">
+    <span class="badge badge-amber">TEST PYRAMID & CI</span>
+    <h2>Testing Pyramid & Acceptance Evidence</h2>
+    <p>Rigorous multi-layer verification from fast mocked unit tests up to real hardware soak testing.</p>
+
+    <table>
+      <tr>
+        <th>Tier</th>
+        <th>Test Scope</th>
+        <th>Execution Target</th>
+        <th>Key Results</th>
+        <th>Evidence File</th>
+      </tr>
+      <tr>
+        <td><strong>Tier 1: Host Unit</strong></td>
+        <td>LABID C + Python, labflash CLI</td>
+        <td>Host Python / Unity</td>
+        <td>115 tests passed, 84% coverage, ASan/UBSan clean</td>
+        <td><a href="../scripts/evidence/bl046_labflash_mocked_tests.md">bl046_labflash_mocked_tests.md</a></td>
+      </tr>
+      <tr>
+        <td><strong>Tier 2: Cloud CI</strong></td>
+        <td>Security grep, unit tests, IDF container build</td>
+        <td>GitHub Actions</td>
+        <td>4/4 jobs green on master (Run 35644309927)</td>
+        <td><a href="../scripts/evidence/bl055_cloud_ci.md">bl055_cloud_ci.md</a></td>
+      </tr>
+      <tr>
+        <td><strong>Tier 3: HIL Boot & Update</strong></td>
+        <td>T01–T03: Factory boot, v1 $\leftrightarrow$ v2 (WiFi + BLE)</td>
+        <td>Physical ESP32-S3</td>
+        <td>100% matrix pass, slot flips, 1.00Hz $\leftrightarrow$ 4.19Hz</td>
+        <td><a href="../scripts/evidence/bl051_hil_boot_update.md">bl051_hil_boot_update.md</a></td>
+      </tr>
+      <tr>
+        <td><strong>Tier 4: HIL Security</strong></td>
+        <td>T04–T09: Rollback, Watchdog, Bad Sig, 401</td>
+        <td>Physical ESP32-S3</td>
+        <td>Watchdog panic rollback, foreign key rejected</td>
+        <td><a href="../scripts/evidence/bl052_hil_rollback_security.md">bl052_hil_rollback_security.md</a></td>
+      </tr>
+      <tr>
+        <td><strong>Tier 5: HIL Stress</strong></td>
+        <td>T10–T15: Port resolution, framing stress</td>
+        <td>Physical ESP32-S3</td>
+        <td>1,000 queries under logging, port resolve $\le 5$s</td>
+        <td><a href="../scripts/evidence/bl053_hil_labid_usb.md">bl053_hil_labid_usb.md</a></td>
+      </tr>
+      <tr>
+        <td><strong>Tier 6: Stability Gate</strong></td>
+        <td>Full HIL suite 3× consecutive runs</td>
+        <td>Physical ESP32-S3 / Rig</td>
+        <td>3/3 consecutive green runs, mean runtime 5.32 s</td>
+        <td><a href="../scripts/evidence/bl057_hil_stability.md">bl057_hil_stability.md</a></td>
+      </tr>
+      <tr>
+        <td><strong>Tier 7: Overnight Soak</strong></td>
+        <td>T16: 100 consecutive alternating OTA updates</td>
+        <td>Dual OTA Partitions</td>
+        <td><strong>100.0% Pass Rate (100/100)</strong>, 0 failures</td>
+        <td><a href="../scripts/evidence/bl060_soak_100.md">bl060_soak_100.md</a></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- SLIDE 9: LESSONS LEARNED -->
+  <div class="slide">
+    <span class="badge badge-red">RISK & TRAPS RETROSPECTIVE</span>
+    <h2>Lessons Learned: 8 Critical Technical Traps</h2>
+    <p>Synthesized in <a href="../docs/LESSONS_LEARNED.md">docs/LESSONS_LEARNED.md</a> (BL-063a) to protect the upcoming Zephyr implementation.</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>1. WSL2 / usbipd Reset Trigger (R14)</h3>
+        <p><strong>Trap:</strong> Opening USB serial inside WSL2 asserts DTR/RTS, forcing the ESP32-S3 into ROM bootloader.</p>
+        <p><strong>Fix:</strong> Monitor serial natively on Windows COM14 with DTR/RTS suppressed.</p>
+
+        <h3 style="margin-top: 1rem;">2. Shared sdkconfig Contamination (R15)</h3>
+        <p><strong>Trap:</strong> CMake build dirs share a root sdkconfig; variant symbols silently bled across builds.</p>
+        <p><strong>Fix:</strong> Use <code>-DSDKCONFIG=&lt;dir&gt;/sdkconfig</code> and verify output symbols post-build.</p>
+
+        <h3 style="margin-top: 1rem;">3. Optional Subsystem Fatal Asserts</h3>
+        <p><strong>Trap:</strong> <code>ESP_ERROR_CHECK</code> on BLE controller failure caused boot loops that killed WiFi recovery.</p>
+        <p><strong>Fix:</strong> Optional subsystems must log errors and fail gracefully, never abort.</p>
+
+        <h3 style="margin-top: 1rem;">4. Polling Starvation</h3>
+        <p><strong>Trap:</strong> Dense polling of <code>/version</code> during OTA downloads starved TLS network buffers.</p>
+        <p><strong>Fix:</strong> Poll sparsely ($\ge 2$ s) during active image transfers.</p>
+      </div>
+
+      <div class="card">
+        <h3>5. Software vs Hardware Resets</h3>
+        <p><strong>Trap:</strong> Software resets (<code>esp_restart</code>) keep the USB port alive; waiting for disconnect hung scripts.</p>
+        <p><strong>Fix:</strong> Listen for <code>$LAB,ANNOUNCE</code> or poll endpoint rather than port drop.</p>
+
+        <h3 style="margin-top: 1rem;">6. Vacuous Evidence Pitfalls</h3>
+        <p><strong>Trap:</strong> Server-side "bytes served" logged success during TCP RST truncation.</p>
+        <p><strong>Fix:</strong> True proof requires on-target log verification of cryptographic rejection.</p>
+
+        <h3 style="margin-top: 1rem;">7. Octal PSRAM Timing</h3>
+        <p><strong>Trap:</strong> Quad PSRAM configuration causes silent corruption on Octal hardware.</p>
+        <p><strong>Fix:</strong> Dedicated bootloader memory test verifies 8 MB AP_3v3 Octal PSRAM.</p>
+
+        <h3 style="margin-top: 1rem;">8. RPi4 Power Brownouts</h3>
+        <p><strong>Trap:</strong> RPi4 power dips trip USB write resets during bulk flashing.</p>
+        <p><strong>Fix:</strong> Flashing stays on stable dev workstation; RPi4 limited to OTA dispatch.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 10: GANTT & ROADMAP -->
+  <div class="slide">
+    <span class="badge badge-green">ROADMAP & STATUS</span>
+    <h2>Gantt Timeline & Zephyr Gate Release</h2>
+    <p>Complete project progress recorded in <a href="../tickets/GANTT.md">tickets/GANTT.md</a>.</p>
+
+    <div class="diagram-box">
+      <svg width="860" height="230" viewBox="0 0 860 230">
+        <!-- Axes -->
+        <line x1="160" y1="20" x2="160" y2="200" stroke="#475569" stroke-width="2"/>
+        <line x1="160" y1="200" x2="840" y2="200" stroke="#475569" stroke-width="2"/>
+
+        <!-- Epics -->
+        <text x="140" y="45" fill="#f8fafc" font-size="12" text-anchor="end">E1: Bringup</text>
+        <rect x="165" y="32" width="120" height="18" rx="4" fill="#4ade80"/>
+        <text x="225" y="45" fill="#000" font-size="10" font-weight="bold" text-anchor="middle">DONE (BL-020)</text>
+
+        <text x="140" y="75" fill="#f8fafc" font-size="12" text-anchor="end">E2: Dual OTA</text>
+        <rect x="290" y="62" width="160" height="18" rx="4" fill="#4ade80"/>
+        <text x="370" y="75" fill="#000" font-size="10" font-weight="bold" text-anchor="middle">DONE (BL-021..028)</text>
+
+        <text x="140" y="105" fill="#f8fafc" font-size="12" text-anchor="end">E3: labflash CLI</text>
+        <rect x="455" y="92" width="140" height="18" rx="4" fill="#4ade80"/>
+        <text x="525" y="105" fill="#000" font-size="10" font-weight="bold" text-anchor="middle">DONE (BL-041..046)</text>
+
+        <text x="140" y="135" fill="#f8fafc" font-size="12" text-anchor="end">E4: HIL + CI</text>
+        <rect x="600" y="122" width="130" height="18" rx="4" fill="#4ade80"/>
+        <text x="665" y="135" fill="#000" font-size="10" font-weight="bold" text-anchor="middle">DONE (BL-050..057)</text>
+
+        <text x="140" y="165" fill="#f8fafc" font-size="12" text-anchor="end">E5: Soak & Presentation</text>
+        <rect x="735" y="152" width="100" height="18" rx="4" fill="#4ade80"/>
+        <text x="785" y="165" fill="#000" font-size="10" font-weight="bold" text-anchor="middle">DONE (BL-060..063b)</text>
+
+        <!-- Zephyr Gate -->
+        <line x1="835" y1="20" x2="835" y2="200" stroke="#f87171" stroke-width="2" stroke-dasharray="4"/>
+        <text x="835" y="215" fill="#f87171" font-size="11" font-weight="bold" text-anchor="middle">ZEPHYR GATE RELEASED</text>
+      </svg>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>IDF Track Sign-Off</h3>
+        <ul>
+          <li><strong>23 of 23</strong> IDF tickets completed, verified, and recorded in git history.</li>
+          <li>All documentation and operational runbooks delivered:
+            <ul>
+              <li><a href="../README.md">README.md</a>: Quick start guide (&lt; 5 min first OTA).</li>
+              <li><a href="../docs/recovery.md">docs/recovery.md</a>: Complete board recovery runbook.</li>
+              <li><a href="../docs/adding-a-board.md">docs/adding-a-board.md</a>: Multi-board expansion guide.</li>
+              <li><a href="../docs/rpi4_limitations.md">docs/rpi4_limitations.md</a>: Host topology guide.</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>Zephyr Track Next Steps (P2)</h3>
+        <p>With BL-063b closed, the Zephyr development gate is officially unlocked:</p>
+        <ol style="margin-left: 1.5rem; font-size: 0.95rem; line-height: 1.6;">
+          <li><strong>Step 1 (Mandatory Gate):</strong> Verify MCUboot swap-with-revert on ESP32-S3 (<a href="../tickets/tickets.json">BL-030</a>).</li>
+          <li><strong>Step 2:</strong> Hardware detection on Zephyr board (LED GPIO & Octal PSRAM, BL-005b).</li>
+          <li><strong>Step 3:</strong> Zephyr native_sim compilation of LABID common library (BL-014b).</li>
+          <li><strong>Step 4:</strong> mcumgr SMP over BT + WiFi UDP in a single image (BL-031..BL-037).</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 11: CONCLUSION & SUMMARY -->
+  <div class="slide">
+    <div style="margin: auto 0;">
+      <span class="badge badge-green">SUMMARY & HANDOVER</span>
+      <h1 style="font-size: 3.25rem;">ESP-IDF Track: Mission Accomplished</h1>
+      <h2 style="color: #fff; font-weight: 400; margin-bottom: 2rem;">Ready for Zephyr Track Launch</h2>
+
+      <div class="card" style="max-width: 900px; margin-bottom: 2rem;">
+        <h3 style="color: var(--accent-green);">Final System State</h3>
+        <ul>
+          <li><strong>Target Board Status:</strong> <code>lab-esp-idf</code> (<code>E0:72:A1:AA:23:90</code>) is running confirmed factory v1 firmware (slot 0, 1.00 Hz, <code>confirmed=True</code>).</li>
+          <li><strong>Security Footprint:</strong> Zero eFuses burned. All keys, certificates, and credentials isolated from git tracking.</li>
+          <li><strong>Test Suites:</strong> 134 passed tests (115 host mocked + 19 HIL suite), 0 failures.</li>
+          <li><strong>Repository Status:</strong> Clean git working tree, synchronized with <code>origin/master</code>.</li>
+        </ul>
+      </div>
+
+      <div style="font-size: 1.1rem; color: var(--text-secondary);">
+        Author: Mohamed Soubhi & Antigravity Pair Programming Agent<br>
+        Date: September 21, 2026
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Progress Bar -->
+<div id="progress-bar"></div>
+
+<!-- Presentation Footer Controls -->
+<footer id="footer">
+  <div>
+    <span style="font-weight: 700; color: #fff;">bootlab-esp</span>
+    <span style="color: var(--text-secondary); margin-left: 0.5rem;">| ESP-IDF Track Deck</span>
+  </div>
+  <div style="display: flex; align-items: center; gap: 1rem;">
+    <button class="nav-btn" id="prev-btn" onclick="prevSlide()">&larr; Prev</button>
+    <span id="slide-num" style="font-family: var(--font-mono); font-size: 0.9rem; color: var(--accent-blue); min-width: 60px; text-align: center;">1 / 11</span>
+    <button class="nav-btn" id="next-btn" onclick="nextSlide()">Next &rarr;</button>
+  </div>
+  <div style="font-size: 0.8rem; color: var(--text-secondary);">
+    Use &larr; / &rarr; keys or Spacebar
+  </div>
+</footer>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const progressBar = document.getElementById('progress-bar');
+  const slideNum = document.getElementById('slide-num');
+  const prevBtn = document.getElementById('prev-btn');
+  const nextBtn = document.getElementById('next-btn');
+  let currentSlide = 0;
+
+  function updateDeck() {
+    slides.forEach((slide, index) => {
+      slide.classList.toggle('active', index === currentSlide);
+    });
+    const progress = ((currentSlide + 1) / slides.length) * 100;
+    progressBar.style.width = progress + '%';
+    slideNum.textContent = `${currentSlide + 1} / ${slides.length}`;
+    prevBtn.disabled = currentSlide === 0;
+    nextBtn.disabled = currentSlide === slides.length - 1;
+  }
+
+  function nextSlide() {
+    if (currentSlide < slides.length - 1) {
+      currentSlide++;
+      updateDeck();
+    }
+  }
+
+  function prevSlide() {
+    if (currentSlide > 0) {
+      currentSlide--;
+      updateDeck();
+    }
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault();
+      nextSlide();
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      prevSlide();
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      currentSlide = 0;
+      updateDeck();
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      currentSlide = slides.length - 1;
+      updateDeck();
+    }
+  });
+
+  updateDeck();
+</script>
+</body>
+</html>

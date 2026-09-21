@@ -1221,7 +1221,7 @@
         "LABID VER? and identity verified from the RPi4 after each update",
         "RPi4 limitations documented (what runs there, what stays on the dev machine or CI)"
       ],
-      "status": "todo",
+      "status": "done",
       "pr": ""
     },
     {
@@ -1281,7 +1281,7 @@
         "Pass rate ≥ 99 %",
         "Root cause logged for every failure"
       ],
-      "status": "todo",
+      "status": "doing",
       "pr": "",
       "tracks": [
         "idf",
@@ -1298,7 +1298,7 @@
         ]
       },
       "track_status": {
-        "idf": "todo",
+        "idf": "done",
         "zephyr": "todo"
       }
     },
@@ -1385,7 +1385,7 @@
       "ac": [
         "PLAN.md matches the delivered repo"
       ],
-      "status": "todo",
+      "status": "doing",
       "pr": "",
       "tracks": [
         "idf",
@@ -1400,7 +1400,7 @@
         ]
       },
       "track_status": {
-        "idf": "todo",
+        "idf": "done",
         "zephyr": "todo"
       }
     },
@@ -1428,7 +1428,7 @@
         "Every lesson has an action: a plan change, a tool change or a checklist item",
         "Owner review recorded"
       ],
-      "status": "todo",
+      "status": "done",
       "pr": ""
     },
     {
@@ -1451,7 +1451,7 @@
         "Every claim links to an evidence file in the repo",
         "Opens and renders offline in a browser"
       ],
-      "status": "todo",
+      "status": "done",
       "pr": ""
     }
   ]

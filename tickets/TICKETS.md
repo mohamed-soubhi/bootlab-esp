@@ -6,16 +6,16 @@
 
 ## Overall
 
-`█████████████░░░░░░░░░░░░░░░░░` **23/52 done (44%)**
+`███████████████░░░░░░░░░░░░░░░` **26/52 done (50%)**
 
-- **IDF track:** `██████████████████░░` 37/42
+- **IDF track:** `████████████████████` 42/42
 - **Zephyr track:** `██████░░░░░░░░░░░░░░` 11/37
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 15
-    "doing" : 14
-    "done" : 23
+    "todo" : 10
+    "doing" : 16
+    "done" : 26
 ```
 
 ## Epics
@@ -27,8 +27,8 @@ pie showData title Ticket status
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `████████████` | 9/9 | ✅ done | §4.2, §5, §6, §7.2, §8 P1 |
 | E2 | P2 | ESP32-S3 #1 — Zephyr | `░░░░░░░░░░░░` | 0/9 | ⬜ todo | §4.1, §5, §6, §7.1, §8 P2 |
 | E3 | P3 | labflash CLI | `███░░░░░░░░░` | 2/7 | 🔵 doing | §8 P3 |
-| E4 | P4 | HIL tests + CI | `░░░░░░░░░░░░` | 0/9 | 🔵 doing | §8 P4 |
-| E5 | P5 | Soak, docs, handover | `░░░░░░░░░░░░` | 0/6 | 🔵 doing | §8 P5 |
+| E4 | P4 | HIL tests + CI | `█░░░░░░░░░░░` | 1/9 | 🔵 doing | §8 P4 |
+| E5 | P5 | Soak, docs, handover | `████░░░░░░░░` | 2/6 | 🔵 doing | §8 P5 |
 
 ## Epic dependency graph
 
@@ -39,8 +39,8 @@ flowchart LR
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>9/9"]:::done
     E2["P2 ESP32-S3 #1 — Zephyr<br/>0/9"]:::todo
     E3["P3 labflash CLI<br/>2/7"]:::doing
-    E4["P4 HIL tests + CI<br/>0/9"]:::doing
-    E5["P5 Soak, docs, handover<br/>0/6"]:::doing
+    E4["P4 HIL tests + CI<br/>1/9"]:::doing
+    E5["P5 Soak, docs, handover<br/>2/6"]:::doing
     E0 --> EL
     E1 --> E3
     E2 --> E3
@@ -740,7 +740,7 @@ pytest with mocked BLE / serial / HTTP.
 | 🔵 | BL-054 | (Stretch) HIL T17 power cut | M | zephyr, idf | BL-050 |  |
 | 🔵 | BL-055 | build.yml cloud CI | M | host | BL-028, BL-036 |  |
 | 🔵 | BL-056 | hil.yml self-hosted runner on RPi4 | M | host | BL-055, BL-051 |  |
-| ⬜ | BL-056a | IDF acceptance re-run on the RPi4 (OTA-programming host) | M | host, idf | BL-043, BL-056 |  |
+| ✅ | BL-056a | IDF acceptance re-run on the RPi4 (OTA-programming host) | M | host, idf | BL-043, BL-056 |  |
 | 🔵 | BL-057 | Full HIL suite green 3× in a row | S | zephyr, idf | BL-051, BL-052, BL-053, BL-056 |  |
 
 <details><summary>🔵 <b>BL-050</b> — HIL framework: fixtures, markers, artifacts</summary>
@@ -872,20 +872,20 @@ Private repo, dedicated runner user, concurrency: hil.
 
 </details>
 
-<details><summary>⬜ <b>BL-056a</b> — IDF acceptance re-run on the RPi4 (OTA-programming host)</summary>
+<details><summary>✅ <b>BL-056a</b> — IDF acceptance re-run on the RPi4 (OTA-programming host)</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** host, idf  
-- **Tracks:** IDF ⬜ todo  
+- **Tracks:** IDF ✅ done  
 - **Depends on:** BL-043, BL-056  
 - **Plan:** §8 P4
 
 Owner decision 2026-09-21: development stays on the current machine (WSL2 + Windows-native tools); the RPi4 has limitations and is used for OTA programming. When the IDF track is done, re-run the IDF acceptance from the RPi4. Builds stay on the development machine / CI; the RPi4 programs and verifies the boards.
 
 **Acceptance criteria**
-- [ ] labflash update idf --transport ble and wifi both succeed from the RPi4
-- [ ] LABID VER? and identity verified from the RPi4 after each update
-- [ ] RPi4 limitations documented (what runs there, what stays on the dev machine or CI)
+- [x] labflash update idf --transport ble and wifi both succeed from the RPi4
+- [x] LABID VER? and identity verified from the RPi4 after each update
+- [x] RPi4 limitations documented (what runs there, what stays on the dev machine or CI)
 
 </details>
 
@@ -912,18 +912,18 @@ Stability gate.
 
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
-| ⬜ | BL-060 | Overnight soak ×100 | S | zephyr, idf | BL-057 |  |
+| 🔵 | BL-060 | Overnight soak ×100 | S | zephyr, idf | BL-057 |  |
 | 🔵 | BL-061 | README quick start | S | host | BL-057 |  |
 | 🔵 | BL-062 | Recovery runbook + adding-a-board guide | S | host | BL-057 |  |
-| ⬜ | BL-063 | Final PLAN.md update | S | host | BL-060 |  |
-| ⬜ | BL-063a | IDF lessons learned (retrospective) | S | host | BL-060, BL-061, BL-062, BL-063, BL-056a |  |
-| ⬜ | BL-063b | HTML presentation of the IDF track | M | host | BL-063a |  |
+| 🔵 | BL-063 | Final PLAN.md update | S | host | BL-060 |  |
+| ✅ | BL-063a | IDF lessons learned (retrospective) | S | host | BL-060, BL-061, BL-062, BL-063, BL-056a |  |
+| ✅ | BL-063b | HTML presentation of the IDF track | M | host | BL-063a |  |
 
-<details><summary>⬜ <b>BL-060</b> — Overnight soak ×100</summary>
+<details><summary>🔵 <b>BL-060</b> — Overnight soak ×100</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** zephyr, idf  
-- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
+- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
 - **Depends on:** BL-057  
 - **Plan:** §8 P5
 
@@ -931,8 +931,8 @@ T16 repeated per board/transport.
 
 **Acceptance criteria**
 *IDF scope*
-- [ ] Pass rate ≥ 99 % on the idf board (ble + wifi)
-- [ ] Root cause logged for every failure
+- [x] Pass rate ≥ 99 % on the idf board (ble + wifi)
+- [x] Root cause logged for every failure
 *Zephyr scope*
 - [ ] Pass rate ≥ 99 % on the zephyr board (ble + udp)
 - [ ] Root cause logged for every failure
@@ -975,11 +975,11 @@ docs/recovery.md, docs/adding-a-board.md.
 
 </details>
 
-<details><summary>⬜ <b>BL-063</b> — Final PLAN.md update</summary>
+<details><summary>🔵 <b>BL-063</b> — Final PLAN.md update</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
-- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
+- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
 - **Depends on:** BL-060  
 - **Plan:** §8 P5
 
@@ -987,43 +987,43 @@ Pinned versions, Zephyr partitions, deviations.
 
 **Acceptance criteria**
 *IDF scope*
-- [ ] PLAN.md matches the delivered IDF work
+- [x] PLAN.md matches the delivered IDF work
 *Zephyr scope*
 - [ ] PLAN.md matches the delivered Zephyr work
 
 </details>
 
-<details><summary>⬜ <b>BL-063a</b> — IDF lessons learned (retrospective)</summary>
+<details><summary>✅ <b>BL-063a</b> — IDF lessons learned (retrospective)</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
-- **Tracks:** IDF ⬜ todo  
+- **Tracks:** IDF ✅ done  
 - **Depends on:** BL-060, BL-061, BL-062, BL-063, BL-056a  
 - **Plan:** §8 P5
 
 Retrospective after the IDF board is complete, BEFORE any Zephyr work starts, so what the IDF track taught shapes the Zephyr plan (PLAN R13/R14/R15, USB reset behaviour, vacuous evidence, optional subsystems, ...).
 
 **Acceptance criteria**
-- [ ] docs/LESSONS_LEARNED.md covers every risk R1–R15 outcome and every trap found during the IDF track
-- [ ] Every lesson has an action: a plan change, a tool change or a checklist item
-- [ ] Owner review recorded
+- [x] docs/LESSONS_LEARNED.md covers every risk R1–R15 outcome and every trap found during the IDF track
+- [x] Every lesson has an action: a plan change, a tool change or a checklist item
+- [x] Owner review recorded
 
 </details>
 
-<details><summary>⬜ <b>BL-063b</b> — HTML presentation of the IDF track</summary>
+<details><summary>✅ <b>BL-063b</b> — HTML presentation of the IDF track</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** host  
-- **Tracks:** IDF ⬜ todo  
+- **Tracks:** IDF ✅ done  
 - **Depends on:** BL-063a  
 - **Plan:** §8 P5
 
 Owner deliverable: a presentation of the finished IDF track. Completing it is what releases the Zephyr track (explicit gate BL-063b).
 
 **Acceptance criteria**
-- [ ] One self-contained HTML deck: architecture, flows, evidence, lessons learned, Gantt
-- [ ] Every claim links to an evidence file in the repo
-- [ ] Opens and renders offline in a browser
+- [x] One self-contained HTML deck: architecture, flows, evidence, lessons learned, Gantt
+- [x] Every claim links to an evidence file in the repo
+- [x] Opens and renders offline in a browser
 
 </details>
 
@@ -1088,16 +1088,16 @@ flowchart TB
         BL054["BL-054"]:::doing
         BL055["BL-055"]:::doing
         BL056["BL-056"]:::doing
-        BL056a["BL-056a"]:::todo
+        BL056a["BL-056a"]:::done
         BL057["BL-057"]:::doing
     end
     subgraph E5_g["P5 Soak, docs, handover"]
-        BL060["BL-060"]:::todo
+        BL060["BL-060"]:::doing
         BL061["BL-061"]:::doing
         BL062["BL-062"]:::doing
-        BL063["BL-063"]:::todo
-        BL063a["BL-063a"]:::todo
-        BL063b["BL-063b"]:::todo
+        BL063["BL-063"]:::doing
+        BL063a["BL-063a"]:::done
+        BL063b["BL-063b"]:::done
     end
     BL001 --> BL002
     BL002 --> BL003

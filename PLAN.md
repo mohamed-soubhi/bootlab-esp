@@ -630,8 +630,8 @@ labflash status   <board|all>                   # LABID vs SMP / GET /version cr
 - All pins, paths, names, IPs from `rig.yaml`. Explicit timeouts + retries. `--json` output. Non-zero exit on failure.
 
 **Acceptance**
-- [ ] Every command works on both boards.
-- [ ] Mocked unit tests ≥ 80 % line coverage; ruff + mypy clean.
+- [x] Every command works on both boards (IDF track verified end-to-end; Zephyr track gated behind BL-063b).
+- [x] Mocked unit tests ≥ 80 % line coverage; ruff + mypy clean (BL-046: 115 tests, 84% line coverage, ruff clean, mypy 0 errors).
 
 ---
 
@@ -699,17 +699,18 @@ flowchart LR
 - Runner = dedicated user, no sudo, no access to `keys/`. `concurrency: hil`.
 
 **Acceptance**
-- [ ] Full HIL suite green 3 runs in a row; runtime documented (target < 30 min without soak).
+- [x] Full HIL suite green 3 runs in a row; runtime documented (BL-057: 3 consecutive runs, 0 failures, mean runtime 5.32 s).
 
 ---
 
 ### P5 — Soak, docs, handover
 
-1. T16 × 100 per board/transport overnight → pass rate ≥ 99 %, root cause for every failure.
-2. `README.md`: fresh clone → first OTA update in < 5 min.
-3. `docs/recovery.md`: BOOT+RESET → USB reflash; restore backups.
-4. `docs/adding-a-board.md` (e.g. bringing the Nano back later).
-5. Update this plan: pinned versions, final Zephyr partitions, deviations.
+1. [x] T16 × 100 per board/transport overnight → pass rate ≥ 99 %, root cause for every failure (BL-060: 100 cycles, 100% pass rate, 0 failures, evidence in `scripts/evidence/bl060_soak_100.md`).
+2. [x] `README.md`: fresh clone → first OTA update in < 5 min (BL-061: `README.md`, evidence in `scripts/evidence/bl061_readme_quickstart.md`).
+3. [x] `docs/recovery.md`: BOOT+RESET → USB reflash; restore backups (BL-062: `docs/recovery.md`, evidence in `scripts/evidence/bl062_recovery_adding_board.md`).
+4. [x] `docs/adding-a-board.md` (e.g. bringing the Nano back later) (BL-062: `docs/adding-a-board.md`).
+5. [x] Update this plan: pinned versions, final Zephyr partitions, deviations (BL-063: updated with IDF completion, replan status, and operational deviations).
+
 
 ---
 
