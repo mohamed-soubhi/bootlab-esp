@@ -1,4 +1,81 @@
 dependencies:
+  espressif/ble_ota:
+    component_hash: 1efe966fe7562c92b857b8901af0f292913d2948fe4d2f144439ee89ec3c3d8c
+    dependencies:
+    - name: espressif/cmake_utilities
+      registry_url: https://components.espressif.com
+      require: private
+      version: 0.*
+    - name: espressif/cjson
+      registry_url: https://components.espressif.com
+      require: private
+      rules:
+      - if: idf_version >=6.0
+      version: 1.*
+    - name: espressif/esp_encrypted_img
+      registry_url: https://components.espressif.com
+      require: private
+      version: ^2.0.1
+    - name: idf
+      require: private
+      version: '>=4.4'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    targets:
+    - esp32
+    - esp32c3
+    - esp32h2
+    - esp32s3
+    - esp32c2
+    - esp32c6
+    version: 0.1.18
+  espressif/cjson:
+    component_hash: e788323270d90738662d66fffa910bfe1fba019bba087f01557e70c40485b469
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    version: 1.7.19~2
+  espressif/cmake_utilities:
+    component_hash: 351350613ceafba240b761b4ea991e0f231ac7a9f59a9ee901f751bddc0bb18f
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=4.1'
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    version: 0.5.3
+  espressif/esp_encrypted_img:
+    component_hash: c04b8f14c45a836b4f9f8dc6e7767a5adc034f00492354423053e042c5aeb342
+    dependencies:
+    - name: espressif/esp_secure_cert_mgr
+      registry_url: https://components.espressif.com
+      require: private
+      rules:
+      - if: idf_version >= 5.3
+      version: '>=2.5.1'
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    version: 2.7.1
+  espressif/esp_secure_cert_mgr:
+    component_hash: 0b83e150f48d6839f0a0a8753850be55a51cc298cfca7658f21d355d5f41dd67
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=4.3'
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    version: 2.9.3
   espressif/led_strip:
     component_hash: 28621486f77229aaf81c71f5e15d6fbf36c2949cf11094e07090593e659e7639
     dependencies:
@@ -14,8 +91,9 @@ dependencies:
       type: idf
     version: 6.0.3
 direct_dependencies:
+- espressif/ble_ota
 - espressif/led_strip
 - idf
-manifest_hash: 47865384640156744318ca0c204e59c5a33f52ef98377c6bbfca89faa85c1879
+manifest_hash: 60cb45d6ff938801a2d18ba5428f41205c2c4e5c7aa80cb66e2242764ef59b0a
 target: esp32s3
 version: 3.0.0

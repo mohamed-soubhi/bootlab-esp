@@ -3,3 +3,7 @@ dependencies:
   # https://components.espressif.com/api/components/espressif/led_strip),
   # pinned exact per project convention (see scripts/versions.env).
   espressif/led_strip: "3.0.3"
+  # BL-027 IDF OTA over BLE. Registry check 2026-09-21: 0.1.18 (published 2026-09-20) requires
+  # IDF >=4.4, lists esp32s3, not yanked, and has an explicit `idf_version >=6.0` rule (cjson).
+  # Pinned exact per project convention (see scripts/versions.env).
+  espressif/ble_ota: "0.1.18"
