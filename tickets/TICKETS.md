@@ -8,13 +8,13 @@
 
 `█████████████░░░░░░░░░░░░░░░░░` **23/52 done (44%)**
 
-- **IDF track:** `█████████████████░░░` 35/42
+- **IDF track:** `██████████████████░░` 37/42
 - **Zephyr track:** `██████░░░░░░░░░░░░░░` 11/37
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 17
-    "doing" : 12
+    "todo" : 15
+    "doing" : 14
     "done" : 23
 ```
 
@@ -28,7 +28,7 @@ pie showData title Ticket status
 | E2 | P2 | ESP32-S3 #1 — Zephyr | `░░░░░░░░░░░░` | 0/9 | ⬜ todo | §4.1, §5, §6, §7.1, §8 P2 |
 | E3 | P3 | labflash CLI | `███░░░░░░░░░` | 2/7 | 🔵 doing | §8 P3 |
 | E4 | P4 | HIL tests + CI | `░░░░░░░░░░░░` | 0/9 | 🔵 doing | §8 P4 |
-| E5 | P5 | Soak, docs, handover | `░░░░░░░░░░░░` | 0/6 | ⬜ todo | §8 P5 |
+| E5 | P5 | Soak, docs, handover | `░░░░░░░░░░░░` | 0/6 | 🔵 doing | §8 P5 |
 
 ## Epic dependency graph
 
@@ -40,7 +40,7 @@ flowchart LR
     E2["P2 ESP32-S3 #1 — Zephyr<br/>0/9"]:::todo
     E3["P3 labflash CLI<br/>2/7"]:::doing
     E4["P4 HIL tests + CI<br/>0/9"]:::doing
-    E5["P5 Soak, docs, handover<br/>0/6"]:::todo
+    E5["P5 Soak, docs, handover<br/>0/6"]:::doing
     E0 --> EL
     E1 --> E3
     E2 --> E3
@@ -913,8 +913,8 @@ Stability gate.
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
 | ⬜ | BL-060 | Overnight soak ×100 | S | zephyr, idf | BL-057 |  |
-| ⬜ | BL-061 | README quick start | S | host | BL-057 |  |
-| ⬜ | BL-062 | Recovery runbook + adding-a-board guide | S | host | BL-057 |  |
+| 🔵 | BL-061 | README quick start | S | host | BL-057 |  |
+| 🔵 | BL-062 | Recovery runbook + adding-a-board guide | S | host | BL-057 |  |
 | ⬜ | BL-063 | Final PLAN.md update | S | host | BL-060 |  |
 | ⬜ | BL-063a | IDF lessons learned (retrospective) | S | host | BL-060, BL-061, BL-062, BL-063, BL-056a |  |
 | ⬜ | BL-063b | HTML presentation of the IDF track | M | host | BL-063a |  |
@@ -939,11 +939,11 @@ T16 repeated per board/transport.
 
 </details>
 
-<details><summary>⬜ <b>BL-061</b> — README quick start</summary>
+<details><summary>🔵 <b>BL-061</b> — README quick start</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
-- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
+- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
 - **Depends on:** BL-057  
 - **Plan:** §8 P5
 
@@ -951,17 +951,17 @@ T16 repeated per board/transport.
 
 **Acceptance criteria**
 *IDF scope*
-- [ ] Fresh clone reaches T02 green on the idf board following README only
+- [x] Fresh clone reaches T02 green on the idf board following README only
 *Zephyr scope*
 - [ ] Fresh clone reaches T02 green on the zephyr board following README only
 
 </details>
 
-<details><summary>⬜ <b>BL-062</b> — Recovery runbook + adding-a-board guide</summary>
+<details><summary>🔵 <b>BL-062</b> — Recovery runbook + adding-a-board guide</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
-- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
+- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
 - **Depends on:** BL-057  
 - **Plan:** §8 P5
 
@@ -969,7 +969,7 @@ docs/recovery.md, docs/adding-a-board.md.
 
 **Acceptance criteria**
 *IDF scope*
-- [ ] Recovery tested once for the idf board from the docs
+- [x] Recovery tested once for the idf board from the docs
 *Zephyr scope*
 - [ ] Recovery tested once for the zephyr board from the docs
 
@@ -1093,8 +1093,8 @@ flowchart TB
     end
     subgraph E5_g["P5 Soak, docs, handover"]
         BL060["BL-060"]:::todo
-        BL061["BL-061"]:::todo
-        BL062["BL-062"]:::todo
+        BL061["BL-061"]:::doing
+        BL062["BL-062"]:::doing
         BL063["BL-063"]:::todo
         BL063a["BL-063a"]:::todo
         BL063b["BL-063b"]:::todo

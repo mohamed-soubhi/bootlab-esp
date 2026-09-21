@@ -1317,7 +1317,7 @@
       "ac": [
         "Fresh clone reaches T02 green following README only"
       ],
-      "status": "todo",
+      "status": "doing",
       "pr": "",
       "tracks": [
         "idf",
@@ -1332,7 +1332,7 @@
         ]
       },
       "track_status": {
-        "idf": "todo",
+        "idf": "done",
         "zephyr": "todo"
       }
     },
@@ -1351,7 +1351,7 @@
       "ac": [
         "Recovery tested once per board from the docs"
       ],
-      "status": "todo",
+      "status": "doing",
       "pr": "",
       "tracks": [
         "idf",
@@ -1366,7 +1366,7 @@
         ]
       },
       "track_status": {
-        "idf": "todo",
+        "idf": "done",
         "zephyr": "todo"
       }
     },
