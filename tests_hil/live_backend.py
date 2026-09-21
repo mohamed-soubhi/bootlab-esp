@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import time
 from argparse import Namespace
 from dataclasses import dataclass
 from pathlib import Path
@@ -96,6 +97,7 @@ class LiveBackend:
     update_fn: Callable[[Namespace], int]
     measure_fn: Callable[[float, float | None, int], tuple[int, float, bool]]
     timeout_s: float = 240.0
+    transport_factory: Callable[[], object] | None = None
 
     @classmethod
     def create(cls, port: str, board_ip: str, images_dir: Path | None = None, keys_dir: Path | None = None,
@@ -134,6 +136,57 @@ class LiveBackend:
                     return last
             sleep_fn(poll_s)
         return None
+
+    def _transport(self):
+        if self.transport_factory is not None:
+            return self.transport_factory()
+        from labflash.identify import SerialLineTransport
+        return SerialLineTransport(self.port)
+
+    def identify_fields(self) -> dict:
+        from labflash.identify import identify
+        tr = self._transport()
+        try:
+            return identify(tr)
+        finally:
+            tr.close()
+
+    def stress(self, n: int) -> tuple[int, int]:
+        """n consecutive VER? on ONE connection; returns (well-formed answers, n)."""
+        from labflash.identify import get_version
+        tr = self._transport()
+        ok = 0
+        try:
+            for _ in range(n):
+                try:
+                    if get_version(tr).get("app"):
+                        ok += 1
+                except Exception:  # noqa: S110, BLE001 - counted as a failure
+                    pass
+        finally:
+            tr.close()
+        return ok, n
+
+    def abuse_framing(self) -> dict:
+        """Send bad-CRC, oversize and garbage lines to the real device; report whether it stayed up and sane."""
+        from labflash.identify import _read_frame, get_state, get_version, identify
+        tr = self._transport()
+        try:
+            up0 = int(get_state(tr)["uptime_ms"])
+            tr.write(b"$LAB,ID?*0000\n")
+            tr.write(b"$LAB,ID?," + b"a" * 300 + b"\n")
+            tr.write(b"\xff\x00garbage!!\n")
+            errs: list[str] = []
+            deadline = time.monotonic() + 1.5   # the device answers junk with ERR frames; collect, do not misread them
+            while time.monotonic() < deadline:
+                frame = _read_frame(tr, deadline)
+                if frame and frame[0] == "ERR":
+                    errs.append(frame[1].get("code", "?"))
+            up1 = int(get_state(tr)["uptime_ms"])
+            return {"uptime_before": up0, "uptime_after": up1, "no_reset": up1 > up0, "err_codes": errs,
+                    "version_ok": bool(get_version(tr).get("app")), "uid": identify(tr).get("uid")}
+        finally:
+            tr.close()
 
     def snapshot(self) -> Snapshot:
         return self.snapshot_fn()

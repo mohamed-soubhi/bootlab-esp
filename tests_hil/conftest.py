@@ -322,6 +322,12 @@ class HilRig:
         s = self.backend.snapshot()
         return {"app": s.app, "slot": s.slot, "confirmed": s.confirmed, "uid": s.uid}
 
+    def identify_fields(self) -> dict[str, str]:
+        if self.is_mock:
+            return {"uid": "E072A1AA2390", "hw": "esp32s3_devkitc", "mcu": "esp32s3"}
+        assert self.backend is not None
+        return self.backend.identify_fields()
+
     def reset_board(self) -> None:
         """Host-driven hardware reset into the app (live only)."""
         assert self.backend is not None

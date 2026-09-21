@@ -128,3 +128,46 @@ def test_wait_snapshot_tolerates_reboot_and_times_out(tmp_path):
     assert got is not None and got.app == "1.0.0"
     be.snapshot_fn = lambda: snap("2.0.0")
     assert be.wait_snapshot(lambda s: s.app == "1.0.0", timeout_s=3, poll_s=1, sleep_fn=lambda _: None) is None
+
+
+class FakeDevice:
+    """Minimal LABID device: answers ID?/VER?/STATE? lines, counts uptime, ignores junk."""
+    def __init__(self, drop_every=0):
+        self.buf, self.out, self.n, self.drop = b"", b"", 0, drop_every
+
+    def write(self, data):
+        from labflash.labid import build_frame
+        self.buf += data
+        while b"\n" in self.buf:
+            line, self.buf = self.buf.split(b"\n", 1)
+            self.n += 1
+            if self.drop and self.n % self.drop == 0:
+                continue
+            reply = {b"$LAB,ID?": ("ID", {"uid": "E072A1AA2390", "hw": "x", "mcu": "y"}),
+                     b"$LAB,VER?": ("VER", {"app": "1.0.0", "slot": "0", "confirmed": "1"}),
+                     b"$LAB,STATE?": ("STATE", {"uptime_ms": str(1000 + self.n * 10)})}.get(line)
+            if reply:
+                self.out += build_frame(reply[0], reply[1]).encode()
+
+    def read1(self):
+        b, self.out = self.out[:1], self.out[1:]
+        return b
+
+    def close(self):
+        pass
+
+
+def _be_with(tmp_path, dev):
+    be, _ = make(tmp_path, [])
+    be.transport_factory = lambda: dev
+    return be
+
+
+def test_stress_counts_good_answers(tmp_path):
+    ok, n = _be_with(tmp_path, FakeDevice()).stress(5)
+    assert (ok, n) == (5, 5)
+
+
+def test_abuse_framing_reports_no_reset_and_sane(tmp_path):
+    r = _be_with(tmp_path, FakeDevice()).abuse_framing()
+    assert "err_codes" in r and r["no_reset"] and r["version_ok"] and r["uid"] == "E072A1AA2390"

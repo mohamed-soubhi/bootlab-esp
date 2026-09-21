@@ -26,11 +26,7 @@ def test_t10_identify_mapping(hil_rig: HilRig) -> None:
     board_cfg = rig["boards"]["idf"]
     expected_mac = board_cfg["mac"].replace(":", "").upper()
 
-    if hil_rig.is_mock:
-        actual_uid = expected_mac
-    else:
-        # In live mode, verify LABID or HTTP reported identity
-        actual_uid = expected_mac
+    actual_uid = expected_mac if hil_rig.is_mock else str(hil_rig.identify_fields().get("uid", "")).upper()
 
     assert actual_uid == expected_mac, f"UID mismatch: expected {expected_mac}, got {actual_uid}"
     hil_rig.log_artifact("t10_identify.txt", f"T10 identify mapped {hil_rig.board} to {actual_uid}\n")
@@ -40,23 +36,15 @@ def test_t10_identify_mapping(hil_rig: HilRig) -> None:
 @pytest.mark.labid
 def test_t11_id_fields_and_uid_stability(hil_rig: HilRig) -> None:
     """T11: ID fields valid, UID stable across repeated queries."""
-    expected_uid = "E072A1AA2390"
+    rig = load_rig_config()
+    expected_uid = rig["boards"]["idf"]["mac"].replace(":", "").upper()
+    expected_hw, expected_mcu = rig["boards"]["idf"]["hw"], rig["boards"]["idf"]["mcu"]
 
     for _ in range(5):
-        if hil_rig.is_mock:
-            uid = expected_uid
-            hw = "esp32s3_devkitc"
-            mcu = "esp32s3"
-        else:
-            status = hil_rig.query_http_version()
-            assert status is not None
-            uid = expected_uid
-            hw = "esp32s3_devkitc"
-            mcu = "esp32s3"
-
-        assert uid == expected_uid
-        assert hw == "esp32s3_devkitc"
-        assert mcu == "esp32s3"
+        fields = hil_rig.identify_fields()  # live: real LABID ID? each time
+        assert str(fields.get("uid", "")).upper() == expected_uid
+        assert fields.get("hw") == expected_hw, fields
+        assert fields.get("mcu") == expected_mcu, fields
 
     hil_rig.log_artifact("t11_stability.txt", f"T11 UID {expected_uid} verified stable\n")
 
@@ -71,13 +59,8 @@ def test_t12_version_consistency(hil_rig: HilRig) -> None:
     http_app = http_status.get("version") or http_status.get("app")
     http_slot = http_status.get("slot")
 
-    if hil_rig.is_mock:
-        labid_app = "1.0.0"
-        labid_slot = 0
-    else:
-        # Live target verified via labflash info
-        labid_app = "1.0.0"
-        labid_slot = 0
+    labid = hil_rig.state()  # live: LABID (independent of HTTPS); mock: simulated
+    labid_app, labid_slot = labid.get("app"), labid.get("slot")
 
     assert http_app == labid_app, f"Consistency failure: HTTP app {http_app} != LABID app {labid_app}"
     assert http_slot == labid_slot, f"Consistency failure: HTTP slot {http_slot} != LABID slot {labid_slot}"
@@ -107,7 +90,15 @@ def test_t13_labid_robustness_framing(hil_rig: HilRig) -> None:
     res_g = p_garbage.feed("RandomNonFrameGarbage12345!@#$%\n")
     assert res_g in (IGNORED, ERROR)
 
-    # Verify device remains online after framing abuse
+    if not hil_rig.is_mock:
+        r = hil_rig.backend.abuse_framing()  # real bad-CRC / >200 B / garbage lines sent to the board
+        assert r["no_reset"], f"board reset under framing abuse: {r}"
+        assert r["version_ok"], f"board stopped answering after abuse: {r}"
+        assert "crc" in r["err_codes"], f"board did not reject the bad-CRC frame with ERR crc: {r}"
+        hil_rig.log_artifact("t13_robustness.txt", f"T13 LIVE: {r}\n")
+        return
+
+    # Mock: device remains online after framing abuse
     st = hil_rig.query_http_version()
     assert st is not None
     assert st.get("confirmed") is True
@@ -119,13 +110,11 @@ def test_t13_labid_robustness_framing(hil_rig: HilRig) -> None:
 @pytest.mark.labid
 def test_t14_labid_query_stress(hil_rig: HilRig) -> None:
     """T14: Consecutive queries under normal operation, 0 corrupt responses."""
-    success_count = 0
-    total = 20  # Fast verification during pytest run, scalable to 1000
-
-    for _ in range(total):
-        st = hil_rig.query_http_version()
-        if st and (st.get("version") or st.get("app")):
-            success_count += 1
+    total = 20 if hil_rig.is_mock else 200
+    if hil_rig.is_mock:
+        success_count = sum(1 for _ in range(total) if (hil_rig.query_http_version() or {}).get("app"))
+    else:
+        success_count, total = hil_rig.backend.stress(total)  # LABID VER? on one real connection
 
     assert success_count == total, f"Query stress had failures: {success_count}/{total} passed"
     hil_rig.log_artifact("t14_stress.txt", f"T14 query stress: {success_count}/{total} successful\n")
@@ -139,7 +128,7 @@ def test_t15_port_resolution_speed(hil_rig: HilRig) -> None:
         time.sleep(0.01)
         port = "COM14"
     else:
-        port = hil_rig.port or "COM14"
+        port = resolve_board("idf", wait_s=5.0)  # real enumeration lookup by USB serial
     elapsed = time.monotonic() - t0
 
     assert port is not None

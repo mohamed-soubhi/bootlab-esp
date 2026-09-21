@@ -17,8 +17,9 @@ from tests_hil.conftest import HilRig
 @pytest.mark.power
 def test_t17_power_cut_recovery(hil_rig: HilRig) -> None:
     """T17: Power cut during update -> recovers to known-good v1 on restore."""
-    if not shutil.which("uhubctl") and not hil_rig.is_mock:
+    if not shutil.which("uhubctl"):
         pytest.skip("No switchable USB power hub (uhubctl) detected; skipping power-cut test")
+    pytest.skip("T17 not implemented even with a hub: no power-cut driver yet; NOT verified on hardware")
 
     # In mock or hardware with uhubctl: verify recovery behavior
     status = hil_rig.query_http_version()
