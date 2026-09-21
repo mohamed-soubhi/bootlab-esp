@@ -25,12 +25,20 @@
 #include "esp_task_wdt.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "labid_port.h"
 #include "led_strip.h"
 #include "sdkconfig.h"
 
 static const char *TAG = "blink_diag";
 
 #define APP_LED_GPIO CONFIG_APP_LED_GPIO /* UNCONFIRMED, see Kconfig.projbuild */
+
+/* Configured LED rate reported over LABID: v2 blinks at 4 Hz, all others 1 Hz. */
+#if CONFIG_APP_VARIANT_V2
+#define APP_BLINK_HZ_STR "4"
+#else
+#define APP_BLINK_HZ_STR "1"
+#endif
 
 static atomic_uint_least32_t s_toggle_count = 0;
 
@@ -119,4 +127,12 @@ void app_main(void)
     led_strip_clear(strip);
 
     xTaskCreate(blink_task, "blink", 4096, strip, 5, NULL);
+
+    /* BL-022: answer LABID requests over USB-Serial-JTAG (PLAN 7.3). */
+    const struct labid_port_app labid_app = {
+        .variant = app_get_variant(),
+        .blink_hz = APP_BLINK_HZ_STR,
+        .toggle_count = app_get_toggle_count,
+    };
+    ESP_ERROR_CHECK(labid_port_start(&labid_app));
 }

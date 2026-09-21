@@ -18,14 +18,15 @@
 if(ESP_PLATFORM)
   # --- ESP-IDF component ---
   idf_component_register(
-    SRCS "src/labid.c"
+    SRCS "src/labid.c" "src/labid_dispatch.c"
     INCLUDE_DIRS "include"
   )
 else()
   # --- Zephyr module ---
   if(CONFIG_LABID)
     zephyr_library()
-    zephyr_library_sources(${CMAKE_CURRENT_SOURCE_DIR}/src/labid.c)
+    zephyr_library_sources(${CMAKE_CURRENT_SOURCE_DIR}/src/labid.c
+                           ${CMAKE_CURRENT_SOURCE_DIR}/src/labid_dispatch.c)
     zephyr_library_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
   endif()
 endif()
