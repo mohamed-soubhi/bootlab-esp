@@ -119,6 +119,10 @@ NEXT:
   boot log (`App version`, `Compile time`, `ELF SHA256`).
 - Hang variant: task WDT panic at ~5.0 s (`rst:0xc`, PC in `task_wdt_timeout_handling`).
 - v2 / no_confirm / bad_sig builds predate R15: rebuild with per-dir sdkconfig before flashing them.
+- PowerShell / usbipd interop from WSL2: `powershell.exe` blocks indefinitely in WSL2 unless stdin is
+  redirected with `< /dev/null`. Can switch the IDF board (`busid 7-4`) directly from WSL bash:
+  - Attach to WSL2: `powershell.exe -Command "usbipd attach --wsl --busid 7-4" < /dev/null`
+  - Detach to Windows: `powershell.exe -Command "usbipd detach --busid 7-4" < /dev/null`
 
 ## HARD RULES STILL IN FORCE
 - Zephyr hold: do NOT touch ~/zephyr-ws, no Zephyr build.
@@ -129,6 +133,8 @@ NEXT:
 - Never burn eFuses; never commit keys/, backups/, *.pem.
 
 ## Known environment traps
+- PowerShell from WSL2: always redirect stdin (`< /dev/null`) when invoking `powershell.exe` from bash
+  subshells to prevent hangs waiting on standard input.
 - esptool: venv 5.4.0 = ~/bootlab-esp/.venv/bin/esptool (HAS elf2image);
   Debian /usr/bin/esptool 4.7.0 shadows it if .venv/bin not first on PATH.
   Export: `export PATH="$HOME/bootlab-esp/.venv/bin:$PATH"`.
