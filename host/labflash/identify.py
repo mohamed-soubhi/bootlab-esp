@@ -147,14 +147,61 @@ def cross_check_identity(id_fields: dict, expected: dict) -> None:
         )
 
 
-def measure_toggles(transport: Transport, duration_s: float = 5.0) -> int:
-    """Sample STATE.toggles at t0 and t0+duration_s, return the delta.
+def query_info(transport: Transport) -> dict:
+    """Query ID, VER, and STATE, returning combined dictionary."""
+    id_fields = identify(transport)
+    ver_fields = get_version(transport)
+    state_fields = get_state(transport)
+    return {
+        "id": id_fields,
+        "version": ver_fields,
+        "state": state_fields,
+    }
 
-    This is the "measure within +/-1 toggle over 5s" AC: it verifies the
-    host's measurement method is accurate against the device's own
-    counter, not a fixed assumption about blink rate.
+
+def map_board_by_id(transport: Transport, rig: dict | None = None) -> tuple[str, dict]:
+    """Identify the board on this transport and match it against rig.yaml.
+
+    Returns (board_key, id_fields).
     """
-    start = int(get_state(transport)["toggles"])
+    from labflash.core import load_rig_config
+    rig = rig if rig is not None else load_rig_config()
+    id_fields = identify(transport)
+    actual_uid = str(id_fields.get("uid", "")).replace(":", "").lower()
+
+    for board_key, bcfg in rig.get("boards", {}).items():
+        expected_uid = str(bcfg.get("mac", "")).replace(":", "").lower()
+        if actual_uid == expected_uid:
+            return board_key, id_fields
+
+    raise LabidError(f"Device reports uid {actual_uid}, which matches no board in rig.yaml")
+
+
+def measure(
+    transport: Transport,
+    duration_s: float = 5.0,
+    expect_hz: float | None = None,
+    tolerance_toggles: int = 1,
+) -> tuple[int, float, bool]:
+    """Measure toggle delta over duration_s and compute frequency.
+
+    Returns (toggle_delta, measured_hz, passed).
+    """
+    t0 = time.monotonic()
+    s0 = get_state(transport)
+    start_toggles = int(s0["toggles"])
     time.sleep(duration_s)
-    end = int(get_state(transport)["toggles"])
-    return end - start
+    t1 = time.monotonic()
+    s1 = get_state(transport)
+    end_toggles = int(s1["toggles"])
+
+    elapsed = t1 - t0
+    delta = end_toggles - start_toggles
+    hz = (delta / elapsed) / 2.0 if elapsed > 0 else 0.0
+
+    passed = True
+    if expect_hz is not None:
+        expected_toggles = int(round(expect_hz * elapsed * 2.0))
+        passed = abs(delta - expected_toggles) <= tolerance_toggles
+
+    return delta, hz, passed

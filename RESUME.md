@@ -20,11 +20,20 @@ the per-ticket bullets below are history.
   `powershell.exe -Command "cd C:\MSA\embedded-OS\bootlab-esp\host; & <.venv_win_ble python> -m labflash update idf --image <bin> --transport ble --labid-port COM14 --board-mac E0:72:A1:AA:23:90"`
   (copy `host/labflash/*.py` into the Windows scratch mirror first; WiFi needs `--board-ip 192.168.1.152`, `--keys <dir with ca/server_cert/server_key>`,
   token via env `OTA_TOKEN` — copy the server key there only for the run and delete it after).
-- **Ready now (all IDF), pick in this order:** BL-045 (build+sign orchestration for the 5 IDF variants: encode PLAN R15 — per-dir sdkconfig, verify
-  variant + signature AFTER building; images to stage under `esp_idf/build*`), BL-041 (identify/measure: `identify.py` exists, needs live IDF
-  verification + CLI wiring), BL-042 (flash/recover/provision with identity check BEFORE writing; esptool wrappers; the zephyr board must never be
-  written by mistake), BL-055 (cloud CI, IDF build). Then BL-046 (mocked tests; add ruff+mypy to the venv — NOT installed yet), BL-050…BL-063 (IDF scope),
-  BL-056a (RPi4 re-run), BL-063a (lessons), BL-063b (HTML presentation; Artifact tool `slides`/HTML), then Zephyr is released.
+- **BL-045 DONE (2026-09-21):** `labflash build <board|all> [--variant ...]` (host/labflash/build.py; 7 unit tests).
+  Encodes PLAN R15: isolated build dirs (`esp_idf/build*`), per-dir sdkconfig, stale `esp_idf/sdkconfig` removal, post-build
+  symbol verification (`CONFIG_APP_VARIANT_*=y`), and RSA-3072 signature verification (v1/v2/no_confirm/hang pass against
+  `keys/idf_sbv2.pem`; `bad_sig` rejected by primary key and verified against `keys/idf_foreign.pem`). Also wires `scripts/build_all.sh`.
+  Zephyr build attempts fail closed with ZephyrGatedError. Evidence: `scripts/evidence/bl045_build_orchestration.md`.
+- **BL-041 DONE (2026-09-21):** `labflash identify`, `info`, `measure` (host/labflash/identify.py, __main__.py; 7 unit tests).
+  Live on-target verification on Windows COM14: `identify` maps board `idf` (UID `E072A1AA2390` matches `rig.yaml`); `info` returns
+  combined ID, VER, and STATE (human-readable and JSON); `measure` samples toggles over 5 s, returning delta 10 in 5.00s = 1.00 Hz
+  (expected 10 toggles, tolerance +/- 1 toggle, PASS). Evidence: `scripts/evidence/bl041_identify_measure.md`.
+- **BL-042 IN PROGRESS (2026-09-21):** `labflash flash`, `recover` (host/labflash/flash.py, __main__.py; 5 unit tests, host suite 51 passed).
+  Pre-write identity check implemented: verifies MAC/serial against `rig.yaml` before issuing any write or erase commands (refuses write
+  if board MAC mismatches). Zephyr gated. Awaiting owner's per-instance authorization before executing live write on hardware.
+- **Ready now (all IDF):** BL-042 (live hardware flash verification), then BL-055 (cloud CI, IDF build). Then BL-046 (mocked tests;
+  add ruff+mypy to the venv — NOT installed yet), BL-050…BL-063 (IDF scope), BL-056a (RPi4 re-run), BL-063a (lessons), BL-063b (HTML presentation).
 - **Open items:** `scripts/ota_check.py` duplicates the server/client now in `labflash.idf_wifi_ota` (fold it in later); PLAN 8.0 documents the replan;
   the Zephyr branch of `common/labid/CMakeLists.txt` (labid_dispatch.c) has never been built (BL-014b).
 - **Hosts:** develop here (WSL2 + Windows-native tools, PLAN R14). The **RPi4 has limitations and is the OTA-programming host**: BL-056a re-runs

@@ -12,10 +12,51 @@ def main(argv=None):
     resolve_p = sub.add_parser("resolve", help="resolve board device paths by USB serial (BL-040)")
     resolve_p.add_argument("--json", action="store_true", help="machine-readable JSON output")
     resolve_p.add_argument("--wait", type=float, default=5.0, help="seconds to wait for re-enumeration (default 5)")
-    sub.add_parser("identify", help="(later epic) map boards by LABID")
-    sub.add_parser("info", help="(later epic) show board identity/versions")
-    sub.add_parser("flash", help="(later epic) flash a board")
-    sub.add_parser("recover", help="(later epic) erase + factory flash")
+    id_p = sub.add_parser(
+        "identify",
+        help="map boards by LABID query over serial (BL-041)",
+        description="Sends LABID $LAB,ID? over serial and matches device UID against rig.yaml.",
+    )
+    id_p.add_argument("--port", help="serial port to query (default: resolve all boards)")
+    id_p.add_argument("--board", choices=["idf", "zephyr"], help="board to identify")
+    id_p.add_argument("--json", action="store_true", help="output JSON")
+
+    info_p = sub.add_parser(
+        "info",
+        help="show board identity, software versions, and runtime state (BL-041)",
+        description="Queries LABID ID?, VER?, and STATE? from the board.",
+    )
+    info_p.add_argument("board", choices=["idf", "zephyr"], help="board to query")
+    info_p.add_argument("--port", help="serial port to query (default: resolved from rig.yaml)")
+    info_p.add_argument("--json", action="store_true", help="output JSON")
+
+    meas_p = sub.add_parser(
+        "measure",
+        help="measure LED blink rate over LABID from toggle counter (BL-041)",
+        description="Samples STATE.toggles over duration and verifies measured Hz matches expected blink rate.",
+    )
+    meas_p.add_argument("board", choices=["idf", "zephyr"], help="board to measure")
+    meas_p.add_argument("--port", help="serial port to query (default: resolved from rig.yaml)")
+    meas_p.add_argument("--seconds", type=float, default=5.0, help="sample duration in seconds (default: 5.0)")
+    meas_p.add_argument("--expect-hz", type=float, default=None, help="expected blink rate in Hz")
+    meas_p.add_argument("--tolerance", type=int, default=1, help="acceptable toggle delta error (default: +/-1 toggle)")
+
+    flash_p = sub.add_parser(
+        "flash",
+        help="factory flash a board with identity check before writing (BL-042)",
+        description="Flashes bootloader, partition table, otadata, and factory app to the board. "
+                    "Enforces mandatory hardware identity check before writing.",
+    )
+    flash_p.add_argument("board", choices=["idf", "zephyr"], help="board to flash")
+    flash_p.add_argument("--port", help="serial port (default: resolved from rig.yaml)")
+
+    rec_p = sub.add_parser(
+        "recover",
+        help="erase flash and factory flash a board with identity check before writing (BL-042)",
+        description="Erases flash and re-flashes factory binaries with identity check before writing.",
+    )
+    rec_p.add_argument("board", choices=["idf", "zephyr"], help="board to recover")
+    rec_p.add_argument("--port", help="serial port (default: resolved from rig.yaml)")
     upd = sub.add_parser(
         "update", help="OTA an ESP-IDF board over BLE or WiFi and verify it via LABID (BL-043)",
         description="Sends a signed app image to the board, then verifies: it runs the version the image carries, "
@@ -51,6 +92,21 @@ def main(argv=None):
     prov_p.add_argument("--env-file", default="credentials.env", help="Path to credentials env file (default: credentials.env)")
     prov_p.add_argument("--port", help="Explicit serial port (defaults to resolved rig.yaml port)")
 
+    bld_p = sub.add_parser(
+        "build",
+        help="build and sign application image variants (BL-045)",
+        description="Builds and signs IDF / Zephyr application image variants per PLAN R15. "
+                    "Enforces per-dir sdkconfig and verifies symbols and RSA signatures post-build."
+    )
+    bld_p.add_argument("board", choices=["idf", "zephyr", "all"], help="board to build for")
+    bld_p.add_argument(
+        "--variant",
+        choices=["v1", "v2", "no_confirm", "hang", "bad_sig", "all"],
+        default=None,
+        help="variant to build (default: all)",
+    )
+    bld_p.add_argument("--clean", action="store_true", help="clean build directory before building")
+
     args = p.parse_args(argv)
 
     if args.cmd == "doctor":
@@ -63,6 +119,18 @@ def main(argv=None):
     if args.cmd == "update":
         from labflash.update_cli import run_update
         return run_update(args)
+    if args.cmd == "build":
+        return _build_cmd(args)
+    if args.cmd == "identify":
+        return _identify_cmd(args)
+    if args.cmd == "info":
+        return _info_cmd(args)
+    if args.cmd == "measure":
+        return _measure_cmd(args)
+    if args.cmd == "flash":
+        return _flash_cmd(args, recover=False)
+    if args.cmd == "recover":
+        return _flash_cmd(args, recover=True)
     p.print_help()
     return 1
 
@@ -131,6 +199,174 @@ def _resolve_cmd(json_out: bool, wait_s: float) -> int:
         for board, path in mapping.items():
             print(f"{board}: {path}")
     return 0
+
+
+def _build_cmd(args) -> int:
+    from labflash.build import BuildError, ZephyrGatedError, build_board
+
+    try:
+        results = build_board(args.board, variant=args.variant, clean=args.clean)
+        print("\n=== Build & Signature Verification Results ===")
+        print(f"{'Variant':<12} {'Version':<16} {'Size (B)':<10} {'Symbol Check':<15} {'Signature':<12}")
+        print("-" * 75)
+        for var, res in results.items():
+            var_ok = "PASS" if res.verified_variant else "FAIL"
+            sig_ok = "PASS" if res.verified_signature else "FAIL"
+            print(f"{var:<12} {res.project_ver:<16} {res.binary_size:<10} {var_ok:<15} {sig_ok:<12}")
+            if res.details:
+                print(f"  -> {res.binary_path} ({res.details})")
+        print("\nAll built variants verified successfully (PLAN R15).")
+        return 0
+    except ZephyrGatedError as e:
+        print(f"[BLOCKED] {e}", file=sys.stderr)
+        return 2
+    except BuildError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        return 1
+
+
+def _identify_cmd(args) -> int:
+    import json as jsonlib
+    from labflash.core import BoardResolutionError, load_rig_config, resolve_board
+    from labflash.identify import LabidError, SerialLineTransport, identify, map_board_by_id
+
+    rig = load_rig_config()
+    out = {}
+
+    ports_to_check: list[tuple[str, str | None]] = []
+    if args.port:
+        ports_to_check.append((args.port, args.board))
+    elif args.board:
+        try:
+            p = resolve_board(args.board, rig=rig)
+            ports_to_check.append((p, args.board))
+        except BoardResolutionError as e:
+            print(f"ERROR: {e}", file=sys.stderr)
+            return 1
+    else:
+        for bkey in rig.get("boards", {}):
+            try:
+                p = resolve_board(bkey, rig=rig, wait_s=0.5)
+                ports_to_check.append((p, bkey))
+            except BoardResolutionError:
+                pass
+
+    if not ports_to_check:
+        print("ERROR: no boards resolved to scan", file=sys.stderr)
+        return 1
+
+    for port, hint in ports_to_check:
+        try:
+            trans = SerialLineTransport(port)
+            try:
+                bname, id_fields = map_board_by_id(trans, rig=rig)
+                out[bname] = {"port": port, "id": id_fields}
+            finally:
+                trans.close()
+        except Exception as e:
+            if args.board or args.port:
+                print(f"ERROR on {port}: {e}", file=sys.stderr)
+                return 1
+
+    if args.json:
+        print(jsonlib.dumps({"ok": True, "identified": out}))
+    else:
+        print(f"{'Board':<10} {'Port':<16} {'UID':<16} {'MCU':<12} {'Board Name'}")
+        print("-" * 65)
+        for bname, info in out.items():
+            idf = info["id"]
+            print(f"{bname:<10} {info['port']:<16} {idf.get('uid', ''):<16} {idf.get('mcu', ''):<12} {idf.get('board', '')}")
+    return 0
+
+
+def _info_cmd(args) -> int:
+    import json as jsonlib
+    from labflash.core import BoardResolutionError, resolve_board
+    from labflash.identify import SerialLineTransport, query_info
+
+    port = args.port
+    if not port:
+        try:
+            port = resolve_board(args.board)
+        except BoardResolutionError as e:
+            print(f"ERROR: {e}", file=sys.stderr)
+            return 1
+
+    try:
+        trans = SerialLineTransport(port)
+        try:
+            info = query_info(trans)
+        finally:
+            trans.close()
+    except Exception as e:
+        print(f"ERROR querying {args.board} on {port}: {e}", file=sys.stderr)
+        return 1
+
+    if args.json:
+        print(jsonlib.dumps({"ok": True, "board": args.board, "port": port, **info}))
+    else:
+        id_f = info["id"]
+        ver_f = info["version"]
+        st_f = info["state"]
+        print(f"=== {args.board} on {port} ===")
+        print(f"Identity : UID={id_f.get('uid')} MCU={id_f.get('mcu')} HW={id_f.get('hw')} OS={id_f.get('os')} Flash={id_f.get('flash_kb')}KB")
+        print(f"Version  : App={ver_f.get('app')} Git={ver_f.get('git')} Slot={ver_f.get('slot')} Confirmed={ver_f.get('confirmed')} Variant={ver_f.get('variant')}")
+        print(f"State    : Toggles={st_f.get('toggles')} Rate={st_f.get('blink_hz')}Hz Uptime={st_f.get('uptime_ms')}ms Reset={st_f.get('reset')}")
+    return 0
+
+
+def _measure_cmd(args) -> int:
+    from labflash.core import BoardResolutionError, resolve_board
+    from labflash.identify import SerialLineTransport, get_state, measure
+
+    port = args.port
+    if not port:
+        try:
+            port = resolve_board(args.board)
+        except BoardResolutionError as e:
+            print(f"ERROR: {e}", file=sys.stderr)
+            return 1
+
+    try:
+        trans = SerialLineTransport(port)
+        try:
+            expect_hz = args.expect_hz
+            if expect_hz is None:
+                try:
+                    s = get_state(trans)
+                    expect_hz = float(s.get("blink_hz", 1.0))
+                except Exception:
+                    expect_hz = 1.0
+            delta, hz, ok = measure(
+                trans,
+                duration_s=args.seconds,
+                expect_hz=expect_hz,
+                tolerance_toggles=args.tolerance,
+            )
+        finally:
+            trans.close()
+    except Exception as e:
+        print(f"ERROR measuring {args.board} on {port}: {e}", file=sys.stderr)
+        return 1
+
+    expected_toggles = int(round(expect_hz * args.seconds * 2.0))
+    res_str = "PASS" if ok else "FAIL"
+    print(f"[{res_str}] toggles delta={delta} in {args.seconds:.2f}s = {hz:.2f} Hz (expected {expected_toggles} toggles, {expect_hz} Hz, tolerance +/- {args.tolerance})")
+    return 0 if ok else 1
+
+
+def _flash_cmd(args, recover: bool = False) -> int:
+    from labflash.flash import FlashError, ZephyrGatedError, flash_board
+
+    try:
+        flash_board(args.board, port=args.port, recover=recover)
+        return 0
+    except ZephyrGatedError as e:
+        print(f"[BLOCKED] {e}", file=sys.stderr)
+        return 2
+    except FlashError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

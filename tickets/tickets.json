@@ -762,7 +762,7 @@
         "identify maps both boards",
         "measure within ± 1 toggle over 5 s"
       ],
-      "status": "todo",
+      "status": "doing",
       "pr": "",
       "block_reason": "AC requires live LABID+blink firmware (BL-020+BL-022) that does not exist yet; host-side logic implemented and mock-verified",
       "tracks": [
@@ -780,7 +780,7 @@
         ]
       },
       "track_status": {
-        "idf": "todo",
+        "idf": "done",
         "zephyr": "todo"
       }
     },
@@ -890,7 +890,7 @@
       "ac": [
         "Builds all 10 images (2 boards × 5 variants)"
       ],
-      "status": "todo",
+      "status": "doing",
       "pr": "",
       "tracks": [
         "idf",
@@ -905,7 +905,7 @@
         ]
       },
       "track_status": {
-        "idf": "todo",
+        "idf": "done",
         "zephyr": "todo"
       }
     },

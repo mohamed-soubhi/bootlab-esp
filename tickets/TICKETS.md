@@ -8,12 +8,13 @@
 
 `█████████████░░░░░░░░░░░░░░░░░` **23/52 done (44%)**
 
-- **IDF track:** `███████████░░░░░░░░░` 23/42
+- **IDF track:** `████████████░░░░░░░░` 25/42
 - **Zephyr track:** `██████░░░░░░░░░░░░░░` 11/37
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 29
+    "todo" : 27
+    "doing" : 2
     "done" : 23
 ```
 
@@ -598,11 +599,11 @@ Run all P2 acceptance checks.
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
 | ✅ | BL-040 | labflash core: config, UID resolution, re-enumeration wait | M | host | BL-013, BL-007 |  |
-| ⬜ | BL-041 | identify, info, status, measure | S | host | BL-040, BL-020, BL-022, BL-031, BL-032 |  |
+| 🔵 | BL-041 | identify, info, status, measure | S | host | BL-040, BL-020, BL-022, BL-031, BL-032 |  |
 | ⬜ | BL-042 | flash, recover, provision (USB) | S | host | BL-040, BL-020, BL-021, BL-030, BL-031 |  |
 | ✅ | BL-043 | update idf --transport ble|wifi | M | host, idf | BL-040, BL-028 |  |
 | ⬜ | BL-044 | update zephyr --transport ble|udp | M | host, zephyr | BL-040, BL-036 |  |
-| ⬜ | BL-045 | build + sign orchestration | S | host | BL-040, BL-020, BL-021, BL-030, BL-031 |  |
+| 🔵 | BL-045 | build + sign orchestration | S | host | BL-040, BL-020, BL-021, BL-030, BL-031 |  |
 | ⬜ | BL-046 | labflash mocked unit tests | M | host | BL-041, BL-042, BL-043, BL-044, BL-045 |  |
 
 <details><summary>✅ <b>BL-040</b> — labflash core: config, UID resolution, re-enumeration wait</summary>
@@ -620,11 +621,11 @@ rig.yaml, resolve ports by UID, wait ≤ 5 s after resets, --json. [DONE 2026-09
 
 </details>
 
-<details><summary>⬜ <b>BL-041</b> — identify, info, status, measure</summary>
+<details><summary>🔵 <b>BL-041</b> — identify, info, status, measure</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
-- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
+- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
 - **Depends on:** BL-040, BL-020, BL-022, BL-031, BL-032  
 - **Plan:** §8 P3
 
@@ -632,8 +633,8 @@ LABID discovery, cross-check, toggle-based Hz. Deps corrected 2026-09-20: AC nee
 
 **Acceptance criteria**
 *IDF scope*
-- [ ] identify maps the idf board (LABID uid matches rig.yaml)
-- [ ] measure within ± 1 toggle over 5 s on the idf board
+- [x] identify maps the idf board (LABID uid matches rig.yaml)
+- [x] measure within ± 1 toggle over 5 s on the idf board
 *Zephyr scope*
 - [ ] identify maps the zephyr board
 - [ ] measure within ± 1 toggle over 5 s on the zephyr board
@@ -690,11 +691,11 @@ SMP client over BLE and UDP.
 
 </details>
 
-<details><summary>⬜ <b>BL-045</b> — build + sign orchestration</summary>
+<details><summary>🔵 <b>BL-045</b> — build + sign orchestration</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
-- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
+- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
 - **Depends on:** BL-040, BL-020, BL-021, BL-030, BL-031  
 - **Plan:** §8 P3
 
@@ -702,7 +703,7 @@ labflash build <board|all> --variant. Deps corrected 2026-09-20: AC ("Builds all
 
 **Acceptance criteria**
 *IDF scope*
-- [ ] Builds all 5 IDF images (v1, v2, no_confirm, hang, bad_sig)
+- [x] Builds all 5 IDF images (v1, v2, no_confirm, hang, bad_sig)
 *Zephyr scope*
 - [ ] Builds all 5 Zephyr images (v1, v2, no_confirm, hang, bad_sig)
 
@@ -1072,11 +1073,11 @@ flowchart TB
     end
     subgraph E3_g["P3 labflash CLI"]
         BL040["BL-040"]:::done
-        BL041["BL-041"]:::todo
+        BL041["BL-041"]:::doing
         BL042["BL-042"]:::todo
         BL043["BL-043"]:::done
         BL044["BL-044"]:::todo
-        BL045["BL-045"]:::todo
+        BL045["BL-045"]:::doing
         BL046["BL-046"]:::todo
     end
     subgraph E4_g["P4 HIL tests + CI"]

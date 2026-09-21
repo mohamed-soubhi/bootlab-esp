@@ -1,0 +1,2 @@
+CONFIG_APP_VARIANT_BAD_SIG=y
+CONFIG_SECURE_BOOT_SIGNING_KEY="../keys/idf_foreign.pem"

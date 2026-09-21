@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
-# build_all.sh — build all boards/variants (later epic). Placeholder.
+# build_all.sh — build all variants using labflash build orchestration (BL-045).
 set -euo pipefail
-echo "build_all.sh placeholder — implemented in later epics"
+
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO"
+
+PYTHONPATH=host "$REPO/.venv/bin/python" -m labflash build idf "$@"
