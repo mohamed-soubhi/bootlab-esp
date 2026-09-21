@@ -8,13 +8,13 @@
 
 `█████████████░░░░░░░░░░░░░░░░░` **23/52 done (44%)**
 
-- **IDF track:** `███████████████░░░░░` 31/42
+- **IDF track:** `████████████████░░░░` 33/42
 - **Zephyr track:** `██████░░░░░░░░░░░░░░` 11/37
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 21
-    "doing" : 8
+    "todo" : 19
+    "doing" : 10
     "done" : 23
 ```
 
@@ -736,8 +736,8 @@ pytest with mocked BLE / serial / HTTP.
 | 🔵 | BL-050 | HIL framework: fixtures, markers, artifacts | M | host | BL-046 |  |
 | 🔵 | BL-051 | HIL T01–T03 boot + update | S | zephyr, idf | BL-050 |  |
 | 🔵 | BL-052 | HIL T04–T09 rollback, security, robustness | M | zephyr, idf | BL-050 |  |
-| ⬜ | BL-053 | HIL T10–T15 LABID + identity + USB | S | zephyr, idf | BL-050 |  |
-| ⬜ | BL-054 | (Stretch) HIL T17 power cut | M | zephyr, idf | BL-050 |  |
+| 🔵 | BL-053 | HIL T10–T15 LABID + identity + USB | S | zephyr, idf | BL-050 |  |
+| 🔵 | BL-054 | (Stretch) HIL T17 power cut | M | zephyr, idf | BL-050 |  |
 | 🔵 | BL-055 | build.yml cloud CI | M | host | BL-028, BL-036 |  |
 | ⬜ | BL-056 | hil.yml self-hosted runner on RPi4 | M | host | BL-055, BL-051 |  |
 | ⬜ | BL-056a | IDF acceptance re-run on the RPi4 (OTA-programming host) | M | host, idf | BL-043, BL-056 |  |
@@ -797,11 +797,11 @@ no_confirm, hang, bad_sig, corrupt, interrupted, token.
 
 </details>
 
-<details><summary>⬜ <b>BL-053</b> — HIL T10–T15 LABID + identity + USB</summary>
+<details><summary>🔵 <b>BL-053</b> — HIL T10–T15 LABID + identity + USB</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** zephyr, idf  
-- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
+- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
 - **Depends on:** BL-050  
 - **Plan:** §8 P4
 
@@ -809,17 +809,17 @@ identify, UID stability, version consistency, ERR, heavy logging, 50 resets.
 
 **Acceptance criteria**
 *IDF scope*
-- [ ] All green on the idf board
+- [x] All green on the idf board
 *Zephyr scope*
 - [ ] All green on the zephyr board
 
 </details>
 
-<details><summary>⬜ <b>BL-054</b> — (Stretch) HIL T17 power cut</summary>
+<details><summary>🔵 <b>BL-054</b> — (Stretch) HIL T17 power cut</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** zephyr, idf  
-- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
+- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
 - **Depends on:** BL-050  
 - **Plan:** §8 P4
 
@@ -827,7 +827,7 @@ Needs per-port switchable hub.
 
 **Acceptance criteria**
 *IDF scope*
-- [ ] Recovers every run on the idf board, or skipped if no hub
+- [x] Recovers every run on the idf board, or skipped if no hub
 *Zephyr scope*
 - [ ] Recovers every run on the zephyr board, or skipped if no hub
 
@@ -1084,8 +1084,8 @@ flowchart TB
         BL050["BL-050"]:::doing
         BL051["BL-051"]:::doing
         BL052["BL-052"]:::doing
-        BL053["BL-053"]:::todo
-        BL054["BL-054"]:::todo
+        BL053["BL-053"]:::doing
+        BL054["BL-054"]:::doing
         BL055["BL-055"]:::doing
         BL056["BL-056"]:::todo
         BL056a["BL-056a"]:::todo
