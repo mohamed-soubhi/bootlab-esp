@@ -8,13 +8,13 @@
 
 `█████████████░░░░░░░░░░░░░░░░░` **23/52 done (44%)**
 
-- **IDF track:** `█████████████░░░░░░░` 27/42
+- **IDF track:** `██████████████░░░░░░` 29/42
 - **Zephyr track:** `██████░░░░░░░░░░░░░░` 11/37
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 25
-    "doing" : 4
+    "todo" : 23
+    "doing" : 6
     "done" : 23
 ```
 
@@ -27,7 +27,7 @@ pie showData title Ticket status
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `████████████` | 9/9 | ✅ done | §4.2, §5, §6, §7.2, §8 P1 |
 | E2 | P2 | ESP32-S3 #1 — Zephyr | `░░░░░░░░░░░░` | 0/9 | ⬜ todo | §4.1, §5, §6, §7.1, §8 P2 |
 | E3 | P3 | labflash CLI | `███░░░░░░░░░` | 2/7 | 🔵 doing | §8 P3 |
-| E4 | P4 | HIL tests + CI | `░░░░░░░░░░░░` | 0/9 | ⬜ todo | §8 P4 |
+| E4 | P4 | HIL tests + CI | `░░░░░░░░░░░░` | 0/9 | 🔵 doing | §8 P4 |
 | E5 | P5 | Soak, docs, handover | `░░░░░░░░░░░░` | 0/6 | ⬜ todo | §8 P5 |
 
 ## Epic dependency graph
@@ -39,7 +39,7 @@ flowchart LR
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>9/9"]:::done
     E2["P2 ESP32-S3 #1 — Zephyr<br/>0/9"]:::todo
     E3["P3 labflash CLI<br/>2/7"]:::doing
-    E4["P4 HIL tests + CI<br/>0/9"]:::todo
+    E4["P4 HIL tests + CI<br/>0/9"]:::doing
     E5["P5 Soak, docs, handover<br/>0/6"]:::todo
     E0 --> EL
     E1 --> E3
@@ -733,21 +733,21 @@ pytest with mocked BLE / serial / HTTP.
 
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
-| ⬜ | BL-050 | HIL framework: fixtures, markers, artifacts | M | host | BL-046 |  |
+| 🔵 | BL-050 | HIL framework: fixtures, markers, artifacts | M | host | BL-046 |  |
 | ⬜ | BL-051 | HIL T01–T03 boot + update | S | zephyr, idf | BL-050 |  |
 | ⬜ | BL-052 | HIL T04–T09 rollback, security, robustness | M | zephyr, idf | BL-050 |  |
 | ⬜ | BL-053 | HIL T10–T15 LABID + identity + USB | S | zephyr, idf | BL-050 |  |
 | ⬜ | BL-054 | (Stretch) HIL T17 power cut | M | zephyr, idf | BL-050 |  |
-| ⬜ | BL-055 | build.yml cloud CI | M | host | BL-028, BL-036 |  |
+| 🔵 | BL-055 | build.yml cloud CI | M | host | BL-028, BL-036 |  |
 | ⬜ | BL-056 | hil.yml self-hosted runner on RPi4 | M | host | BL-055, BL-051 |  |
 | ⬜ | BL-056a | IDF acceptance re-run on the RPi4 (OTA-programming host) | M | host, idf | BL-043, BL-056 |  |
 | ⬜ | BL-057 | Full HIL suite green 3× in a row | S | zephyr, idf | BL-051, BL-052, BL-053, BL-056 |  |
 
-<details><summary>⬜ <b>BL-050</b> — HIL framework: fixtures, markers, artifacts</summary>
+<details><summary>🔵 <b>BL-050</b> — HIL framework: fixtures, markers, artifacts</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** host  
-- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
+- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
 - **Depends on:** BL-046  
 - **Plan:** §8 P4
 
@@ -755,7 +755,7 @@ rig fixture, factory_reset, btmon capture, JUnit.
 
 **Acceptance criteria**
 *IDF scope*
-- [ ] Dummy HIL test runs on the idf board and restores v1
+- [x] Dummy HIL test runs on the idf board and restores v1
 *Zephyr scope*
 - [ ] Dummy HIL test runs on the zephyr board and restores v1
 
@@ -833,11 +833,11 @@ Needs per-port switchable hub.
 
 </details>
 
-<details><summary>⬜ <b>BL-055</b> — build.yml cloud CI</summary>
+<details><summary>🔵 <b>BL-055</b> — build.yml cloud CI</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** host  
-- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
+- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
 - **Depends on:** BL-028, BL-036  
 - **Plan:** §8 P4
 
@@ -845,8 +845,8 @@ Builds, unit tests, fuzz smoke, forbidden-config grep, CI test keys.
 
 **Acceptance criteria**
 *IDF scope*
-- [ ] Green on main for the IDF build
-- [ ] Signed IDF artifacts uploaded
+- [x] Green on main for the IDF build
+- [x] Signed IDF artifacts uploaded
 *Zephyr scope*
 - [ ] Green on main for the Zephyr build
 - [ ] Signed Zephyr artifacts uploaded
@@ -1081,12 +1081,12 @@ flowchart TB
         BL046["BL-046"]:::doing
     end
     subgraph E4_g["P4 HIL tests + CI"]
-        BL050["BL-050"]:::todo
+        BL050["BL-050"]:::doing
         BL051["BL-051"]:::todo
         BL052["BL-052"]:::todo
         BL053["BL-053"]:::todo
         BL054["BL-054"]:::todo
-        BL055["BL-055"]:::todo
+        BL055["BL-055"]:::doing
         BL056["BL-056"]:::todo
         BL056a["BL-056a"]:::todo
         BL057["BL-057"]:::todo

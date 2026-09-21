@@ -49,3 +49,4 @@ esp_idf/managed_components/
 bootloader/
 tools/
 package.json
+tests_hil/reports/
