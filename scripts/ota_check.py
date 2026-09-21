@@ -183,7 +183,8 @@ def main() -> int:
     ap.add_argument("--token", default=None)
     ap.add_argument("--want-app", default="2.0.0")
     ap.add_argument("--no-restore", action="store_true", help="leave the board on v2")
-    ap.add_argument("--only", choices=("all", "ac1", "ac2"), default="all", help="run one scenario")
+    ap.add_argument("--only", choices=("all", "ac1", "ac2", "restore"), default="all",
+                    help="run one scenario; 'restore' only puts the board back on v1")
     ap.add_argument("--console-log", default=None,
                     help="file the board's serial output is being appended to (needed for AC2)")
     args = ap.parse_args()
