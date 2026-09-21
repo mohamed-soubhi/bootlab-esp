@@ -1,3 +1,5 @@
+> **REVIEW 2026-09-21 — CORRECTION:** the fresh-clone run was not performed; commands were exercised during BL-043/051. BL-061 is blocked pending that run. (see `scripts/evidence/REVIEW_2026-09-21.md`)
+
 # BL-061 evidence — README quick start (IDF track), 2026-09-21
 
 Implementation: Comprehensive, tested quick start guide in `README.md` enabling a fresh clone to reach a green T02 OTA update in under 5 minutes.

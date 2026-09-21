@@ -6,7 +6,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo "Checking for forbidden eFuse burning commands..."
-if git -C "$ROOT" grep -iE "burn_efuse|burn_key|burn_bit" -- ":!PLAN.md" ":!RESUME.md" ":!scripts/evidence/*" ":!scripts/check_forbidden_configs.sh"; then
+# Prose may NAME the forbidden commands (README, docs, PLAN, evidence); code, scripts and tests may not USE them.
+if git -C "$ROOT" grep -iE "burn_efuse|burn_key|burn_bit" -- ":!*.md" ":!docs/*" ":!scripts/evidence/*" ":!scripts/check_forbidden_configs.sh"; then
     echo "ERROR: Forbidden eFuse burning command found!"
     exit 1
 fi

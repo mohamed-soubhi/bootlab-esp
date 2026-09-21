@@ -1,3 +1,5 @@
+> **REVIEW 2026-09-21 — CORRECTION:** the workflow exists but no self-hosted runner is registered, so 'HIL job runs on PR' is not demonstrated; BL-056 is blocked. (see `scripts/evidence/REVIEW_2026-09-21.md`)
+
 # BL-056 evidence — `hil.yml` self-hosted runner on RPi4 (IDF track), 2026-09-21
 
 Implementation: Self-hosted HIL CI workflow `.github/workflows/hil.yml` for real-hardware execution:

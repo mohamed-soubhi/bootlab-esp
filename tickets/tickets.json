@@ -1174,12 +1174,12 @@
         "BL-055",
         "BL-051"
       ],
-      "desc": "Private repo, dedicated runner user, concurrency: hil.",
+      "desc": "Private repo, dedicated runner user, concurrency: hil. [REVIEW 2026-09-21 (independent re-check): status reverted. Workflow file only; AC1 not shown.]",
       "ac": [
         "HIL job runs on PR",
         "Runner has no sudo and no access to keys/"
       ],
-      "status": "doing",
+      "status": "blocked",
       "pr": "",
       "tracks": [
         "idf",
@@ -1195,9 +1195,10 @@
         ]
       },
       "track_status": {
-        "idf": "done",
+        "idf": "blocked",
         "zephyr": "todo"
-      }
+      },
+      "block_reason": "hil.yml and its safety checks exist, but 'HIL job runs on PR for the idf board' is not demonstrated: no self-hosted runner is registered. Needs the RPi4 (or another host owning USB + BLE) registered as a runner; owner action."
     },
     {
       "id": "BL-056a",
@@ -1215,14 +1216,15 @@
         "BL-043",
         "BL-056"
       ],
-      "desc": "Owner decision 2026-09-21: development stays on the current machine (WSL2 + Windows-native tools); the RPi4 has limitations and is used for OTA programming. When the IDF track is done, re-run the IDF acceptance from the RPi4. Builds stay on the development machine / CI; the RPi4 programs and verifies the boards.",
+      "desc": "Owner decision 2026-09-21: development stays on the current machine (WSL2 + Windows-native tools); the RPi4 has limitations and is used for OTA programming. When the IDF track is done, re-run the IDF acceptance from the RPi4. Builds stay on the development machine / CI; the RPi4 programs and verifies the boards. [REVIEW 2026-09-21 (independent re-check): status reverted from 'PASS with documented boundary' to blocked: the update from the RPi4 never ran.]",
       "ac": [
         "labflash update idf --transport ble and wifi both succeed from the RPi4",
         "LABID VER? and identity verified from the RPi4 after each update",
         "RPi4 limitations documented (what runs there, what stays on the dev machine or CI)"
       ],
-      "status": "done",
-      "pr": ""
+      "status": "blocked",
+      "pr": "",
+      "block_reason": "AC1 not done: no `labflash update` was run from the RPi4 (curl of /version + a host audit only). BLE is impossible there today (bluetooth.service masked, hci0 down, no sudo) and the boards are wired to the workstation. AC2 used curl over HTTPS, not LABID. Needs owner action on the RPi4 (unmask bluetooth, attach a board) before it can be run for real. The RPi4 audit and docs/rpi4_limitations.md are valid."
     },
     {
       "id": "BL-057",
@@ -1239,12 +1241,12 @@
         "BL-053",
         "BL-056"
       ],
-      "desc": "Stability gate.",
+      "desc": "Stability gate. [REVIEW 2026-09-21 (independent re-check): status reverted. The 3 'green runs' were `pytest tests_hil --mock-rig` (18 tests in ~5 s = a simulator, not the idf board). Repeat the suite live against the board 3x in a row.]",
       "ac": [
         "3 consecutive green runs",
         "Runtime documented"
       ],
-      "status": "doing",
+      "status": "todo",
       "pr": "",
       "tracks": [
         "idf",
@@ -1260,7 +1262,7 @@
         ]
       },
       "track_status": {
-        "idf": "done",
+        "idf": "todo",
         "zephyr": "todo"
       }
     },
@@ -1276,12 +1278,12 @@
       "deps": [
         "BL-057"
       ],
-      "desc": "T16 repeated per board/transport.",
+      "desc": "T16 repeated per board/transport. [REVIEW 2026-09-21 (independent re-check): status reverted. The recorded '100 cycles, 100% pass' was tests_hil/test_t16_soak.py run with --mock-rig (elapsed 0.0 s; a simulated rig), not a soak on the board. A real T16 is ~100 alternating OTA cycles on lab-esp-idf via `labflash update` (hours), with the console captured. Needs a live implementation of update_ota in tests_hil/conftest.py and an owner-approved overnight window.]",
       "ac": [
         "Pass rate ≥ 99 %",
         "Root cause logged for every failure"
       ],
-      "status": "doing",
+      "status": "todo",
       "pr": "",
       "tracks": [
         "idf",
@@ -1298,7 +1300,7 @@
         ]
       },
       "track_status": {
-        "idf": "done",
+        "idf": "todo",
         "zephyr": "todo"
       }
     },
@@ -1313,11 +1315,11 @@
       "deps": [
         "BL-057"
       ],
-      "desc": "< 5 min from clone to first OTA.",
+      "desc": "< 5 min from clone to first OTA. [REVIEW 2026-09-21 (independent re-check): the fresh-clone AC was not actually exercised.]",
       "ac": [
         "Fresh clone reaches T02 green following README only"
       ],
-      "status": "doing",
+      "status": "blocked",
       "pr": "",
       "tracks": [
         "idf",
@@ -1332,9 +1334,10 @@
         ]
       },
       "track_status": {
-        "idf": "done",
+        "idf": "blocked",
         "zephyr": "todo"
-      }
+      },
+      "block_reason": "README content is complete and its commands were exercised during BL-043/051, but 'Fresh clone reaches T02 green following README only' was not run from a fresh clone; also waits on BL-057."
     },
     {
       "id": "BL-062",
@@ -1347,11 +1350,11 @@
       "deps": [
         "BL-057"
       ],
-      "desc": "docs/recovery.md, docs/adding-a-board.md.",
+      "desc": "docs/recovery.md, docs/adding-a-board.md. [REVIEW 2026-09-21 (independent re-check): content accepted; held by dependency BL-057.]",
       "ac": [
         "Recovery tested once per board from the docs"
       ],
-      "status": "doing",
+      "status": "blocked",
       "pr": "",
       "tracks": [
         "idf",
@@ -1366,9 +1369,10 @@
         ]
       },
       "track_status": {
-        "idf": "done",
+        "idf": "blocked",
         "zephyr": "todo"
-      }
+      },
+      "block_reason": "Docs complete and the recovery evidence rests on the live BL-042 run (accepted); formally waits on BL-057 (dependency)."
     },
     {
       "id": "BL-063",
@@ -1381,11 +1385,11 @@
       "deps": [
         "BL-060"
       ],
-      "desc": "Pinned versions, Zephyr partitions, deviations.",
+      "desc": "Pinned versions, Zephyr partitions, deviations. [REVIEW 2026-09-21 (independent re-check): needs re-review once BL-057/BL-060 are real.]",
       "ac": [
         "PLAN.md matches the delivered repo"
       ],
-      "status": "doing",
+      "status": "blocked",
       "pr": "",
       "tracks": [
         "idf",
@@ -1400,9 +1404,10 @@
         ]
       },
       "track_status": {
-        "idf": "done",
+        "idf": "blocked",
         "zephyr": "todo"
-      }
+      },
+      "block_reason": "Waits on BL-060. Its text also repeated the unverified soak/stability claims (PLAN 8 boxes unchecked in review); re-review after BL-057/BL-060 are real."
     },
     {
       "id": "BL-063a",
@@ -1422,14 +1427,15 @@
         "BL-063",
         "BL-056a"
       ],
-      "desc": "Retrospective after the IDF board is complete, BEFORE any Zephyr work starts, so what the IDF track taught shapes the Zephyr plan (PLAN R13/R14/R15, USB reset behaviour, vacuous evidence, optional subsystems, ...).",
+      "desc": "Retrospective after the IDF board is complete, BEFORE any Zephyr work starts, so what the IDF track taught shapes the Zephyr plan (PLAN R13/R14/R15, USB reset behaviour, vacuous evidence, optional subsystems, ...). [REVIEW 2026-09-21 (independent re-check): held by dependencies.]",
       "ac": [
         "docs/LESSONS_LEARNED.md covers every risk R1–R15 outcome and every trap found during the IDF track",
         "Every lesson has an action: a plan change, a tool change or a checklist item",
         "Owner review recorded"
       ],
-      "status": "done",
-      "pr": ""
+      "status": "blocked",
+      "pr": "",
+      "block_reason": "Lessons-learned doc exists and reads accurately; formally waits on BL-060/061/062/063/056a. Add the review's own lesson (mock evidence presented as hardware evidence)."
     },
     {
       "id": "BL-063b",
@@ -1445,14 +1451,15 @@
       "deps": [
         "BL-063a"
       ],
-      "desc": "Owner deliverable: a presentation of the finished IDF track. Completing it is what releases the Zephyr track (explicit gate BL-063b).",
+      "desc": "Owner deliverable: a presentation of the finished IDF track. Completing it is what releases the Zephyr track (explicit gate BL-063b). [REVIEW 2026-09-21 (independent re-check): deck metrics corrected.]",
       "ac": [
         "One self-contained HTML deck: architecture, flows, evidence, lessons learned, Gantt",
         "Every claim links to an evidence file in the repo",
         "Opens and renders offline in a browser"
       ],
-      "status": "done",
-      "pr": ""
+      "status": "blocked",
+      "pr": "",
+      "block_reason": "Deck exists but contained false headline metrics (100% soak, 23/23, gate released); corrected in review. Formally waits on BL-063a. It is what releases the Zephyr gate, so it must not be marked done until the IDF track really is."
     }
   ]
 }

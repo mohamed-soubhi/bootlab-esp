@@ -208,16 +208,16 @@
       </p>
       <div class="grid-4" style="margin-top: 3rem; max-width: 900px;">
         <div class="card card-metric">
-          <div class="metric-val" style="color: var(--accent-green);">100%</div>
-          <div class="metric-label">IDF Track Done (23/23)</div>
+          <div class="metric-val" style="color: var(--accent-green);">33/42</div>
+          <div class="metric-label">IDF Track Tickets Done</div>
         </div>
         <div class="card card-metric">
           <div class="metric-val" style="color: var(--accent-blue);">0</div>
           <div class="metric-label">eFuses Burned</div>
         </div>
         <div class="card card-metric">
-          <div class="metric-val" style="color: var(--accent-purple);">100%</div>
-          <div class="metric-label">100-Soak Pass Rate</div>
+          <div class="metric-val" style="color: var(--accent-purple);">n/a</div>
+          <div class="metric-label">Soak: real run pending</div>
         </div>
         <div class="card card-metric">
           <div class="metric-val" style="color: var(--accent-amber);">115</div>
@@ -322,7 +322,7 @@
         <p>Documented in <a href="../docs/rpi4_limitations.md">docs/rpi4_limitations.md</a>:</p>
         <ul>
           <li>RPi4 power supply exhibits brownout drops (~1 UV / 85s); flashing stays on dev workstation.</li>
-          <li>RPi4 acts as isolated OTA network trigger and health monitor (<a href="../scripts/evidence/bl056a_rpi4_acceptance.md">BL-056a</a>).</li>
+          <li>RPi4 was audited (<a href="../scripts/evidence/bl056a_rpi4_acceptance.md">BL-056a</a>); no update has been run from it yet and BLE is unavailable there today.</li>
         </ul>
       </div>
     </div>
@@ -611,7 +611,7 @@ UPDATE OK (slot 0 -&gt; 1, confirmed)</code></pre>
         <td><strong>Tier 6: Stability Gate</strong></td>
         <td>Full HIL suite 3× consecutive runs</td>
         <td>Physical ESP32-S3 / Rig</td>
-        <td>3/3 consecutive green runs, mean runtime 5.32 s</td>
+        <td>NOT MET: the recorded runs were simulator runs (--mock-rig); live runs pending</td>
         <td><a href="../scripts/evidence/bl057_hil_stability.md">bl057_hil_stability.md</a></td>
       </tr>
       <tr>
@@ -700,11 +700,11 @@ UPDATE OK (slot 0 -&gt; 1, confirmed)</code></pre>
 
         <text x="140" y="165" fill="#f8fafc" font-size="12" text-anchor="end">E5: Soak & Presentation</text>
         <rect x="735" y="152" width="100" height="18" rx="4" fill="#4ade80"/>
-        <text x="785" y="165" fill="#000" font-size="10" font-weight="bold" text-anchor="middle">DONE (BL-060..063b)</text>
+        <text x="785" y="165" fill="#000" font-size="10" font-weight="bold" text-anchor="middle">PENDING (BL-060..063b)</text>
 
         <!-- Zephyr Gate -->
         <line x1="835" y1="20" x2="835" y2="200" stroke="#f87171" stroke-width="2" stroke-dasharray="4"/>
-        <text x="835" y="215" fill="#f87171" font-size="11" font-weight="bold" text-anchor="middle">ZEPHYR GATE RELEASED</text>
+        <text x="835" y="215" fill="#f87171" font-size="11" font-weight="bold" text-anchor="middle">ZEPHYR GATE: HELD</text>
       </svg>
     </div>
 

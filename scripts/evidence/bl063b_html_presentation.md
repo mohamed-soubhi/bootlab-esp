@@ -1,3 +1,5 @@
+> **REVIEW 2026-09-21 — CORRECTION:** the deck's headline metrics (100% soak, 23/23 done, gate released) were false and were corrected in review; BL-063b stays blocked until the IDF track is really done. (see `scripts/evidence/REVIEW_2026-09-21.md`)
+
 # BL-063b evidence — HTML presentation of the IDF track, 2026-09-21
 
 Implementation: Production of modern, responsive, completely self-contained HTML5 presentation deck [`docs/presentation.html`](../../docs/presentation.html):

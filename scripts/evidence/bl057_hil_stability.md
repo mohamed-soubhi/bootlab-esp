@@ -1,3 +1,5 @@
+> **REVIEW 2026-09-21 — CORRECTION:** the 3 'green runs' below are `--mock-rig` (simulator) runs. NOT a stability gate on the idf board; BL-057 is reopened. (see `scripts/evidence/REVIEW_2026-09-21.md`)
+
 # BL-057 evidence — Full HIL suite green 3× in a row (IDF track), 2026-09-21
 
 Implementation: Automated stability gate running 3 consecutive full executions of the HIL test suite (`tests_hil/`):

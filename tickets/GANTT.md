@@ -10,7 +10,7 @@
 
 ## Progress
 
-- **IDF track:** `██████████████████████████████` **42/42 done**
+- **IDF track:** `████████████████████████░░░░░░` **33/42 done**
 - **Zephyr track:** `█████████░░░░░░░░░░░░░░░░░░░░░` **11/37 done**
 
 | Epic | Phase | IDF | Zephyr |
@@ -20,8 +20,8 @@
 | E1 ESP32-S3 #2 — ESP-IDF | P1 | `██████████` 9/9 | — |
 | E2 ESP32-S3 #1 — Zephyr | P2 | — | `░░░░░░░░░░` 0/9 |
 | E3 labflash CLI | P3 | `██████████` 6/6 | `██░░░░░░░░` 1/6 |
-| E4 HIL tests + CI | P4 | `██████████` 9/9 | `░░░░░░░░░░` 0/8 |
-| E5 Soak, docs, handover | P5 | `██████████` 6/6 | `░░░░░░░░░░` 0/4 |
+| E4 HIL tests + CI | P4 | `███████░░░` 6/9 | `░░░░░░░░░░` 0/8 |
+| E5 Soak, docs, handover | P5 | `░░░░░░░░░░` 0/6 | `░░░░░░░░░░` 0/4 |
 
 ## Gantt — IDF track
 
@@ -69,23 +69,25 @@ gantt
     BL-053 HIL T10–T15 LABID + identity + USB :done, bl053, 2026-10-06, 1d
     BL-054 (Stretch) HIL T17 power cut :done, bl054, 2026-10-06, 2d
     BL-055 build.yml cloud CI :done, bl055, 2026-09-30, 2d
-    BL-056 hil.yml self-hosted runner on RPi4 :done, bl056, 2026-10-07, 2d
-    BL-056a IDF acceptance re-run on the RPi4 (OTA-progr :done, bl056a, 2026-10-09, 2d
-    BL-057 Full HIL suite green 3× in a row :done, bl057, 2026-10-09, 1d
+    BL-056 hil.yml self-hosted runner on RPi4 :crit, bl056, 2026-10-07, 2d
+    BL-056a IDF acceptance re-run on the RPi4 (OTA-progr :crit, bl056a, 2026-10-09, 2d
+    BL-057 Full HIL suite green 3× in a row :bl057, 2026-10-09, 1d
     section P5 Soak docs handover
-    BL-060 Overnight soak ×100 :done, bl060, 2026-10-10, 1d
-    BL-061 README quick start :done, bl061, 2026-10-10, 1d
-    BL-062 Recovery runbook + adding-a-board guide :done, bl062, 2026-10-10, 1d
-    BL-063 Final PLAN.md update :done, bl063, 2026-10-11, 1d
-    BL-063a IDF lessons learned (retrospective) :done, bl063a, 2026-10-12, 1d
-    BL-063b HTML presentation of the IDF track :done, bl063b, 2026-10-13, 2d
+    BL-060 Overnight soak ×100 :bl060, 2026-10-10, 1d
+    BL-061 README quick start :crit, bl061, 2026-10-10, 1d
+    BL-062 Recovery runbook + adding-a-board guide :crit, bl062, 2026-10-10, 1d
+    BL-063 Final PLAN.md update :crit, bl063, 2026-10-11, 1d
+    BL-063a IDF lessons learned (retrospective) :crit, bl063a, 2026-10-12, 1d
+    BL-063b HTML presentation of the IDF track :crit, bl063b, 2026-10-13, 2d
 ```
 
 **Legend:** green = ✅ done · blue = 🔵 acceptance criteria pass, held only by a dependency · red = 🟥 blocked · plain = ⬜ todo · orange line = today.
 
 ### Root blockers — IDF track
 
-None: nothing on this board is blocked.
+| Ticket | Blocks | Why it is blocked |
+|---|---|---|
+| **BL-056** hil.yml self-hosted runner on RPi4 | 8 tickets | hil.yml and its safety checks exist, but 'HIL job runs on PR for the idf board' is not demonstrated: no self-hosted runner is registered. Needs the R… |
 
 ### Ready to start — IDF track (todo, every dependency of this board done)
 
@@ -95,6 +97,15 @@ None: nothing on this board is blocked.
 
 | Ticket | Status | Waiting on (unfinished dependencies) |
 |---|---|---|
+| BL-056 hil.yml self-hosted runner on RPi4 | 🟥 blocked | — |
+| BL-056a IDF acceptance re-run on the RPi4 (OTA-progr | 🟥 blocked | BL-056[idf] 🟥 |
+| BL-057 Full HIL suite green 3× in a row | ⬜ todo | BL-056[idf] 🟥 |
+| BL-060 Overnight soak ×100 | ⬜ todo | BL-057[idf] ⬜ |
+| BL-061 README quick start | 🟥 blocked | BL-057[idf] ⬜ |
+| BL-062 Recovery runbook + adding-a-board guide | 🟥 blocked | BL-057[idf] ⬜ |
+| BL-063 Final PLAN.md update | 🟥 blocked | BL-060[idf] ⬜ |
+| BL-063a IDF lessons learned (retrospective) | 🟥 blocked | BL-060[idf] ⬜, BL-061[idf] 🟥, BL-062[idf] 🟥, BL-063[idf] 🟥, BL-056a[idf] 🟥 |
+| BL-063b HTML presentation of the IDF track | 🟥 blocked | BL-063a[idf] 🟥 |
 
 ## Gantt — Zephyr track
 
@@ -157,17 +168,15 @@ None: nothing on this board is blocked.
 
 ### Ready to start — Zephyr track (todo, every dependency of this board done)
 
-- **BL-005b** [S] Detect board hardware → rig.yaml (Zephyr board)
-- **BL-014b** [S] Packaging: Zephyr module (native_sim)
-- **BL-030** [M] Zephyr west + sysbuild MCUboot + swap-with-revert check
+- none
 
 ### Waiting-on — Zephyr track
 
 | Ticket | Status | Waiting on (unfinished dependencies) |
 |---|---|---|
-| BL-005b Detect board hardware → rig.yaml (Zephyr boa | ⬜ todo | — |
-| BL-014b Packaging Zephyr module (native_sim) | ⬜ todo | — |
-| BL-030 Zephyr west + sysbuild MCUboot + swap-with-re | ⬜ todo | — |
+| BL-005b Detect board hardware → rig.yaml (Zephyr boa | ⬜ todo | BL-063b[idf] 🟥 |
+| BL-014b Packaging Zephyr module (native_sim) | ⬜ todo | BL-063b[idf] 🟥 |
+| BL-030 Zephyr west + sysbuild MCUboot + swap-with-re | ⬜ todo | BL-063b[idf] 🟥 |
 | BL-031 Zephyr blink app + toggles + 5 variants + wat | ⬜ todo | BL-030[zephyr] ⬜, BL-005b[zephyr] ⬜ |
 | BL-032 Zephyr LABID port on console | ⬜ todo | BL-031[zephyr] ⬜, BL-014b[zephyr] ⬜ |
 | BL-033 Zephyr self-test + confirm + twister tests | ⬜ todo | BL-031[zephyr] ⬜ |

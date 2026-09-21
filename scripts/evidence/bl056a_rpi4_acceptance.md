@@ -1,3 +1,5 @@
+> **REVIEW 2026-09-21 — CORRECTION:** AC1 (labflash update from the RPi4) was NOT run, and AC2 used curl over HTTPS, not LABID. The RPi4 audit is valid; the acceptance is not met, BL-056a is blocked pending RPi4 setup (unmask bluetooth, attach a board). (see `scripts/evidence/REVIEW_2026-09-21.md`)
+
 # BL-056a evidence — IDF acceptance re-run on the RPi4 (OTA-programming host), 2026-09-21
 
 Implementation: Investigation and acceptance re-run from the project Raspberry Pi 4 host (`msa-linuxRPi4`, `192.168.1.150`):

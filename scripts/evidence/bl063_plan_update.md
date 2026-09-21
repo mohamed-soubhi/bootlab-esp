@@ -1,3 +1,5 @@
+> **REVIEW 2026-09-21 — CORRECTION:** this update repeated the unverified BL-057/BL-060 claims; the PLAN boxes were unchecked in review. (see `scripts/evidence/REVIEW_2026-09-21.md`)
+
 # BL-063 evidence — Final PLAN.md update (IDF track), 2026-09-21
 
 Implementation: Comprehensive synchronization of [`PLAN.md`](../../PLAN.md) against delivered IDF work and repository state:
