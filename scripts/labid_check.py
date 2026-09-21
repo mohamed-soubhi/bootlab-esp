@@ -13,6 +13,7 @@ Checks the BL-022 acceptance criteria:
   AC3  garbage input -> ERR frame, and the board does not reset
 Exit code 0 only if every check passes.
 """
+import argparse
 import pathlib
 import sys
 import time
@@ -44,35 +45,35 @@ def record(name, ok, detail):
 import serial.tools.list_ports
 
 
-def port_exists(port_name: str) -> bool:
+RECONNECT_POLL_S = 0.05
+
+
+def _try_open(port: str):
     try:
-        tr = SerialLineTransport(port_name, BAUD)
-        tr.close()
-        return True
+        return SerialLineTransport(port, BAUD)
     except Exception:
-        return False
+        return None
 
 
 def open_for_announce(port: str):
-    if port_exists(port):
-        print(f"--- {port} is connected. Please press RST on the board (or replug) now ---", flush=True)
-        while port_exists(port):
-            time.sleep(0.1)
-        print(f"--- board reset detected; waiting for {port} to reconnect ---", flush=True)
-    else:
-        print(f"--- waiting for {port} to connect ---", flush=True)
+    """Open the port and hold it; the boot's own ANNOUNCE frame is the reset signal.
 
-    while not port_exists(port):
-        time.sleep(0.1)
-
-    time.sleep(0.15)  # allow Windows driver to settle after device arrival
+    A software reset (esp_restart: OTA reboot, watchdog panic) does NOT drop the ESP32-S3's
+    USB-Serial-JTAG, so 'wait for the port to disappear' never fires -- and polling by
+    open/close raced the physical replug and kept the port busy. Any reset type works here:
+    RST button, replug, OTA, watchdog. It only has to happen within --wait seconds.
+    """
+    announced = False
     while True:
-        try:
-            tr = SerialLineTransport(port, BAUD)
-            print(f"--- {port} connected, listening for boot ANNOUNCE ---", flush=True)
+        tr = _try_open(port)
+        if tr is not None:
+            print(f"--- {port} open; waiting up to {ANNOUNCE_WAIT_S:.0f} s for a boot ANNOUNCE "
+                  "(reset the board: RST, replug, OTA, ...) ---", flush=True)
             return tr
-        except Exception:
-            time.sleep(0.1)
+        if not announced:
+            print(f"--- waiting for {port} to connect ---", flush=True)
+            announced = True
+        time.sleep(RECONNECT_POLL_S)
 
 
 def roundtrip(tr, request):
@@ -147,6 +148,10 @@ def main(port):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        sys.exit("usage: labid_check.py COMx")
-    sys.exit(main(sys.argv[1]))
+    ap = argparse.ArgumentParser()
+    ap.add_argument("port")
+    ap.add_argument("--wait", type=float, default=ANNOUNCE_WAIT_S,
+                    help="seconds to wait for a boot ANNOUNCE (raise it when an OTA triggers the reset)")
+    cli = ap.parse_args()
+    ANNOUNCE_WAIT_S = cli.wait
+    sys.exit(main(cli.port))

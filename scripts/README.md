@@ -15,6 +15,8 @@
 - `ota_check.py` (WSL/Linux) — BL-026 live acceptance: serves OTA images over HTTPS, triggers `POST /ota`, checks v1->v2 (slot flip, confirmed), and that `bad_sig` images are fully downloaded yet refused with the running image unchanged. Needs `tcp_forwarder.py` running on Windows when the server is in WSL2.
 - `tcp_forwarder.py` (Windows) — forwards a LAN port to the same port inside WSL2 (NAT mode) so the board can reach a server running in WSL2.
 - `rate_check.py` (Windows/any) — measures the LED blink rate from LABID's toggle counter: `python scripts\rate_check.py COM14 --expect-hz 4`. Self-contained (pyserial only); DTR/RTS held inactive before open.
+- `labid_query.py` (Windows/any) — sends one LABID request and prints the reply with its CRC verified: `python scripts\labid_query.py COM14 VER?` (also `ID?`, `STATE?`, `HELLO`). Self-contained (pyserial only).
+- `labid_check.py` now holds one connection and waits for the next boot `ANNOUNCE` (`--wait SECONDS`), so any reset works: RST, replug, OTA reboot or watchdog. A software reset does NOT drop the ESP32-S3 USB port, so waiting for the port to disappear never fires.
 - `evidence/` — dated evidence files backing ticket "done" claims.
 
 ## USBIPD Switching between WSL2 and Windows (from WSL)
