@@ -73,7 +73,7 @@ NEXT:
 
 ## Hardware state (2026-09-21)
 - idf board: `/dev/lab-esp-idf`, USB serial `E0:72:A1:AA:23:90`, usbipd busid 7-4, Windows COM14.
-  Flashed with BL-023 no_confirm build (dual OTA partitions, rollback enabled, 1 Hz blink on GPIO48).
+  Flashed with BL-023 v1 signed build (dual OTA partitions, rollback enabled, 1 Hz blink on GPIO48, confirms after 5s).
 - zephyr board: `/dev/lab-esp-zephyr`, USB serial `AC:A7:04:2C:3B:04`, busid 6-3. Untouched.
 
 ## Settled findings (see PLAN Sec 9)
