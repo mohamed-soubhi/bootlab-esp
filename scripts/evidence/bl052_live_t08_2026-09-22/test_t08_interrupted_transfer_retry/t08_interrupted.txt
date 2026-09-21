@@ -1,0 +1,2 @@
+mode: live
+T08 LIVE: {'trigger_status': 202, 'image_bytes': 1249280, 'served': {'update.bin': 624640}, 'aborted': 1}; unchanged {'app': '1.0.0', 'slot': 1, 'confirmed': True}; retry -> v2 OK

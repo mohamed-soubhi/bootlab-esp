@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-from labflash.update import Snapshot
+from labflash.update import Snapshot, read_app_version
 
 REPO = Path(__file__).resolve().parent.parent
 IMAGE_NAME = "bootlab_idf_blink.bin"
@@ -215,6 +215,33 @@ class LiveBackend:
         with log_path.open("a", encoding="utf-8") as f:
             f.write(f"--- update {variant} via {transport} rc={rc}\n{out}\n")
         return rc == 0 and OK_MARKER in out
+
+    def interrupted_transfer(self, variant: str, fraction: float = 0.5, settle_s: float = 20.0) -> dict:
+        """WiFi OTA whose image server cuts the connection after `fraction` of the bytes (T08 driver).
+        Returns what really happened; the caller asserts the board discarded the partial image."""
+        import shutil
+        import tempfile
+        from labflash.idf_wifi_ota import OtaServer, WifiBoard
+        from labflash.update_cli import DEFAULT_KEYS, guess_host_ip, read_token
+        image = self.image_for(variant)
+        size = image.stat().st_size
+        keys = self.keys_dir or DEFAULT_KEYS
+        board = WifiBoard(self.board_ip, read_token(self.env_file, None), keys / "ca.pem")
+        with tempfile.TemporaryDirectory(prefix="labflash-t08-") as d:
+            shutil.copy(image, Path(d) / "update.bin")
+            server = OtaServer(d, 8443, keys / "server_cert.pem", keys / "server_key.pem",
+                               abort_after_bytes=int(size * fraction)).start()
+            try:
+                status = board.trigger(f"https://{guess_host_ip(self.board_ip)}:{server.port}/update.bin",
+                                       read_app_version(image.read_bytes()))
+                deadline = time.monotonic() + settle_s
+                while time.monotonic() < deadline and server.aborted == 0:
+                    time.sleep(0.5)
+                time.sleep(settle_s)   # let the board notice the short body and abandon the download
+                return {"trigger_status": status, "image_bytes": size, "served": dict(server.served),
+                        "aborted": server.aborted}
+            finally:
+                server.stop()
 
     def reset_to_v1(self, log_path: Path, transport: str = "wifi") -> bool:
         s = self.snapshot()

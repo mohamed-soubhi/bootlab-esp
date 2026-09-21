@@ -131,7 +131,20 @@ def test_t07_corrupted_truncated_rejected(hil_rig: HilRig) -> None:
 def test_t08_interrupted_transfer_retry(hil_rig: HilRig) -> None:
     """T08: Interrupted transfer is discarded, subsequent retry succeeds."""
     if not hil_rig.is_mock:
-        pytest.skip("live T08 not implemented (no interrupted-transfer driver); NOT verified on hardware")
+        before = hil_rig.state()
+        assert before.get("confirmed") is True, f"precondition: board must be confirmed, got {before}"
+        res = hil_rig.backend.interrupted_transfer("v2", fraction=0.5)
+        assert res["trigger_status"] == 202, f"board did not start the download: {res}"
+        assert res["aborted"] == 1, f"the transfer was not actually interrupted: {res}"
+        assert 0 < sum(res["served"].values()) < res["image_bytes"], f"transfer not cut mid-way: {res}"
+        after = hil_rig.wait_state(lambda s: True, timeout_s=90.0)
+        assert after is not None, "board unreachable after an interrupted transfer"
+        assert (after["app"], after["slot"], after["confirmed"]) == (before["app"], before["slot"], before["confirmed"]), \
+            f"partial image was not discarded: {before} -> {after}"
+        assert hil_rig.update_ota("v2", "wifi"), "retry after the interrupted transfer failed"
+        assert hil_rig.state()["app"] == "2.0.0"
+        hil_rig.log_artifact("t08_interrupted.txt", f"T08 LIVE: {res}; unchanged {after}; retry -> v2 OK\n")
+        return
     # Simulates transfer abort at 50%
     st_before = hil_rig.query_http_version()
 

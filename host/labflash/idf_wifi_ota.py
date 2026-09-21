@@ -38,10 +38,25 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
 
     def copyfile(self, source, outputfile):
         name = os.path.basename(self.path)
+        limit = self.server.abort_after_bytes
+        sent = 0
         try:
             while chunk := source.read(COPY_CHUNK):
+                if limit is not None and sent + len(chunk) > limit:
+                    chunk = chunk[:max(0, limit - sent)]
                 outputfile.write(chunk)
+                sent += len(chunk)
                 self.server.served[name] = self.server.served.get(name, 0) + len(chunk)
+                if limit is not None and sent >= limit:
+                    # Full Content-Length was already declared: cut the connection so the client sees a short body.
+                    self.server.aborted += 1
+                    self.close_connection = True
+                    outputfile.flush()
+                    try:
+                        self.connection.shutdown(2)
+                    except OSError:
+                        pass
+                    return
         except (BrokenPipeError, ConnectionResetError, ssl.SSLError):
             pass
 
@@ -49,12 +64,18 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
 class OtaServer:
     """Serve `directory` over HTTPS. port=0 picks a free port (see .port). Use as a context manager."""
 
-    def __init__(self, directory, port, certfile, keyfile, bind="0.0.0.0"):
+    def __init__(self, directory, port, certfile, keyfile, bind="0.0.0.0", abort_after_bytes=None):
         self.directory, self.bind, self._port = Path(directory), bind, port
         self.certfile, self.keyfile = str(certfile), str(keyfile)
         self.served: dict[str, int] = {}
+        self.abort_after_bytes = abort_after_bytes   # T08 driver: send only this many bytes, then cut
+        self._aborted_final = 0
         self._server = None
         self._thread = None
+
+    @property
+    def aborted(self) -> int:
+        return self._server.aborted if self._server else self._aborted_final
 
     @property
     def port(self) -> int:
@@ -67,12 +88,15 @@ class OtaServer:
         self._server = http.server.ThreadingHTTPServer((self.bind, self._port), handler)
         self._server.socket = ctx.wrap_socket(self._server.socket, server_side=True)
         self._server.served = self.served
+        self._server.abort_after_bytes = self.abort_after_bytes
+        self._server.aborted = 0
         self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
         self._thread.start()
         return self
 
     def stop(self):
         if self._server:
+            self._aborted_final = self._server.aborted
             self._server.shutdown()
             self._server.server_close()
             self._server = None
