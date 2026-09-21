@@ -17,10 +17,27 @@ Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
   - BL-014: AC needs Zephyr native_sim + IDF linux builds; Zephyr on hold.
   - BL-041: host code done + mock-verified; live LABID firmware now running on IDF board.
   - BL-026: both ACs PASS with live on-target console evidence (2026-09-21); blocked only on deps BL-023/BL-025.
-- TODO, IDF chain: BL-027 (IDF BLE OTA).
+  - BL-027: all 3 ACs PASS with live on-target console evidence (2026-09-21); blocked only on dep BL-023.
+- TODO, IDF chain: BL-028 (IDF phase acceptance run: all P1 checkboxes with logs).
 - Zephyr chain (BL-030 ...) stays on hold.
 
-## BL-027 status (IN PROGRESS — firmware + host client built and unit-tested; NOT flashed, NO on-target result yet)
+## BL-027 status (COMPLETE — all 3 ACs PASS on target; evidence: `scripts/evidence/bl027_ble_ota_acceptance.md`)
+Board left on **v1** (1.0.0, slot 0, confirmed), now running the BLE-enabled firmware. Results (2026-09-21):
+- AC1 v2->v1 (and v1->v2) over BLE: PASS. AC2 WiFi stays connected: 24/24 sparse /version samples during a 116 s transfer,
+  0 WiFi disconnect events in the console. AC3 interrupted transfer: 'partial image discarded', running image unchanged,
+  and a full transfer right after it works. Extra: a foreign-key-signed image is refused over BLE.
+- FAILURE FIXED FIRST (b2f4034): the first BLE build boot-looped ('BLE_INIT: hci inits failed'): ble_ota calls `esp_nimble_init()`
+  (host only) so the app must call `esp_bt_controller_init/enable`; and a fatal `ESP_ERROR_CHECK` on an OPTIONAL subsystem took
+  the WiFi OTA recovery path down. Optional subsystems must never be fatal. Recovered by a USB flash.
+- HOW TO RUN (all Windows-side via `powershell.exe ... < /dev/null`; BLE OTA needs a central, WSL2 has none):
+  1. stage signed 4096-aligned images where Windows can read them (e.g. `C:\MSA\embedded-OS\bootlab-esp\ble_stage\`), copy
+     `host/labflash/idf_ble_ota.py` next to the other scripts (it is self-contained: stdlib + bleak);
+  2. `C:\MSA\embedded-OS\bootlab-esp\.venv_win_ble\Scripts\python.exe <...>\idf_ble_ota.py --image <img> --board-mac E0:72:A1:AA:23:90`
+     (`--scan-only` to just find it; `--abort-after N` for the interrupted-transfer test). BLE addr = base MAC + 2.
+  3. capture the board console in the background with `serial_watch.py` for evidence; sample `/version` SPARSELY (~5 s).
+- Not covered: radio-level loss mid-transfer; unaligned images; ~11 KB/s (~2 min/image).
+
+(historical build notes, all done)
 Done and pushed (HEAD ~ab048a2):
 - `espressif/ble_ota` 0.1.18 pinned (ESCALATE gate cleared, see versions.env). Firmware: `esp_idf/main/app_ble_ota.[ch]`
   (flash write via esp_ota_*, `esp_ota_end` enforces the RSA signature, activation only after verification, GAP-disconnect
