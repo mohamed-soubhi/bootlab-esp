@@ -243,6 +243,41 @@ class HilRig:
             return None
         return None
 
+    def trigger_http_ota(
+        self,
+        url: str = "https://192.168.1.134:8443/update.bin",
+        token: str = "wrong-token",
+        ip: str = "192.168.1.152",
+        timeout: float = 5.0,
+    ) -> int:
+        """Trigger POST /ota on the target board and return the HTTP status code."""
+        if self.is_mock:
+            if token != "lab-bearer-token-secret-12345":
+                return 401
+            return 202
+        endpoint = f"https://{ip}/ota"
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        payload = json.dumps({"url": url}).encode("utf-8")
+        req = urllib.request.Request(
+            endpoint,
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {token}",
+                "User-Agent": "bootlab-hil",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
+                return resp.status
+        except urllib.error.HTTPError as e:
+            return e.code
+        except Exception:
+            return -1
+
     def query_labid_info(self) -> dict[str, str] | None:
         """Query board identity and version via LABID framing."""
         if self.is_mock:

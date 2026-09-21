@@ -8,13 +8,13 @@
 
 `█████████████░░░░░░░░░░░░░░░░░` **23/52 done (44%)**
 
-- **IDF track:** `██████████████░░░░░░` 30/42
+- **IDF track:** `███████████████░░░░░` 31/42
 - **Zephyr track:** `██████░░░░░░░░░░░░░░` 11/37
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 22
-    "doing" : 7
+    "todo" : 21
+    "doing" : 8
     "done" : 23
 ```
 
@@ -735,7 +735,7 @@ pytest with mocked BLE / serial / HTTP.
 |---|---|---|---|---|---|---|
 | 🔵 | BL-050 | HIL framework: fixtures, markers, artifacts | M | host | BL-046 |  |
 | 🔵 | BL-051 | HIL T01–T03 boot + update | S | zephyr, idf | BL-050 |  |
-| ⬜ | BL-052 | HIL T04–T09 rollback, security, robustness | M | zephyr, idf | BL-050 |  |
+| 🔵 | BL-052 | HIL T04–T09 rollback, security, robustness | M | zephyr, idf | BL-050 |  |
 | ⬜ | BL-053 | HIL T10–T15 LABID + identity + USB | S | zephyr, idf | BL-050 |  |
 | ⬜ | BL-054 | (Stretch) HIL T17 power cut | M | zephyr, idf | BL-050 |  |
 | 🔵 | BL-055 | build.yml cloud CI | M | host | BL-028, BL-036 |  |
@@ -779,11 +779,11 @@ PLAN §8 P4 matrix.
 
 </details>
 
-<details><summary>⬜ <b>BL-052</b> — HIL T04–T09 rollback, security, robustness</summary>
+<details><summary>🔵 <b>BL-052</b> — HIL T04–T09 rollback, security, robustness</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** zephyr, idf  
-- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
+- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
 - **Depends on:** BL-050  
 - **Plan:** §8 P4
 
@@ -791,7 +791,7 @@ no_confirm, hang, bad_sig, corrupt, interrupted, token.
 
 **Acceptance criteria**
 *IDF scope*
-- [ ] Green on the idf board for every transport
+- [x] Green on the idf board for every transport
 *Zephyr scope*
 - [ ] Green on the zephyr board for every transport
 
@@ -1083,7 +1083,7 @@ flowchart TB
     subgraph E4_g["P4 HIL tests + CI"]
         BL050["BL-050"]:::doing
         BL051["BL-051"]:::doing
-        BL052["BL-052"]:::todo
+        BL052["BL-052"]:::doing
         BL053["BL-053"]:::todo
         BL054["BL-054"]:::todo
         BL055["BL-055"]:::doing

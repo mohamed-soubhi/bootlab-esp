@@ -10,7 +10,7 @@
 
 ## Progress
 
-- **IDF track:** `█████████████████████░░░░░░░░░` **30/42 done**
+- **IDF track:** `██████████████████████░░░░░░░░` **31/42 done**
 - **Zephyr track:** `█████████░░░░░░░░░░░░░░░░░░░░░` **11/37 done**
 
 | Epic | Phase | IDF | Zephyr |
@@ -20,7 +20,7 @@
 | E1 ESP32-S3 #2 — ESP-IDF | P1 | `██████████` 9/9 | — |
 | E2 ESP32-S3 #1 — Zephyr | P2 | — | `░░░░░░░░░░` 0/9 |
 | E3 labflash CLI | P3 | `██████████` 6/6 | `██░░░░░░░░` 1/6 |
-| E4 HIL tests + CI | P4 | `███░░░░░░░` 3/9 | `░░░░░░░░░░` 0/8 |
+| E4 HIL tests + CI | P4 | `████░░░░░░` 4/9 | `░░░░░░░░░░` 0/8 |
 | E5 Soak, docs, handover | P5 | `░░░░░░░░░░` 0/6 | `░░░░░░░░░░` 0/4 |
 
 ## Gantt — IDF track
@@ -65,7 +65,7 @@ gantt
     section P4 HIL tests + CI
     BL-050 HIL framework fixtures markers artifacts :done, bl050, 2026-10-04, 2d
     BL-051 HIL T01–T03 boot + update :done, bl051, 2026-10-06, 1d
-    BL-052 HIL T04–T09 rollback security robustness :bl052, 2026-10-06, 2d
+    BL-052 HIL T04–T09 rollback security robustness :done, bl052, 2026-10-06, 2d
     BL-053 HIL T10–T15 LABID + identity + USB :bl053, 2026-10-06, 1d
     BL-054 (Stretch) HIL T17 power cut :bl054, 2026-10-06, 2d
     BL-055 build.yml cloud CI :done, bl055, 2026-09-30, 2d
@@ -89,7 +89,6 @@ None: nothing on this board is blocked.
 
 ### Ready to start — IDF track (todo, every dependency of this board done)
 
-- **BL-052** [M] HIL T04–T09 rollback, security, robustness
 - **BL-053** [S] HIL T10–T15 LABID + identity + USB
 - **BL-054** [M] (Stretch) HIL T17 power cut
 - **BL-056** [M] hil.yml self-hosted runner on RPi4
@@ -98,12 +97,11 @@ None: nothing on this board is blocked.
 
 | Ticket | Status | Waiting on (unfinished dependencies) |
 |---|---|---|
-| BL-052 HIL T04–T09 rollback security robustness | ⬜ todo | — |
 | BL-053 HIL T10–T15 LABID + identity + USB | ⬜ todo | — |
 | BL-054 (Stretch) HIL T17 power cut | ⬜ todo | — |
 | BL-056 hil.yml self-hosted runner on RPi4 | ⬜ todo | — |
 | BL-056a IDF acceptance re-run on the RPi4 (OTA-progr | ⬜ todo | BL-056[idf] ⬜ |
-| BL-057 Full HIL suite green 3× in a row | ⬜ todo | BL-052[idf] ⬜, BL-053[idf] ⬜, BL-056[idf] ⬜ |
+| BL-057 Full HIL suite green 3× in a row | ⬜ todo | BL-053[idf] ⬜, BL-056[idf] ⬜ |
 | BL-060 Overnight soak ×100 | ⬜ todo | BL-057[idf] ⬜ |
 | BL-061 README quick start | ⬜ todo | BL-057[idf] ⬜ |
 | BL-062 Recovery runbook + adding-a-board guide | ⬜ todo | BL-057[idf] ⬜ |
