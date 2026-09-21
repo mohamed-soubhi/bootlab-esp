@@ -45,6 +45,7 @@ jobs:
 
       - name: Build and run libFuzzer smoke test
         run: |
+          mkdir -p common/labid/tests/fuzz_corpus
           clang -g -O1 -fsanitize=fuzzer,address,undefined -std=c99 \
             -I common/labid/include \
             common/labid/tests/fuzz_labid.c common/labid/src/labid.c \
