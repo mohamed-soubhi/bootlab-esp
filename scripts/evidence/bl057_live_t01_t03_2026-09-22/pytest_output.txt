@@ -1,0 +1,14 @@
+configfile: pytest.ini
+plugins: anyio-4.10.0, dash-2.17.1, typeguard-4.4.4
+collecting ... collected 6 items
+
+tests_hil/test_t01_t03_boot_update.py::test_t01_factory_v1_boot PASSED   [ 16%]
+tests_hil/test_t01_t03_boot_update.py::test_t02_update_v1_to_v2_wifi PASSED [ 33%]
+tests_hil/test_t01_t03_boot_update.py::test_t03_downgrade_v2_to_v1_wifi PASSED [ 50%]
+tests_hil/test_t01_t03_boot_update.py::test_t02_update_v1_to_v2_ble PASSED [ 66%]
+tests_hil/test_t01_t03_boot_update.py::test_t03_downgrade_v2_to_v1_ble PASSED [ 83%]
+tests_hil/test_t01_t03_boot_update.py::test_t01_t03_zephyr_gated SKIPPED [100%]
+
+================== 5 passed, 1 skipped in 502.27s (0:08:22) ===================
+
+[exited with code 0]
