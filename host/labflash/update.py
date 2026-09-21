@@ -127,9 +127,8 @@ def update_idf(image: bytes, transport: str, *, snapshot_fn: Callable[[], Snapsh
         post = _poll(snapshot_fn, lambda s: s.app == version and s.confirmed, confirm_timeout_s, poll_s, sleep_fn) or post
     https = None
     if https_snapshot_fn is not None:
-        try:
-            https = https_snapshot_fn()
-        except Exception:   # noqa: BLE001 - reported as a failed check below
+        https = _poll(https_snapshot_fn, lambda s: s.app == version, timeout_s=15.0, poll_s=poll_s, sleep_fn=sleep_fn)
+        if https is None:
             https = Snapshot("unreachable", -1, False, None, "https")
     checks = evaluate(pre, post, version, expected_uid, https)
     return UpdateResult(all(c.ok for c in checks), checks, version, pre, post)

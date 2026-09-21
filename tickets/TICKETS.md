@@ -8,13 +8,13 @@
 
 `█████████████░░░░░░░░░░░░░░░░░` **23/52 done (44%)**
 
-- **IDF track:** `██████████████░░░░░░` 29/42
+- **IDF track:** `██████████████░░░░░░` 30/42
 - **Zephyr track:** `██████░░░░░░░░░░░░░░` 11/37
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 23
-    "doing" : 6
+    "todo" : 22
+    "doing" : 7
     "done" : 23
 ```
 
@@ -734,7 +734,7 @@ pytest with mocked BLE / serial / HTTP.
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
 | 🔵 | BL-050 | HIL framework: fixtures, markers, artifacts | M | host | BL-046 |  |
-| ⬜ | BL-051 | HIL T01–T03 boot + update | S | zephyr, idf | BL-050 |  |
+| 🔵 | BL-051 | HIL T01–T03 boot + update | S | zephyr, idf | BL-050 |  |
 | ⬜ | BL-052 | HIL T04–T09 rollback, security, robustness | M | zephyr, idf | BL-050 |  |
 | ⬜ | BL-053 | HIL T10–T15 LABID + identity + USB | S | zephyr, idf | BL-050 |  |
 | ⬜ | BL-054 | (Stretch) HIL T17 power cut | M | zephyr, idf | BL-050 |  |
@@ -761,11 +761,11 @@ rig fixture, factory_reset, btmon capture, JUnit.
 
 </details>
 
-<details><summary>⬜ <b>BL-051</b> — HIL T01–T03 boot + update</summary>
+<details><summary>🔵 <b>BL-051</b> — HIL T01–T03 boot + update</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** zephyr, idf  
-- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
+- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
 - **Depends on:** BL-050  
 - **Plan:** §8 P4
 
@@ -773,7 +773,7 @@ PLAN §8 P4 matrix.
 
 **Acceptance criteria**
 *IDF scope*
-- [ ] Green on the idf board for both transports (ble, wifi)
+- [x] Green on the idf board for both transports (ble, wifi)
 *Zephyr scope*
 - [ ] Green on the zephyr board for both transports (ble, udp)
 
@@ -1082,7 +1082,7 @@ flowchart TB
     end
     subgraph E4_g["P4 HIL tests + CI"]
         BL050["BL-050"]:::doing
-        BL051["BL-051"]:::todo
+        BL051["BL-051"]:::doing
         BL052["BL-052"]:::todo
         BL053["BL-053"]:::todo
         BL054["BL-054"]:::todo

@@ -1000,7 +1000,7 @@
       "ac": [
         "Green on all board/transport combinations"
       ],
-      "status": "todo",
+      "status": "doing",
       "pr": "",
       "tracks": [
         "idf",
@@ -1015,7 +1015,7 @@
         ]
       },
       "track_status": {
-        "idf": "todo",
+        "idf": "done",
         "zephyr": "todo"
       }
     },

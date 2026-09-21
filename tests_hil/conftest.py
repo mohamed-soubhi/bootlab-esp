@@ -217,11 +217,19 @@ class HilRig:
     artifacts_dir: Path
     port: str | None
     is_mock: bool
+    mock_version: str = "1.0.0"
+    mock_slot: int = 0
 
     def query_http_version(self, ip: str = "192.168.1.152", timeout: float = 3.0) -> dict[str, Any] | None:
         """Query running app version via HTTPS /version."""
         if self.is_mock:
-            return {"version": "1.0.0", "slot": 0, "confirmed": True, "board": "idf"}
+            return {
+                "version": self.mock_version,
+                "app": self.mock_version,
+                "slot": self.mock_slot,
+                "confirmed": True,
+                "board": "idf",
+            }
         url = f"https://{ip}/version"
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
@@ -248,6 +256,85 @@ class HilRig:
         p = self.artifacts_dir / filename
         p.write_text(content, encoding="utf-8")
         return p
+
+    def measure_blink_rate(
+        self,
+        expect_hz: float = 1.0,
+        duration_s: float = 5.0,
+        tolerance: int = 2,
+    ) -> tuple[float, bool]:
+        """Measure LED toggle frequency over duration_s."""
+        if self.is_mock:
+            hz = 4.0 if self.mock_version == "2.0.0" else 1.0
+            return hz, (abs(hz - expect_hz) < 0.1)
+        port = self.port or "COM14"
+        cmd = f'cd C:\\MSA\\embedded-OS\\bootlab-esp\\host; python -m labflash measure idf --port {port} --expect-hz {expect_hz} --seconds {duration_s} --tolerance {tolerance}'
+        res = subprocess.run(
+            ["powershell.exe", "-Command", cmd],
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
+        )
+        passed = "[PASS]" in res.stdout
+        import re
+        m = re.search(r"=\s*([0-9.]+)\s*Hz", res.stdout)
+        hz = float(m.group(1)) if m else (expect_hz if passed else 0.0)
+        return hz, passed
+
+    def update_ota(self, variant: str, transport: str = "wifi") -> bool:
+        """Perform an OTA update to a specified variant (e.g. 'v1' or 'v2')."""
+        if self.is_mock:
+            if variant == "v2":
+                self.mock_version = "2.0.0"
+                self.mock_slot = 1
+            else:
+                self.mock_version = "1.0.0"
+                self.mock_slot = 0
+            return True
+        port = self.port or "COM14"
+        img_map = {
+            "v1": r"..\esp_idf\build\bootlab_idf_blink.bin",
+            "v2": r"..\esp_idf\build_v2\bootlab_idf_blink.bin",
+            "no_confirm": r"..\esp_idf\build_no_confirm\bootlab_idf_blink.bin",
+            "hang": r"..\esp_idf\build_hang\bootlab_idf_blink.bin",
+            "bad_sig": r"..\esp_idf\build_bad_sig\bootlab_idf_blink.bin",
+        }
+        img = img_map.get(variant)
+        if not img:
+            raise ValueError(f"Unknown variant {variant}")
+
+        if transport == "ble":
+            cmd = f'cd C:\\MSA\\embedded-OS\\bootlab-esp\\host; python -m labflash update idf --image {img} --transport ble --labid-port {port} --board-mac E0:72:A1:AA:23:90'
+            res = subprocess.run(
+                ["powershell.exe", "-Command", cmd],
+                stdin=subprocess.DEVNULL,
+                capture_output=True,
+                text=True,
+                timeout=240,
+            )
+            return "UPDATE OK" in res.stdout
+        elif transport == "wifi":
+            # Copy server key temporarily
+            shutil.copy("keys/server_key.pem", "/mnt/c/MSA/embedded-OS/bootlab-esp/keys/server_key.pem")
+            try:
+                cmd = f'cd C:\\MSA\\embedded-OS\\bootlab-esp\\host; python -m labflash update idf --image {img} --transport wifi --board-ip 192.168.1.152 --labid-port {port} --keys C:\\MSA\\embedded-OS\\bootlab-esp\\keys --token lab-bearer-token-secret-12345'
+                res = subprocess.run(
+                    ["powershell.exe", "-Command", cmd],
+                    stdin=subprocess.DEVNULL,
+                    capture_output=True,
+                    text=True,
+                    timeout=240,
+                )
+                return "UPDATE OK" in res.stdout
+            finally:
+                # Always remove temporary server key
+                key_path = Path("/mnt/c/MSA/embedded-OS/bootlab-esp/keys/server_key.pem")
+                if key_path.exists():
+                    try:
+                        key_path.unlink()
+                    except OSError:
+                        pass
+        return False
 
 
 @pytest.fixture
