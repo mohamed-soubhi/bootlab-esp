@@ -14,9 +14,19 @@ the per-ticket bullets below are history.
   BL-063a (lessons learned), BL-063b (HTML presentation). BL-020…BL-028 are now **done**.
 - **Gate:** all Zephyr work (BL-030, BL-005b, BL-014b and everything behind them) waits for **BL-063b** via `deps_by_track`.
   The tool refuses to start a Zephyr ticket early. Do not lift this without the owner.
-- **Ready now (all IDF):** BL-041 (identify/measure), BL-042 (flash/recover/provision, identity check before writing),
-  BL-043 (update idf --transport ble|wifi: assemble `idf_ble_ota.py` + `ota_check.py`), BL-045 (build+sign orchestration for the 5 IDF
-  variants; encode PLAN R15), BL-055 (cloud CI, IDF build).
+- **BL-043 DONE (2026-09-21):** `labflash update idf --transport ble|wifi` (host/labflash/update.py, update_cli.py, idf_wifi_ota.py; 13 tests,
+  host suite 32 passed). Verified live on the board, run NATIVELY on Windows, both transports via LABID (+ LABID==HTTPS on WiFi); live negatives:
+  wrong identity refused before sending, foreign-key image -> UPDATE FAILED. Evidence `scripts/evidence/bl043_labflash_update.md`. Run recipe:
+  `powershell.exe -Command "cd C:\MSA\embedded-OS\bootlab-esp\host; & <.venv_win_ble python> -m labflash update idf --image <bin> --transport ble --labid-port COM14 --board-mac E0:72:A1:AA:23:90"`
+  (copy `host/labflash/*.py` into the Windows scratch mirror first; WiFi needs `--board-ip 192.168.1.152`, `--keys <dir with ca/server_cert/server_key>`,
+  token via env `OTA_TOKEN` — copy the server key there only for the run and delete it after).
+- **Ready now (all IDF), pick in this order:** BL-045 (build+sign orchestration for the 5 IDF variants: encode PLAN R15 — per-dir sdkconfig, verify
+  variant + signature AFTER building; images to stage under `esp_idf/build*`), BL-041 (identify/measure: `identify.py` exists, needs live IDF
+  verification + CLI wiring), BL-042 (flash/recover/provision with identity check BEFORE writing; esptool wrappers; the zephyr board must never be
+  written by mistake), BL-055 (cloud CI, IDF build). Then BL-046 (mocked tests; add ruff+mypy to the venv — NOT installed yet), BL-050…BL-063 (IDF scope),
+  BL-056a (RPi4 re-run), BL-063a (lessons), BL-063b (HTML presentation; Artifact tool `slides`/HTML), then Zephyr is released.
+- **Open items:** `scripts/ota_check.py` duplicates the server/client now in `labflash.idf_wifi_ota` (fold it in later); PLAN 8.0 documents the replan;
+  the Zephyr branch of `common/labid/CMakeLists.txt` (labid_dispatch.c) has never been built (BL-014b).
 - **Hosts:** develop here (WSL2 + Windows-native tools, PLAN R14). The **RPi4 has limitations and is the OTA-programming host**: BL-056a re-runs
   the IDF acceptance from it at the end. Builds stay on the dev machine / CI.
 - **Lessons so far (feed BL-063a):** R13 USB serial descriptor; R14 usbipd resets the board on port open; R15 shared sdkconfig across `-B` dirs;
