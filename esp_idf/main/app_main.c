@@ -27,6 +27,7 @@
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "app_wifi.h"
 #include "labid_port.h"
 #include "led_strip.h"
 #define APP_LED_GPIO CONFIG_APP_LED_GPIO /* UNCONFIRMED, see Kconfig.projbuild */
@@ -160,4 +161,9 @@ void app_main(void)
         .is_confirmed = app_is_confirmed,
     };
     ESP_ERROR_CHECK(labid_port_start(&labid_app));
+
+#if !CONFIG_APP_VARIANT_HANG
+    /* BL-024: initialize NVS & WiFi in station mode if provisioned (PLAN 5.2 / 7.2) */
+    ESP_ERROR_CHECK(app_wifi_init());
+#endif
 }

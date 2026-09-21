@@ -10,12 +10,28 @@ Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
   - BL-021: all 3 ACs PASS with evidence (2026-09-21); blocked only on dep BL-020.
   - BL-022: all 3 ACs PASS with live on-target evidence (2026-09-21); blocked only on dep BL-020.
   - BL-023: all 2 ACs PASS with live on-target evidence (2026-09-21); blocked only on dep BL-021.
+  - BL-024: all 2 ACs PASS with live on-target evidence (2026-09-21); blocked only on dep BL-020.
   - BL-005: idf led_gpio=48 confirmed; zephyr led_gpio unknown (Zephyr hold); `psram_mode` unverified
     on both boards (the current IDF build does not enable PSRAM, so it cannot be detected yet).
   - BL-014: AC needs Zephyr native_sim + IDF linux builds; Zephyr on hold.
   - BL-041: host code done + mock-verified; live LABID firmware now running on IDF board.
-- TODO, IDF chain: BL-024 (WiFi HTTPS OTA) -> BL-025 (BLE OTA).
+- TODO, IDF chain: BL-025 (IDF HTTPS control server (/ota, /version)) -> BL-026 (IDF WiFi OTA pull).
 - Zephyr chain (BL-030 ...) stays on hold.
+
+## BL-024 status (COMPLETE — all 2 ACs pass with live on-target evidence)
+- Host provisioning tool `host/labflash/provision.py` implemented: `labflash provision idf` writes
+  SSID/PSK/token to NVS partition at offset 0x9000 using `nvs_partition_gen` and `esptool`.
+  Unit tests in `host/tests/test_provision.py` (4/4 PASS). Added `labflash provision` CLI subcommand.
+- ESP-IDF WiFi client implemented in `esp_idf/main/app_wifi.[ch]`: reads NVS namespace `lab` keys
+  `ssid`, `psk`, `token`, configures WiFi STA mode, connects to AP, logs IP on `IP_EVENT_STA_GOT_IP`.
+  Sensitive stack buffers (`psk`, `wifi_config_t`) wiped with `memset` immediately after use.
+- Built and signed `v1` firmware with WiFi support (size 856064 bytes, ELF SHA256 `6f7be3cba67c6e87faf24d5a1a4b7e23f245b207383f45dd999f6d0ae2ed0806`).
+- Flashed signed v1 app and provisioned NVS partition at offset 0x9000 to `lab-esp-idf` (`E0:72:A1:AA:23:90`)
+  after owner go-ahead.
+- Live acceptance test runner `scripts/wifi_check.py` run natively on Windows (`COM14`):
+  - AC1 (Board joins WiFi after reboot): PASS, connected to AP `DIGIFIBRA-ubEU`, DHCP assigned IP `192.168.1.152`.
+  - AC2 (No credentials in source or logs): PASS, zero PSK or token in console logs or tracked git files.
+- Status set to 'blocked' solely because dep BL-020 is blocked on BL-005/BL-014; all requirements satisfied.
 
 ## BL-023 status (COMPLETE — all 2 ACs pass with live on-target evidence)
 - Self-test health check task implemented in `esp_idf/main/app_main.c`: waits for >= 5 s uptime and >= 5
@@ -68,12 +84,13 @@ Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
 - Ticket status set to 'blocked' solely because dep BL-020 is blocked; all requirements satisfied.
 
 NEXT:
-- BL-024 (IDF WiFi + token provisioning via NVS)
+- BL-025 (IDF HTTPS control server (/ota, /version))
 - BL-041 (host identify/measure verification against live LABID)
 
 ## Hardware state (2026-09-21)
 - idf board: `/dev/lab-esp-idf`, USB serial `E0:72:A1:AA:23:90`, usbipd busid 7-4, Windows COM14.
-  Flashed with BL-023 v1 signed build (dual OTA partitions, rollback enabled, 1 Hz blink on GPIO48, confirms after 5s).
+  Flashed with BL-024 v1 signed build (WiFi STA support, NVS credentials provisioned at 0x9000,
+  dual OTA partitions, rollback enabled, 1 Hz blink on GPIO48, confirms after 5s). Connected to WiFi.
 - zephyr board: `/dev/lab-esp-zephyr`, USB serial `AC:A7:04:2C:3B:04`, busid 6-3. Untouched.
 
 ## Settled findings (see PLAN Sec 9)

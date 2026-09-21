@@ -9,8 +9,8 @@
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 29
-    "blocked" : 7
+    "todo" : 28
+    "blocked" : 8
     "done" : 11
 ```
 
@@ -62,6 +62,7 @@ flowchart LR
 - 🟥 **BL-021** IDF partitions + signing + rollback config 
 - 🟥 **BL-022** IDF LABID port on USB-Serial-JTAG 
 - 🟥 **BL-023** IDF self-test + mark valid 
+- 🟥 **BL-024** IDF WiFi + token provisioning via NVS 
 - 🟥 **BL-041** identify, info, status, measure 
 
 ## Tickets by epic
@@ -279,7 +280,7 @@ One source, two build integrations. [BLOCKED: AC requires Zephyr native_sim + ID
 | 🟥 | BL-021 | IDF partitions + signing + rollback config | S | idf | BL-020, BL-006 |  |
 | 🟥 | BL-022 | IDF LABID port on USB-Serial-JTAG | S | idf | BL-020, BL-013 |  |
 | 🟥 | BL-023 | IDF self-test + mark valid | S | idf | BL-021 |  |
-| ⬜ | BL-024 | IDF WiFi + token provisioning via NVS | S | idf | BL-020 |  |
+| 🟥 | BL-024 | IDF WiFi + token provisioning via NVS | S | idf | BL-020 |  |
 | ⬜ | BL-025 | IDF HTTPS control server (/ota, /version) | M | idf | BL-024 |  |
 | ⬜ | BL-026 | IDF WiFi OTA (esp_https_ota pull) | M | idf | BL-025, BL-023 |  |
 | ⬜ | BL-027 | IDF BLE OTA (ble_ota + NimBLE + coexistence) | L | idf | BL-023 |  |
@@ -349,14 +350,14 @@ Driver read task, app/bootloader descriptions, OTA state. [NOTE 2026-09-21: R14 
 
 </details>
 
-<details><summary>⬜ <b>BL-024</b> — IDF WiFi + token provisioning via NVS</summary>
+<details><summary>🟥 <b>BL-024</b> — IDF WiFi + token provisioning via NVS</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** idf  
 - **Depends on:** BL-020  
 - **Plan:** §4.2, §5, §6, §7.2, §8 P1
 
-labflash provision idf writes SSID/PSK/token over USB.
+labflash provision idf writes SSID/PSK/token over USB. [PROGRESS 2026-09-21 DONE: Implemented host/labflash/provision.py (writes SSID/PSK/token to NVS partition at 0x9000 using esp_idf_nvs_partition_gen and esptool, verified by unit tests in host/tests/test_provision.py, 4/4 PASS). Added 'labflash provision' CLI command. Added esp_idf/main/app_wifi.[ch] (reads NVS namespace 'lab' keys ssid/psk/token, initializes WiFi STA mode, connects to AP, logs assigned IP on IP_EVENT_STA_GOT_IP, wipes sensitive stack buffers with memset immediately after use). Rebuilt signed v1 firmware with WiFi support. Flashed signed v1 app and provisioned NVS partition at 0x9000 on lab-esp-idf (E0:72:A1:AA:23:90) after owner go-ahead. Verified live on hardware using scripts/wifi_check.py COM14: AC1 (Board joins WiFi after reboot): PASS, connected to AP DIGIFIBRA-ubEU and assigned DHCP IP 192.168.1.152. AC2 (No credentials in source or logs): PASS, zero PSK/token in console logs or tracked repository source files. Status set to blocked pending dep BL-020.]
 
 **Acceptance criteria**
 - [ ] Board joins WiFi after reboot
@@ -880,7 +881,7 @@ flowchart TB
         BL021["BL-021"]:::blocked
         BL022["BL-022"]:::blocked
         BL023["BL-023"]:::blocked
-        BL024["BL-024"]:::todo
+        BL024["BL-024"]:::blocked
         BL025["BL-025"]:::todo
         BL026["BL-026"]:::todo
         BL027["BL-027"]:::todo

@@ -4,6 +4,12 @@ keys/
 build/
 *.pem
 __pycache__/
+# Local credentials (NEVER COMMIT)
+credentials.env
+.env
+.env.*
+*.env
+!scripts/versions.env
 # labflash host artifacts (extend-only; never remove entries above)
 host/**/*.egg-info/
 *.pyc

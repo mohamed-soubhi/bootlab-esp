@@ -387,13 +387,14 @@
       "deps": [
         "BL-020"
       ],
-      "desc": "labflash provision idf writes SSID/PSK/token over USB.",
+      "desc": "labflash provision idf writes SSID/PSK/token over USB. [PROGRESS 2026-09-21 DONE: Implemented host/labflash/provision.py (writes SSID/PSK/token to NVS partition at 0x9000 using esp_idf_nvs_partition_gen and esptool, verified by unit tests in host/tests/test_provision.py, 4/4 PASS). Added 'labflash provision' CLI command. Added esp_idf/main/app_wifi.[ch] (reads NVS namespace 'lab' keys ssid/psk/token, initializes WiFi STA mode, connects to AP, logs assigned IP on IP_EVENT_STA_GOT_IP, wipes sensitive stack buffers with memset immediately after use). Rebuilt signed v1 firmware with WiFi support. Flashed signed v1 app and provisioned NVS partition at 0x9000 on lab-esp-idf (E0:72:A1:AA:23:90) after owner go-ahead. Verified live on hardware using scripts/wifi_check.py COM14: AC1 (Board joins WiFi after reboot): PASS, connected to AP DIGIFIBRA-ubEU and assigned DHCP IP 192.168.1.152. AC2 (No credentials in source or logs): PASS, zero PSK/token in console logs or tracked repository source files. Status set to blocked pending dep BL-020.]",
       "ac": [
         "Board joins WiFi after reboot",
         "No credentials in source or logs"
       ],
-      "status": "todo",
-      "pr": ""
+      "status": "blocked",
+      "pr": "",
+      "block_reason": "Both BL-024 ACs PASS with live on-target evidence on E0:72:A1:AA:23:90 (2026-09-21). Cannot be marked done only because dependency BL-020 is blocked on BL-005/BL-014."
     },
     {
       "id": "BL-025",
