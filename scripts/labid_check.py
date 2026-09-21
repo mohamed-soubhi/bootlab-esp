@@ -41,13 +41,38 @@ def record(name, ok, detail):
     print(f"[{'PASS' if ok else 'FAIL'}] {name}: {detail}")
 
 
-def open_when_ready(port):
-    print(f"waiting for {port} ... (replug the board now for the ANNOUNCE check)")
+import serial.tools.list_ports
+
+
+def port_exists(port_name: str) -> bool:
+    try:
+        tr = SerialLineTransport(port_name, BAUD)
+        tr.close()
+        return True
+    except Exception:
+        return False
+
+
+def open_for_announce(port: str):
+    if port_exists(port):
+        print(f"--- {port} is connected. Please press RST on the board (or replug) now ---", flush=True)
+        while port_exists(port):
+            time.sleep(0.1)
+        print(f"--- board reset detected; waiting for {port} to reconnect ---", flush=True)
+    else:
+        print(f"--- waiting for {port} to connect ---", flush=True)
+
+    while not port_exists(port):
+        time.sleep(0.1)
+
+    time.sleep(0.15)  # allow Windows driver to settle after device arrival
     while True:
         try:
-            return SerialLineTransport(port, BAUD)
+            tr = SerialLineTransport(port, BAUD)
+            print(f"--- {port} connected, listening for boot ANNOUNCE ---", flush=True)
+            return tr
         except Exception:
-            time.sleep(0.2)
+            time.sleep(0.1)
 
 
 def roundtrip(tr, request):
@@ -110,7 +135,7 @@ def check_garbage(tr):
 
 
 def main(port):
-    tr = open_when_ready(port)
+    tr = open_for_announce(port)
     try:
         check_announce(tr)
         check_latency(tr)

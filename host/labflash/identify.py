@@ -76,7 +76,10 @@ def _read_frame(transport: Transport, deadline: float) -> tuple[str, dict] | Non
     """Read bytes until one full frame is parsed, or the deadline passes."""
     parser = Parser()
     while time.monotonic() < deadline:
-        b = transport.read1()
+        try:
+            b = transport.read1()
+        except Exception:
+            return None
         if not b:
             time.sleep(0.005)
             continue
