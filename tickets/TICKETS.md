@@ -9,8 +9,8 @@
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 31
-    "blocked" : 5
+    "todo" : 30
+    "blocked" : 6
     "done" : 11
 ```
 
@@ -59,6 +59,7 @@ flowchart LR
 - 🟥 **BL-005** Detect board hardware → rig.yaml 
 - 🟥 **BL-014** Packaging: Zephyr module + IDF component 
 - 🟥 **BL-020** IDF blink app + toggles + 5 variants + task WDT 
+- 🟥 **BL-021** IDF partitions + signing + rollback config 
 - 🟥 **BL-022** IDF LABID port on USB-Serial-JTAG 
 - 🟥 **BL-041** identify, info, status, measure 
 
@@ -274,7 +275,7 @@ One source, two build integrations. [BLOCKED: AC requires Zephyr native_sim + ID
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
 | 🟥 | BL-020 | IDF blink app + toggles + 5 variants + task WDT | M | idf | BL-005, BL-014 |  |
-| ⬜ | BL-021 | IDF partitions + signing + rollback config | S | idf | BL-020, BL-006 |  |
+| 🟥 | BL-021 | IDF partitions + signing + rollback config | S | idf | BL-020, BL-006 |  |
 | 🟥 | BL-022 | IDF LABID port on USB-Serial-JTAG | S | idf | BL-020, BL-013 |  |
 | ⬜ | BL-023 | IDF self-test + mark valid | S | idf | BL-021 |  |
 | ⬜ | BL-024 | IDF WiFi + token provisioning via NVS | S | idf | BL-020 |  |
@@ -300,14 +301,14 @@ FreeRTOS blink task (led_strip), toggles counter, variants per PLAN §5.3, CONFI
 
 </details>
 
-<details><summary>⬜ <b>BL-021</b> — IDF partitions + signing + rollback config</summary>
+<details><summary>🟥 <b>BL-021</b> — IDF partitions + signing + rollback config</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** idf  
 - **Depends on:** BL-020, BL-006  
 - **Plan:** §4.2, §5, §6, §7.2, §8 P1
 
-partitions.csv (§4.2), sdkconfig.defaults (§6). No eFuse writes.
+partitions.csv (§4.2), sdkconfig.defaults (§6). No eFuse writes. [PROGRESS 2026-09-21 DONE: Configured partitions.csv (PLAN Sec 4.2: ota_0, ota_1 4MB each, otadata, nvs, phy_init, storage) and sdkconfig.defaults (CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y, CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT=y, CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME=y, CONFIG_SECURE_BOOT_SIGNING_KEY=../keys/idf_sbv2.pem). Removed temporary blink_diag logging from app_main.c. EVIDENCE: All 3 ACs PASS: AC1 (Signed build succeeds): PASS, build produced signed bootlab_idf_blink.bin (RSA-3072); espsecure verify-signature confirms Signature block 0 is valid and verified using idf_sbv2.pem. AC2 (Forbidden-config grep passes): PASS, grep confirms CONFIG_SECURE_BOOT=n, CONFIG_SECURE_FLASH_ENC_ENABLED=n, CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK=n. AC3 (efuse-summary unchanged after flash): PASS, flashed bootloader, partition table, ota_data_initial, and signed app to lab-esp-idf (E0:72:A1:AA:23:90); pre-flash efuse summary (scripts/evidence/efuse_pre_bl021.txt) and post-flash efuse summary (scripts/evidence/efuse_post_bl021.txt) are bit-for-bit identical with SHA256 83e95198dedc0db5507df44ad6e75f181fea26a9d1ecd6cf71f401b85bde2a34. Status set to blocked pending dep BL-020.]
 
 **Acceptance criteria**
 - [ ] Signed build succeeds
@@ -875,7 +876,7 @@ flowchart TB
     end
     subgraph E1_g["P1 ESP32-S3 #2 — ESP-IDF"]
         BL020["BL-020"]:::blocked
-        BL021["BL-021"]:::todo
+        BL021["BL-021"]:::blocked
         BL022["BL-022"]:::blocked
         BL023["BL-023"]:::todo
         BL024["BL-024"]:::todo

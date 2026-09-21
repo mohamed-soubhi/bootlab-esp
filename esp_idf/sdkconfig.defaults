@@ -1,4 +1,4 @@
-# bootlab-esp — BL-020 sdkconfig defaults
+# bootlab-esp — ESP-IDF sdkconfig defaults
 #
 # Task watchdog must PANIC (reset the chip), not just log, so the "hang"
 # variant actually resets within 10s per PLAN Sec 5.3.
@@ -9,14 +9,27 @@ CONFIG_ESP_TASK_WDT_TIMEOUT_S=5
 CONFIG_IDF_TARGET="esp32s3"
 CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
 
-# Default (single-app) partition table for BL-020's build/blink/watchdog
-# verification only. BL-021 replaces this with the real OTA partitions.csv
-# (ota_0/ota_1/otadata) -- deliberately out of scope here.
+# Custom Partition Table (PLAN Sec 4.2, BL-021)
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+CONFIG_PARTITION_TABLE_FILENAME="partitions.csv"
+CONFIG_PARTITION_TABLE_OFFSET=0x8000
+
+# Application Rollback (PLAN Sec 5.1 & Sec 6, BL-021)
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
+CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK=n
+
+# App Image Signing without hardware Secure Boot / eFuse burning (PLAN Sec 6, BL-021)
+CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT=y
+CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME=y
+CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT=y
+CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES=y
+CONFIG_SECURE_BOOT_SIGNING_KEY="../keys/idf_sbv2.pem"
+CONFIG_SECURE_BOOT=n
+CONFIG_SECURE_FLASH_ENC_ENABLED=n
 
 # Console over USB-Serial-JTAG, not the default UART0 -- this is the only
 # console physically reachable over the boards' USB connector, and matches
 # PLAN Sec 7.3.4's intent (LABID/console read directly from USB-Serial-JTAG,
-# not UART0/stdin). Without this, all esp_log/printf output -- including
-# the standard IDF boot banner -- goes to physical UART0 pins nobody is
-# connected to, which is what happened on this project's first real flash.
+# not UART0/stdin).
 CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y

@@ -27,10 +27,6 @@
 #include "freertos/task.h"
 #include "labid_port.h"
 #include "led_strip.h"
-#include "sdkconfig.h"
-
-static const char *TAG = "blink_diag";
-
 #define APP_LED_GPIO CONFIG_APP_LED_GPIO /* UNCONFIRMED, see Kconfig.projbuild */
 
 /* Configured LED rate reported over LABID: v2 blinks at 4 Hz, all others 1 Hz. */
@@ -91,21 +87,14 @@ static void blink_task(void *arg)
      * fixed dim-white pixel (R=G=B=16 out of 255 -- deliberately dim, not a
      * default/arbitrary value) and off, at the rate from
      * app_blink_half_period_ms() above. */
-    /* TEMPORARY DIAGNOSTIC LOGGING -- not part of BL-020's real scope, added
-     * to debug a real-hardware report of "LED lit but not visibly blinking"
-     * on GPIO38. Remove once the blink behavior is confirmed correct. */
     bool on = false;
     for (;;) {
         on = !on;
-        esp_err_t err;
         if (on) {
-            err = led_strip_set_pixel(strip, 0, 16, 16, 16);
-            ESP_LOGI(TAG, "on : set_pixel=%d", err);
-            err = led_strip_refresh(strip);
-            ESP_LOGI(TAG, "on : refresh=%d", err);
+            (void)led_strip_set_pixel(strip, 0, 16, 16, 16);
+            (void)led_strip_refresh(strip);
         } else {
-            err = led_strip_clear(strip);
-            ESP_LOGI(TAG, "off: clear=%d", err);
+            (void)led_strip_clear(strip);
         }
         atomic_fetch_add(&s_toggle_count, 1);
         esp_task_wdt_reset();

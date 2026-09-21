@@ -7,13 +7,31 @@ Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
 - DONE: BL-001, 002, 003, 004, 006, 007, 010, 011, 012, 013, 040
 - BLOCKED:
   - BL-020: all 4 ACs PASS with evidence (2026-09-21); blocked only on unfinished deps BL-005, BL-014.
+  - BL-021: all 3 ACs PASS with evidence (2026-09-21); blocked only on dep BL-020.
   - BL-022: all 3 ACs PASS with live on-target evidence (2026-09-21); blocked only on dep BL-020.
   - BL-005: idf led_gpio=48 confirmed; zephyr led_gpio unknown (Zephyr hold); `psram_mode` unverified
     on both boards (the current IDF build does not enable PSRAM, so it cannot be detected yet).
   - BL-014: AC needs Zephyr native_sim + IDF linux builds; Zephyr on hold.
   - BL-041: host code done + mock-verified; live LABID firmware now running on IDF board.
-- TODO, IDF chain: BL-021 (partitions/signing/rollback) -> BL-024.
+- TODO, IDF chain: BL-023 (self-test + esp_ota confirm after 5s) -> BL-024 (WiFi HTTPS OTA) -> BL-025 (BLE OTA).
 - Zephyr chain (BL-030 ...) stays on hold.
+
+## BL-021 status (COMPLETE — all 3 ACs pass with evidence)
+- partitions.csv configured per PLAN Sec 4.2: 16 MB flash layout with dual 4MB slots (ota_0, ota_1),
+  otadata (0xF000), nvs (0x9000), phy_init (0x11000), storage (spiffs, 0x820000).
+- sdkconfig.defaults configured with CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y,
+  CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT=y, CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME=y,
+  CONFIG_SECURE_BOOT_SIGNING_KEY="../keys/idf_sbv2.pem".
+- Removed temporary blink_diag logging from app_main.c.
+- AC1 (Signed build succeeds): PASS, build produced signed bootlab_idf_blink.bin; verified with
+  `espsecure verify-signature` (RSA signature block 0 valid and verified).
+- AC2 (Forbidden-config grep passes): PASS, CONFIG_SECURE_BOOT=n, CONFIG_SECURE_FLASH_ENC_ENABLED=n,
+  CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK=n.
+- AC3 (efuse-summary unchanged after flash): PASS, flashed bootloader, partition table, ota_data_initial,
+  and signed app to lab-esp-idf (E0:72:A1:AA:23:90); pre-flash efuse summary (scripts/evidence/efuse_pre_bl021.txt)
+  and post-flash efuse summary (scripts/evidence/efuse_post_bl021.txt) are bit-for-bit identical with SHA256
+  83e95198dedc0db5507df44ad6e75f181fea26a9d1ecd6cf71f401b85bde2a34.
+- Status set to 'blocked' solely because dep BL-020 is blocked; all requirements satisfied.
 
 ## BL-022 status (COMPLETE — steps A, B, C, D done & verified on target)
 - A: `common/labid/{include/labid_dispatch.h,src/labid_dispatch.c}` + device-mode parser
@@ -34,12 +52,12 @@ Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
 - Ticket status set to 'blocked' solely because dep BL-020 is blocked; all requirements satisfied.
 
 NEXT:
-- BL-021 (IDF partitions + signing + rollback config, PLAN Sec 4.2 & 6)
+- BL-023 (IDF app self-test + esp_ota_mark_app_valid_cancel_rollback after 5s)
 - BL-041 (host identify/measure verification against live LABID)
 
 ## Hardware state (2026-09-21)
 - idf board: `/dev/lab-esp-idf`, USB serial `E0:72:A1:AA:23:90`, usbipd busid 7-4, Windows COM14.
-  Flashed with the **v1** build (blinks 1 Hz on GPIO48).
+  Flashed with BL-021 signed build (dual OTA partitions, rollback enabled, 1 Hz blink on GPIO48).
 - zephyr board: `/dev/lab-esp-zephyr`, USB serial `AC:A7:04:2C:3B:04`, busid 6-3. Untouched.
 
 ## Settled findings (see PLAN Sec 9)

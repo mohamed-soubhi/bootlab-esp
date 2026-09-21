@@ -324,14 +324,15 @@
         "BL-020",
         "BL-006"
       ],
-      "desc": "partitions.csv (§4.2), sdkconfig.defaults (§6). No eFuse writes.",
+      "desc": "partitions.csv (§4.2), sdkconfig.defaults (§6). No eFuse writes. [PROGRESS 2026-09-21 DONE: Configured partitions.csv (PLAN Sec 4.2: ota_0, ota_1 4MB each, otadata, nvs, phy_init, storage) and sdkconfig.defaults (CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y, CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT=y, CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME=y, CONFIG_SECURE_BOOT_SIGNING_KEY=../keys/idf_sbv2.pem). Removed temporary blink_diag logging from app_main.c. EVIDENCE: All 3 ACs PASS: AC1 (Signed build succeeds): PASS, build produced signed bootlab_idf_blink.bin (RSA-3072); espsecure verify-signature confirms Signature block 0 is valid and verified using idf_sbv2.pem. AC2 (Forbidden-config grep passes): PASS, grep confirms CONFIG_SECURE_BOOT=n, CONFIG_SECURE_FLASH_ENC_ENABLED=n, CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK=n. AC3 (efuse-summary unchanged after flash): PASS, flashed bootloader, partition table, ota_data_initial, and signed app to lab-esp-idf (E0:72:A1:AA:23:90); pre-flash efuse summary (scripts/evidence/efuse_pre_bl021.txt) and post-flash efuse summary (scripts/evidence/efuse_post_bl021.txt) are bit-for-bit identical with SHA256 83e95198dedc0db5507df44ad6e75f181fea26a9d1ecd6cf71f401b85bde2a34. Status set to blocked pending dep BL-020.]",
       "ac": [
         "Signed build succeeds",
         "Forbidden-config grep passes",
         "efuse-summary unchanged after flash"
       ],
-      "status": "todo",
-      "pr": ""
+      "status": "blocked",
+      "pr": "",
+      "block_reason": "All 3 BL-021 ACs PASS with evidence (2026-09-21). Cannot be marked done only because dependency BL-020 is blocked on BL-005/BL-014."
     },
     {
       "id": "BL-022",
