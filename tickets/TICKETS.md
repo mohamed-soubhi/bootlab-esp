@@ -6,15 +6,15 @@
 
 ## Overall
 
-`█████████████░░░░░░░░░░░░░░░░░` **22/52 done (42%)**
+`█████████████░░░░░░░░░░░░░░░░░` **23/52 done (44%)**
 
-- **IDF track:** `██████████░░░░░░░░░░` 22/42
+- **IDF track:** `███████████░░░░░░░░░` 23/42
 - **Zephyr track:** `██████░░░░░░░░░░░░░░` 11/37
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 30
-    "done" : 22
+    "todo" : 29
+    "done" : 23
 ```
 
 ## Epics
@@ -25,7 +25,7 @@ pie showData title Ticket status
 | EL | PL | LABID common library | `████████████` | 4/4 | ✅ done | §7.3, §8 PL |
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `████████████` | 9/9 | ✅ done | §4.2, §5, §6, §7.2, §8 P1 |
 | E2 | P2 | ESP32-S3 #1 — Zephyr | `░░░░░░░░░░░░` | 0/9 | ⬜ todo | §4.1, §5, §6, §7.1, §8 P2 |
-| E3 | P3 | labflash CLI | `██░░░░░░░░░░` | 1/7 | 🔵 doing | §8 P3 |
+| E3 | P3 | labflash CLI | `███░░░░░░░░░` | 2/7 | 🔵 doing | §8 P3 |
 | E4 | P4 | HIL tests + CI | `░░░░░░░░░░░░` | 0/9 | ⬜ todo | §8 P4 |
 | E5 | P5 | Soak, docs, handover | `░░░░░░░░░░░░` | 0/6 | ⬜ todo | §8 P5 |
 
@@ -37,7 +37,7 @@ flowchart LR
     EL["PL LABID common library<br/>4/4"]:::done
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>9/9"]:::done
     E2["P2 ESP32-S3 #1 — Zephyr<br/>0/9"]:::todo
-    E3["P3 labflash CLI<br/>1/7"]:::doing
+    E3["P3 labflash CLI<br/>2/7"]:::doing
     E4["P4 HIL tests + CI<br/>0/9"]:::todo
     E5["P5 Soak, docs, handover<br/>0/6"]:::todo
     E0 --> EL
@@ -57,7 +57,6 @@ flowchart LR
 - **BL-005b** Detect board hardware → rig.yaml (Zephyr board) (S) — E2
 - **BL-014b** Packaging: Zephyr module (native_sim) (S) — E2
 - **BL-030** Zephyr west + sysbuild MCUboot + swap-with-revert check (M) — E2
-- **BL-043** update idf --transport ble|wifi (M) — E3
 
 ## Tickets by epic
 
@@ -601,7 +600,7 @@ Run all P2 acceptance checks.
 | ✅ | BL-040 | labflash core: config, UID resolution, re-enumeration wait | M | host | BL-013, BL-007 |  |
 | ⬜ | BL-041 | identify, info, status, measure | S | host | BL-040, BL-020, BL-022, BL-031, BL-032 |  |
 | ⬜ | BL-042 | flash, recover, provision (USB) | S | host | BL-040, BL-020, BL-021, BL-030, BL-031 |  |
-| ⬜ | BL-043 | update idf --transport ble|wifi | M | host, idf | BL-040, BL-028 |  |
+| ✅ | BL-043 | update idf --transport ble|wifi | M | host, idf | BL-040, BL-028 |  |
 | ⬜ | BL-044 | update zephyr --transport ble|udp | M | host, zephyr | BL-040, BL-036 |  |
 | ⬜ | BL-045 | build + sign orchestration | S | host | BL-040, BL-020, BL-021, BL-030, BL-031 |  |
 | ⬜ | BL-046 | labflash mocked unit tests | M | host | BL-041, BL-042, BL-043, BL-044, BL-045 |  |
@@ -661,18 +660,18 @@ esptool / west / idf.py wrappers with identity check before writing. Deps correc
 
 </details>
 
-<details><summary>⬜ <b>BL-043</b> — update idf --transport ble|wifi</summary>
+<details><summary>✅ <b>BL-043</b> — update idf --transport ble|wifi</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** host, idf  
-- **Tracks:** IDF ⬜ todo  
+- **Tracks:** IDF ✅ done  
 - **Depends on:** BL-040, BL-028  
 - **Plan:** §8 P3
 
-Python ble_ota client + HTTPS trigger + local HTTPS server.
+Python ble_ota client + HTTPS trigger + local HTTPS server. [DONE 2026-09-21 -- `labflash update idf --transport ble|wifi` (host/labflash/update.py, update_cli.py, idf_wifi_ota.py; 13 hardware-free tests, host suite 32 passed). AC 'Both transports update and verify via LABID': PASS on the real board, run natively on Windows: BLE v1->v2 and WiFi v2->v1, each checked for running-the-image-version (read from the image's own app descriptor), slot flip, confirmed and uid via LABID; the WiFi run also cross-checks LABID == HTTPS (PLAN 7.3.4). Live negatives: a wrong identity is refused BEFORE anything is sent (BLE not even scanned); a foreign-key-signed image over BLE ends in UPDATE FAILED, exit 1. Evidence: scripts/evidence/bl043_labflash_update.md. Limits: run natively (WSL2 has no Bluetooth; usbipd resets the board, R14); ruff/mypy not installed yet (BL-046); scripts/ota_check.py still has its own copy of the server/client code. RPi4 re-run is BL-056a.]
 
 **Acceptance criteria**
-- [ ] Both transports update and verify via LABID
+- [x] Both transports update and verify via LABID
 
 </details>
 
@@ -1075,7 +1074,7 @@ flowchart TB
         BL040["BL-040"]:::done
         BL041["BL-041"]:::todo
         BL042["BL-042"]:::todo
-        BL043["BL-043"]:::todo
+        BL043["BL-043"]:::done
         BL044["BL-044"]:::todo
         BL045["BL-045"]:::todo
         BL046["BL-046"]:::todo

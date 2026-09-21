@@ -838,11 +838,11 @@
         "BL-040",
         "BL-028"
       ],
-      "desc": "Python ble_ota client + HTTPS trigger + local HTTPS server.",
+      "desc": "Python ble_ota client + HTTPS trigger + local HTTPS server. [DONE 2026-09-21 -- `labflash update idf --transport ble|wifi` (host/labflash/update.py, update_cli.py, idf_wifi_ota.py; 13 hardware-free tests, host suite 32 passed). AC 'Both transports update and verify via LABID': PASS on the real board, run natively on Windows: BLE v1->v2 and WiFi v2->v1, each checked for running-the-image-version (read from the image's own app descriptor), slot flip, confirmed and uid via LABID; the WiFi run also cross-checks LABID == HTTPS (PLAN 7.3.4). Live negatives: a wrong identity is refused BEFORE anything is sent (BLE not even scanned); a foreign-key-signed image over BLE ends in UPDATE FAILED, exit 1. Evidence: scripts/evidence/bl043_labflash_update.md. Limits: run natively (WSL2 has no Bluetooth; usbipd resets the board, R14); ruff/mypy not installed yet (BL-046); scripts/ota_check.py still has its own copy of the server/client code. RPi4 re-run is BL-056a.]",
       "ac": [
         "Both transports update and verify via LABID"
       ],
-      "status": "todo",
+      "status": "done",
       "pr": "",
       "tracks": [
         "idf"

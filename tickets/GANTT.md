@@ -10,7 +10,7 @@
 
 ## Progress
 
-- **IDF track:** `████████████████░░░░░░░░░░░░░░` **22/42 done**
+- **IDF track:** `████████████████░░░░░░░░░░░░░░` **23/42 done**
 - **Zephyr track:** `█████████░░░░░░░░░░░░░░░░░░░░░` **11/37 done**
 
 | Epic | Phase | IDF | Zephyr |
@@ -19,7 +19,7 @@
 | EL LABID common library | PL | `██████████` 4/4 | `██████████` 4/4 |
 | E1 ESP32-S3 #2 — ESP-IDF | P1 | `██████████` 9/9 | — |
 | E2 ESP32-S3 #1 — Zephyr | P2 | — | `░░░░░░░░░░` 0/9 |
-| E3 labflash CLI | P3 | `██░░░░░░░░` 1/6 | `██░░░░░░░░` 1/6 |
+| E3 labflash CLI | P3 | `███░░░░░░░` 2/6 | `██░░░░░░░░` 1/6 |
 | E4 HIL tests + CI | P4 | `░░░░░░░░░░` 0/9 | `░░░░░░░░░░` 0/8 |
 | E5 Soak, docs, handover | P5 | `░░░░░░░░░░` 0/6 | `░░░░░░░░░░` 0/4 |
 
@@ -59,7 +59,7 @@ gantt
     BL-040 labflash core config UID resolution re-enumer :done, bl040, 2026-09-22, 2d
     BL-041 identify info status measure :bl041, 2026-09-24, 1d
     BL-042 flash recover provision (USB) :bl042, 2026-09-24, 1d
-    BL-043 update idf --transport ble|wifi :bl043, 2026-09-30, 2d
+    BL-043 update idf --transport ble|wifi :done, bl043, 2026-09-30, 2d
     BL-045 build + sign orchestration :bl045, 2026-09-24, 1d
     BL-046 labflash mocked unit tests :bl046, 2026-10-02, 2d
     section P4 HIL tests + CI
@@ -91,7 +91,6 @@ None: nothing on this board is blocked.
 
 - **BL-041** [S] identify, info, status, measure
 - **BL-042** [S] flash, recover, provision (USB)
-- **BL-043** [M] update idf --transport ble|wifi
 - **BL-045** [S] build + sign orchestration
 - **BL-055** [M] build.yml cloud CI
 
@@ -101,9 +100,8 @@ None: nothing on this board is blocked.
 |---|---|---|
 | BL-041 identify info status measure | ⬜ todo | — |
 | BL-042 flash recover provision (USB) | ⬜ todo | — |
-| BL-043 update idf --transport ble|wifi | ⬜ todo | — |
 | BL-045 build + sign orchestration | ⬜ todo | — |
-| BL-046 labflash mocked unit tests | ⬜ todo | BL-041[idf] ⬜, BL-042[idf] ⬜, BL-043[idf] ⬜, BL-045[idf] ⬜ |
+| BL-046 labflash mocked unit tests | ⬜ todo | BL-041[idf] ⬜, BL-042[idf] ⬜, BL-045[idf] ⬜ |
 | BL-050 HIL framework fixtures markers artifacts | ⬜ todo | BL-046[idf] ⬜ |
 | BL-051 HIL T01–T03 boot + update | ⬜ todo | BL-050[idf] ⬜ |
 | BL-052 HIL T04–T09 rollback security robustness | ⬜ todo | BL-050[idf] ⬜ |
@@ -111,7 +109,7 @@ None: nothing on this board is blocked.
 | BL-054 (Stretch) HIL T17 power cut | ⬜ todo | BL-050[idf] ⬜ |
 | BL-055 build.yml cloud CI | ⬜ todo | — |
 | BL-056 hil.yml self-hosted runner on RPi4 | ⬜ todo | BL-055[idf] ⬜, BL-051[idf] ⬜ |
-| BL-056a IDF acceptance re-run on the RPi4 (OTA-progr | ⬜ todo | BL-043[idf] ⬜, BL-056[idf] ⬜ |
+| BL-056a IDF acceptance re-run on the RPi4 (OTA-progr | ⬜ todo | BL-056[idf] ⬜ |
 | BL-057 Full HIL suite green 3× in a row | ⬜ todo | BL-051[idf] ⬜, BL-052[idf] ⬜, BL-053[idf] ⬜, BL-056[idf] ⬜ |
 | BL-060 Overnight soak ×100 | ⬜ todo | BL-057[idf] ⬜ |
 | BL-061 README quick start | ⬜ todo | BL-057[idf] ⬜ |
