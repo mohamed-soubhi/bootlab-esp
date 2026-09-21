@@ -199,10 +199,27 @@ bootlab-esp/
 
 ### 4.1 ESP32-S3 #1 — Zephyr + MCUboot
 
-- Start from the board DTS `partitions` for MCUboot: `boot_partition`, `slot0_partition`,
-  `slot1_partition`, `scratch_partition`, `storage_partition`.
-- If default slots are too small for a BT + WiFi app: add `app/boards/<board>.overlay` with resized partitions.
-- Record the final addresses here after P2.
+#### Swap Mode Decision (BL-030)
+- **Evaluation**: MCUboot under Zephyr sysbuild provides three upgrade strategies:
+  1. `BOOT_SWAP_USING_MOVE` (`SB_CONFIG_MCUBOOT_MODE_SWAP_USING_MOVE=y`): Two-phase sector move and swap between primary and secondary slots without requiring a separate scratch partition. This is the upstream Zephyr sysbuild default for `SOC_FAMILY_ESPRESSIF_ESP32`. Full revert and rollback support upon unconfirmed reset or watchdog panic.
+  2. `BOOT_SWAP_USING_SCRATCH` (`SB_CONFIG_MCUBOOT_MODE_SWAP_SCRATCH=y`): Traditional swap using a dedicated scratch partition (`scratch_partition`). Also supports full revert and rollback.
+  3. `BOOT_UPGRADE_ONLY` (`SB_CONFIG_MCUBOOT_MODE_OVERWRITE_ONLY=y`): Destructive overwrite, no rollback capability.
+- **Decision**: Adopt **`BOOT_SWAP_USING_MOVE`** (`CONFIG_BOOT_SWAP_USING_MOVE=y`). It provides true dual-slot swap with automatic rollback (meeting PLAN §5.1 requirements) while eliminating wear on a dedicated scratch area. `scratch_partition` is retained in the DTS layout to allow scratch mode fallback if needed. Overwrite-only is rejected.
+- **Escalation**: Not triggered; revert-capable dual-slot swap is natively supported.
+
+#### Flash Partition Table (16 MB Quad SPI Flash)
+Confirmed via `rig.yaml` and `esptool.py flash-id` (Vendor 68, Device 4018):
+
+| Name | Label | Offset | Size | Purpose |
+|---|---|---|---|---|
+| `boot_partition` | `mcuboot` | `0x00000` | 64 KB (`0x10000`) | MCUboot bootloader |
+| `sys_partition` | `sys` | `0x10000` | 64 KB (`0x10000`) | System metadata / config |
+| `slot0_partition` | `image-0` | `0x20000` | 7936 KB (`0x7C0000`, ~7.75 MB) | Primary application slot (active) |
+| `slot1_partition` | `image-1` | `0x7E0000` | 7936 KB (`0x7C0000`, ~7.75 MB) | Secondary application slot (OTA candidate) |
+| `storage_partition` | `storage` | `0xFB0000` | 192 KB (`0x30000`) | LittleFS / NVS persistent data |
+| `scratch_partition` | `image-scratch` | `0xFE0000` | 124 KB (`0x1F000`) | MCUboot scratch buffer (scratch mode fallback) |
+| `coredump_partition` | `coredump` | `0xFFF000` | 4 KB (`0x1000`) | Post-mortem panic crash dump |
+
 
 ### 4.2 ESP32-S3 #2 — ESP-IDF (`partitions.csv`, 16 MB flash — confirmed in P0)
 

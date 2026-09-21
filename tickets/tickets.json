@@ -565,7 +565,7 @@
         "Swap mode decision written in PLAN §4.1",
         "ESCALATE to owner if only overwrite-only exists"
       ],
-      "status": "todo",
+      "status": "done",
       "pr": "",
       "tracks": [
         "zephyr"

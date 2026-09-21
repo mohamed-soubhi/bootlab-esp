@@ -6,17 +6,17 @@
 
 ## Overall
 
-`██████████████░░░░░░░░░░░░░░░░` **25/52 done (48%)**
+`███████████████░░░░░░░░░░░░░░░` **26/52 done (50%)**
 
 - **IDF track:** `████████████████░░░░` 33/42
-- **Zephyr track:** `███████░░░░░░░░░░░░░` 13/37
+- **Zephyr track:** `████████░░░░░░░░░░░░` 14/37
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 10
+    "todo" : 9
     "doing" : 10
     "blocked" : 7
-    "done" : 25
+    "done" : 26
 ```
 
 ## Epics
@@ -26,7 +26,7 @@ pie showData title Ticket status
 | E0 | P0 | Host & rig setup | `████████████` | 8/8 | ✅ done | §2, §3, §8 P0 |
 | EL | PL | LABID common library | `████████████` | 4/4 | ✅ done | §7.3, §8 PL |
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `████████████` | 9/9 | ✅ done | §4.2, §5, §6, §7.2, §8 P1 |
-| E2 | P2 | ESP32-S3 #1 — Zephyr | `███░░░░░░░░░` | 2/9 | 🔵 doing | §4.1, §5, §6, §7.1, §8 P2 |
+| E2 | P2 | ESP32-S3 #1 — Zephyr | `████░░░░░░░░` | 3/9 | 🔵 doing | §4.1, §5, §6, §7.1, §8 P2 |
 | E3 | P3 | labflash CLI | `███░░░░░░░░░` | 2/7 | 🔵 doing | §8 P3 |
 | E4 | P4 | HIL tests + CI | `░░░░░░░░░░░░` | 0/9 | 🟥 blocked | §8 P4 |
 | E5 | P5 | Soak, docs, handover | `░░░░░░░░░░░░` | 0/6 | 🟥 blocked | §8 P5 |
@@ -38,7 +38,7 @@ flowchart LR
     E0["P0 Host & rig setup<br/>8/8"]:::done
     EL["PL LABID common library<br/>4/4"]:::done
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>9/9"]:::done
-    E2["P2 ESP32-S3 #1 — Zephyr<br/>2/9"]:::doing
+    E2["P2 ESP32-S3 #1 — Zephyr<br/>3/9"]:::doing
     E3["P3 labflash CLI<br/>2/7"]:::doing
     E4["P4 HIL tests + CI<br/>0/9"]:::blocked
     E5["P5 Soak, docs, handover<br/>0/6"]:::blocked
@@ -56,7 +56,7 @@ flowchart LR
 
 ## Ready to start now
 
-- **BL-030** Zephyr west + sysbuild MCUboot + swap-with-revert check (M) — E2
+- **BL-031** Zephyr blink app + toggles + 5 variants + watchdog (M) — E2
 
 ## Blocked
 
@@ -445,7 +445,7 @@ Run all P1 acceptance checks. [RESULT 2026-09-21 -- ALL 6 PLAN P1 CHECKBOXES PAS
 |---|---|---|---|---|---|---|
 | ✅ | BL-005b | Detect board hardware → rig.yaml (Zephyr board) | S | zephyr | BL-003 |  |
 | ✅ | BL-014b | Packaging: Zephyr module (native_sim) | S | common, zephyr | BL-010 |  |
-| ⬜ | BL-030 | Zephyr west + sysbuild MCUboot + swap-with-revert check | M | zephyr | BL-002, BL-006 |  |
+| ✅ | BL-030 | Zephyr west + sysbuild MCUboot + swap-with-revert check | M | zephyr | BL-002, BL-006 |  |
 | ⬜ | BL-031 | Zephyr blink app + toggles + 5 variants + watchdog | M | zephyr | BL-030, BL-005b |  |
 | ⬜ | BL-032 | Zephyr LABID port on console | S | zephyr | BL-031, BL-014b |  |
 | ⬜ | BL-033 | Zephyr self-test + confirm + twister tests | S | zephyr | BL-031 |  |
@@ -484,20 +484,20 @@ Split from BL-014 on 2026-09-21. REMAINING: build the labid Zephyr module for na
 
 </details>
 
-<details><summary>⬜ <b>BL-030</b> — Zephyr west + sysbuild MCUboot + swap-with-revert check</summary>
+<details><summary>✅ <b>BL-030</b> — Zephyr west + sysbuild MCUboot + swap-with-revert check</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** zephyr  
-- **Tracks:** Zephyr ⬜ todo  
+- **Tracks:** Zephyr ✅ done  
 - **Depends on:** BL-002, BL-006  
 - **Plan:** §4.1, §5, §6, §7.1, §8 P2
 
 FIRST ticket for Zephyr. Verify revert-capable swap mode on ESP32-S3.
 
 **Acceptance criteria**
-- [ ] MCUboot + hello app boot on the board
-- [ ] Swap mode decision written in PLAN §4.1
-- [ ] ESCALATE to owner if only overwrite-only exists
+- [x] MCUboot + hello app boot on the board
+- [x] Swap mode decision written in PLAN §4.1
+- [x] ESCALATE to owner if only overwrite-only exists
 
 </details>
 
@@ -1069,7 +1069,7 @@ flowchart TB
     subgraph E2_g["P2 ESP32-S3 #1 — Zephyr"]
         BL005b["BL-005b"]:::done
         BL014b["BL-014b"]:::done
-        BL030["BL-030"]:::todo
+        BL030["BL-030"]:::done
         BL031["BL-031"]:::todo
         BL032["BL-032"]:::todo
         BL033["BL-033"]:::todo

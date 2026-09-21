@@ -8,14 +8,14 @@
 ## Progress
 
 - **IDF track:** `████████████████████████░░░░░░` **33/42 done**
-- **Zephyr track:** `███████████░░░░░░░░░░░░░░░░░░░` **13/37 done**
+- **Zephyr track:** `███████████░░░░░░░░░░░░░░░░░░░` **14/37 done**
 
 | Epic | Phase | IDF | Zephyr |
 |---|---|---|---|
 | E0 Host & rig setup | P0 | `██████████` 8/8 | `██████████` 6/6 |
 | EL LABID common library | PL | `██████████` 4/4 | `██████████` 4/4 |
 | E1 ESP32-S3 #2 — ESP-IDF | P1 | `██████████` 9/9 | — |
-| E2 ESP32-S3 #1 — Zephyr | P2 | — | `██░░░░░░░░` 2/9 |
+| E2 ESP32-S3 #1 — Zephyr | P2 | — | `███░░░░░░░` 3/9 |
 | E3 labflash CLI | P3 | `██████████` 6/6 | `██░░░░░░░░` 1/6 |
 | E4 HIL tests + CI | P4 | `███████░░░` 6/9 | `░░░░░░░░░░` 0/8 |
 | E5 Soak, docs, handover | P5 | `░░░░░░░░░░` 0/6 | `░░░░░░░░░░` 0/4 |
@@ -127,7 +127,7 @@ gantt
     section P2 ESP32-S3 1 — Zephyr
     BL-005b Detect board hardware → rig.yaml (Zephyr boa :done, bl005b, 2026-09-20, 1d
     BL-014b Packaging Zephyr module (native_sim) :done, bl014b, 2026-09-19, 1d
-    BL-030 Zephyr west + sysbuild MCUboot + swap-with-re :bl030, 2026-09-20, 2d
+    BL-030 Zephyr west + sysbuild MCUboot + swap-with-re :done, bl030, 2026-09-20, 2d
     BL-031 Zephyr blink app + toggles + 5 variants + wat :bl031, 2026-09-22, 2d
     BL-032 Zephyr LABID port on console :bl032, 2026-09-24, 1d
     BL-033 Zephyr self-test + confirm + twister tests :bl033, 2026-09-24, 1d
@@ -165,23 +165,22 @@ None: nothing on this board is blocked.
 
 ### Ready to start — Zephyr track (todo, every dependency of this board done)
 
-- **BL-030** [M] Zephyr west + sysbuild MCUboot + swap-with-revert check
+- **BL-031** [M] Zephyr blink app + toggles + 5 variants + watchdog
 
 ### Waiting-on — Zephyr track
 
 | Ticket | Status | Waiting on (unfinished dependencies) |
 |---|---|---|
-| BL-030 Zephyr west + sysbuild MCUboot + swap-with-re | ⬜ todo | — |
-| BL-031 Zephyr blink app + toggles + 5 variants + wat | ⬜ todo | BL-030[zephyr] ⬜ |
+| BL-031 Zephyr blink app + toggles + 5 variants + wat | ⬜ todo | — |
 | BL-032 Zephyr LABID port on console | ⬜ todo | BL-031[zephyr] ⬜ |
 | BL-033 Zephyr self-test + confirm + twister tests | ⬜ todo | BL-031[zephyr] ⬜ |
 | BL-034 Zephyr mcumgr SMP over BLE | ⬜ todo | BL-033[zephyr] ⬜ |
 | BL-035 Zephyr WiFi + SMP over UDP (single build with | ⬜ todo | BL-034[zephyr] ⬜ |
 | BL-036 Zephyr phase acceptance run | ⬜ todo | BL-032[zephyr] ⬜, BL-035[zephyr] ⬜ |
 | BL-041 identify info status measure | ⬜ todo | BL-031[zephyr] ⬜, BL-032[zephyr] ⬜ |
-| BL-042 flash recover provision (USB) | ⬜ todo | BL-030[zephyr] ⬜, BL-031[zephyr] ⬜ |
+| BL-042 flash recover provision (USB) | ⬜ todo | BL-031[zephyr] ⬜ |
 | BL-044 update zephyr --transport ble|udp | ⬜ todo | BL-036[zephyr] ⬜ |
-| BL-045 build + sign orchestration | ⬜ todo | BL-030[zephyr] ⬜, BL-031[zephyr] ⬜ |
+| BL-045 build + sign orchestration | ⬜ todo | BL-031[zephyr] ⬜ |
 | BL-046 labflash mocked unit tests | ⬜ todo | BL-041[zephyr] ⬜, BL-042[zephyr] ⬜, BL-044[zephyr] ⬜, BL-045[zephyr] ⬜ |
 | BL-050 HIL framework fixtures markers artifacts | ⬜ todo | BL-046[zephyr] ⬜ |
 | BL-051 HIL T01–T03 boot + update | ⬜ todo | BL-050[zephyr] ⬜ |
