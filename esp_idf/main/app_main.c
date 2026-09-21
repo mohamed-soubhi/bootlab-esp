@@ -188,7 +188,12 @@ void app_main(void)
     /* BL-024: initialize NVS & WiFi in station mode if provisioned (PLAN 5.2 / 7.2) */
     ESP_ERROR_CHECK(app_wifi_init());
 
-    /* BL-027: BLE OTA service (NimBLE, coexists with WiFi; PLAN 7.2). */
-    ESP_ERROR_CHECK(app_ble_ota_start());
+    /* BL-027: BLE OTA service (NimBLE, coexists with WiFi; PLAN 7.2). Optional: if BLE
+     * cannot start the board must still boot -- a fatal check here caused a boot loop
+     * that also took the WiFi OTA recovery path down. */
+    const esp_err_t ble_err = app_ble_ota_start();
+    if (ble_err != ESP_OK) {
+        ESP_LOGE("app_main", "BLE OTA unavailable (%s); WiFi OTA is unaffected", esp_err_to_name(ble_err));
+    }
 #endif
 }

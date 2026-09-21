@@ -14,6 +14,7 @@
 #include <string.h>
 
 #include "ble_ota.h"
+#include "esp_bt.h"
 #include "esp_log.h"
 #include "esp_ota_ops.h"
 #include "esp_partition.h"
@@ -147,9 +148,25 @@ esp_err_t app_ble_ota_start(void)
     if (err != ESP_OK) {
         return err;
     }
+    /* ble_ota calls esp_nimble_init(), which brings up the HOST only; unlike
+     * nimble_port_init() it does not touch the BT controller. Without this the
+     * vhci registration fails ("BLE_INIT: hci inits failed"). */
+    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+    err = esp_bt_controller_init(&bt_cfg);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_bt_controller_init failed: %s", esp_err_to_name(err));
+        return err;
+    }
+    err = esp_bt_controller_enable(ESP_BT_MODE_BLE);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_bt_controller_enable failed: %s", esp_err_to_name(err));
+        return err;
+    }
+
     (void)esp_ble_ota_recv_fw_data_callback(on_sector);
     err = esp_ble_ota_host_init();
     if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_ble_ota_host_init failed: %s", esp_err_to_name(err));
         return err;
     }
     int rc = ble_gap_event_listener_register(&s_gap_listener, gap_listener_cb, NULL);
