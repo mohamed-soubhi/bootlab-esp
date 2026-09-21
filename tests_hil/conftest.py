@@ -308,6 +308,12 @@ class HilRig:
         assert self.backend is not None
         return self.backend.measure(duration_s, expect_hz, tolerance)
 
+    def ensure_variant(self, variant: str, transport: str = "wifi") -> bool:
+        """Precondition helper: make sure the board runs `variant` (v1/v2), updating over `transport` if not."""
+        want = "2.0.0" if variant == "v2" else "1.0.0"
+        current = self.mock_version if self.is_mock else (self.query_labid_info() or {}).get("v")
+        return current == want or self.update_ota(variant, transport)
+
     def update_ota(self, variant: str, transport: str = "wifi") -> bool:
         """Perform an OTA update to a specified variant (e.g. 'v1' or 'v2')."""
         if self.is_mock:

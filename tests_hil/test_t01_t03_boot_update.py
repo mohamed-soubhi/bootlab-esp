@@ -64,6 +64,7 @@ def test_t02_update_v1_to_v2_wifi(hil_rig: HilRig) -> None:
 @pytest.mark.wifi
 def test_t03_downgrade_v2_to_v1_wifi(hil_rig: HilRig) -> None:
     """T03: Downgrade v2 -> v1 over WiFi, 1 Hz, confirmed=1."""
+    assert hil_rig.ensure_variant("v2", "wifi"), "precondition failed: board could not be put on v2"
     ok = hil_rig.update_ota(variant="v1", transport="wifi")
     assert ok, "WiFi OTA downgrade v2 -> v1 failed"
 
@@ -106,6 +107,7 @@ def test_t02_update_v1_to_v2_ble(hil_rig: HilRig) -> None:
 @pytest.mark.ble
 def test_t03_downgrade_v2_to_v1_ble(hil_rig: HilRig) -> None:
     """T03: Downgrade v2 -> v1 over BLE, 1 Hz, confirmed=1."""
+    assert hil_rig.ensure_variant("v2", "wifi"), "precondition failed: board could not be put on v2"
     ok = hil_rig.update_ota(variant="v1", transport="ble")
     assert ok, "BLE OTA downgrade v2 -> v1 failed"
 

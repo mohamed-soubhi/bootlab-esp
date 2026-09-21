@@ -78,6 +78,10 @@ jobs:
         run: |
           PYTHONPATH=host pytest --cov=host/labflash --cov-fail-under=80 host/tests
 
+      - name: HIL live-backend unit tests (hardware-free)
+        run: |
+          PYTHONPATH=host:. pytest tests_hil/test_live_backend_unit.py
+
   idf-build:
     name: ESP-IDF Build & Sign (All Variants)
     runs-on: ubuntu-latest
