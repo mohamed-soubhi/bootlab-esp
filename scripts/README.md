@@ -14,6 +14,7 @@
 - `https_check.py` (Linux/Windows) — BL-025 HTTPS control server checker: `python scripts/https_check.py [--ip <IP>] [--com <COM_PORT>]`.
 - `ota_check.py` (WSL/Linux) — BL-026 live acceptance: serves OTA images over HTTPS, triggers `POST /ota`, checks v1->v2 (slot flip, confirmed), and that `bad_sig` images are fully downloaded yet refused with the running image unchanged. Needs `tcp_forwarder.py` running on Windows when the server is in WSL2.
 - `tcp_forwarder.py` (Windows) — forwards a LAN port to the same port inside WSL2 (NAT mode) so the board can reach a server running in WSL2.
+- `rate_check.py` (Windows/any) — measures the LED blink rate from LABID's toggle counter: `python scripts\rate_check.py COM14 --expect-hz 4`. Self-contained (pyserial only); DTR/RTS held inactive before open.
 - `evidence/` — dated evidence files backing ticket "done" claims.
 
 ## USBIPD Switching between WSL2 and Windows (from WSL)

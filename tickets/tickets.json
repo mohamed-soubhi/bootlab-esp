@@ -428,13 +428,14 @@
         "BL-025",
         "BL-023"
       ],
-      "desc": "Pull from RPi4 HTTPS server, signature check on update. [PROGRESS 2026-09-21 -- NOT PASSING YET. Firmware OTA pull task + variants compile (commit b440568); scripts/ota_check.py written (8c2132d). First live run on E0:72:A1:AA:23:90 FAILED: AC1 v2 never appeared in 150 s (board stayed 1.0.0 slot 0 confirmed). AC2: bad_sig_tamper.bin and bad_sig_key.bin were fully downloaded (1052672/1052672 B) and the running image was unchanged, but the board was unreachable ~20 s (39 polls) during each attempt -- cause unknown (reboot vs starved HTTPS task); 'restore v1' passed vacuously (already on v1). Hypothesis, UNVERIFIED: ota_task starves the idle task and trips the task WDT. Next: capture the console log (native Windows serial_watch on COM14) during one v2 OTA. Note: the earlier bad_sig artifact was still validly signed; real ones built (tamper, foreign key) and confirmed failing espsecure verify-signature. hang.bin needs a rebuild for revert scenarios.]",
+      "desc": "Pull from RPi4 HTTPS server, signature check on update. [PROGRESS 2026-09-21 -- NOT PASSING YET. Firmware OTA pull task + variants compile (commit b440568); scripts/ota_check.py written (8c2132d). First live run on E0:72:A1:AA:23:90 FAILED: AC1 v2 never appeared in 150 s (board stayed 1.0.0 slot 0 confirmed). AC2: bad_sig_tamper.bin and bad_sig_key.bin were fully downloaded (1052672/1052672 B) and the running image was unchanged, but the board was unreachable ~20 s (39 polls) during each attempt -- cause unknown (reboot vs starved HTTPS task); 'restore v1' passed vacuously (already on v1). Hypothesis, UNVERIFIED: ota_task starves the idle task and trips the task WDT. Next: capture the console log (native Windows serial_watch on COM14) during one v2 OTA. Note: the earlier bad_sig artifact was still validly signed; real ones built (tamper, foreign key) and confirmed failing espsecure verify-signature. hang.bin needs a rebuild for revert scenarios.] [UPDATE 2026-09-21 -- BOTH ACs PASS with live on-target console evidence (scripts/evidence/bl026_ota_acceptance.md); supersedes the earlier 'not passing' note. Root cause of the first failed run: scripts/tcp_forwarder.py closed both sockets on first EOF -> RST truncated the 1 MB download (fixed: half-close; server now HTTP/1.1 + Content-Length). The board never rebooted in that run; the 'unreachable' polls were mbedTLS contention from polling during the OTA. AC1 v1->v2: slot 0->1, app 2.0.0, confirmed, 4.20 Hz (scripts/rate_check.py over native Windows LABID). AC2 bad_sig refused: bad_sig_key.bin (foreign RSA-3072 key) = real signature rejection on the board ('Secure boot signature verification failed', OTA_VALIDATE_FAILED), shows the trust key is pinned; bad_sig_tamper.bin = rejected by image CHECKSUM only (integrity, not a signature test); no reboot, running image unchanged. Earlier server-side 'bytes served' refusal evidence was vacuous and is withdrawn. Not covered: no_confirm/hang revert (rebuild hang.bin), valid-checksum/invalid-signature tamper. Board left on v1.]",
       "ac": [
         "v1 → v2 over WiFi, 4 Hz, confirmed=1",
         "bad_sig rejected, v1 keeps running"
       ],
-      "status": "todo",
-      "pr": ""
+      "status": "blocked",
+      "pr": "",
+      "block_reason": "Both ACs PASS with live on-target evidence (2026-09-21). Cannot be marked done only because deps BL-023 and BL-025 are not done (they wait on BL-021/BL-024, which wait on BL-020)."
     },
     {
       "id": "BL-027",

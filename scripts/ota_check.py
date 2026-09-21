@@ -30,9 +30,16 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 POLL_S = 0.5
 OTA_TIMEOUT_S = 150.0
 CONFIRM_TIMEOUT_S = 20.0
-REFUSE_WINDOW_S = 60.0
-REBOOT_POLLS = 4            # consecutive failed polls (~2 s) that mean "rebooted"
-BAD_IMAGES = ("bad_sig_tamper.bin", "bad_sig_key.bin")
+REFUSE_WINDOW_S = 45.0      # ~15 s download + verify; NOT polled (polling starves the board's TLS)
+REBOOT_MARKER = "ESP-ROM"   # ROM boot banner: present in the console log only after a reset
+REJECT_MARKER = "New image failed verification"
+# The board's console must say WHY it refused. tamper is caught by the image
+# checksum (integrity, not a signature test); key is a real signature rejection.
+REFUSAL_REASON = {
+    "bad_sig_tamper.bin": ("Checksum failed", "integrity (checksum), not a signature test"),
+    "bad_sig_key.bin": ("signature verification failed", "signature, foreign key rejected"),
+}
+BAD_IMAGES = tuple(REFUSAL_REASON)
 results: list[bool] = []
 served: dict[str, int] = {}
 
@@ -55,6 +62,10 @@ def load_token() -> str | None:
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
+    # HTTP/1.1 + Content-Length: the board knows where the image ends and does
+    # not depend on how the connection is closed (a RST truncated a download).
+    protocol_version = "HTTP/1.1"
+
     def log_message(self, fmt: str, *args) -> None:  # keep output readable
         return
 
@@ -132,28 +143,34 @@ def check_upgrade(b: Board, base_url: str, want_app: str) -> None:
     record("AC1 confirmed after health check", done is not None, f"{done}")
 
 
-def check_refused(b: Board, base_url: str, name: str, size: int) -> None:
+def check_refused(b: Board, base_url: str, name: str, console_log: str) -> None:
+    """Refusal evidence comes from the board's own console, not from HTTP polling.
+
+    Bytes the server WROTE do not prove the board RECEIVED them (a RST truncated
+    a download once), so a refusal only counts if the console shows the board
+    reached image verification and rejected it.
+    """
     pre = b.version()
     if not pre:
         record(f"AC2 {name} precondition", False, "board unreachable")
         return
-    served.pop(name, None)
+    start = os.path.getsize(console_log)
     status = b.ota(f"{base_url}/{name}", "9.9.9")
     if not record(f"AC2 {name} POST accepted", status == 202, f"HTTP {status}"):
         return
-    end, bad_polls, worst = time.monotonic() + REFUSE_WINDOW_S, 0, 0
-    while time.monotonic() < end:
-        bad_polls = 0 if b.version(1.0) else bad_polls + 1
-        worst = max(worst, bad_polls)
-        time.sleep(POLL_S)
+    time.sleep(REFUSE_WINDOW_S)
+    with open(console_log, "rb") as fh:
+        fh.seek(start)
+        text = fh.read().decode("utf-8", errors="replace")
+    marker, kind = REFUSAL_REASON[name]
+    record(f"AC2 {name} board reached verification and rejected it",
+           REJECT_MARKER in text and marker.lower() in text.lower(), f"{kind}; console has {marker!r}")
+    record(f"AC2 {name} board did not reboot", REBOOT_MARKER not in text,
+           "no ROM boot banner in the console during the attempt")
     post = b.version()
-    fetched = served.get(name, 0)
-    record(f"AC2 {name} fully downloaded (refusal is not a network error)", fetched >= size,
-           f"{fetched}/{size} bytes served")
     same = post is not None and (post["app"], post["slot"], post["confirmed"]) == \
         (pre["app"], pre["slot"], pre["confirmed"])
-    record(f"AC2 {name} refused, running image unchanged", same, f"before {pre} after {post}")
-    record(f"AC2 {name} board did not reboot", worst < REBOOT_POLLS, f"max {worst} consecutive failed polls")
+    record(f"AC2 {name} running image unchanged", same, f"before {pre} after {post}")
 
 
 def main() -> int:
@@ -167,6 +184,8 @@ def main() -> int:
     ap.add_argument("--want-app", default="2.0.0")
     ap.add_argument("--no-restore", action="store_true", help="leave the board on v2")
     ap.add_argument("--only", choices=("all", "ac1", "ac2"), default="all", help="run one scenario")
+    ap.add_argument("--console-log", default=None,
+                    help="file the board's serial output is being appended to (needed for AC2)")
     args = ap.parse_args()
     token = args.token or load_token()
     if not token:
@@ -178,8 +197,11 @@ def main() -> int:
     if args.only in ("all", "ac1"):
         check_upgrade(board, base_url, args.want_app)
     if args.only in ("all", "ac2"):
-        for name in BAD_IMAGES:
-            check_refused(board, base_url, name, os.path.getsize(os.path.join(args.stage, name)))
+        if not args.console_log:
+            record("AC2 console evidence", False, "--console-log is required (the board's serial output)")
+        else:
+            for name in BAD_IMAGES:
+                check_refused(board, base_url, name, args.console_log)
     cur = board.version()
     if not args.no_restore and cur and cur["app"] == "1.0.0":
         print("board already on v1 (1.0.0); nothing to restore", flush=True)

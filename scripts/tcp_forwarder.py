@@ -8,6 +8,12 @@ import sys
 import threading
 
 def forward(src, dst):
+    """Copy src -> dst until src's EOF, then half-close dst (FIN, not RST).
+
+    Closing both sockets on the first EOF can send a RST that discards data
+    still in flight -- it truncated a 1 MB OTA download. Sockets are closed
+    only once BOTH directions are done (see pipe()).
+    """
     try:
         while True:
             data = src.recv(8192)
@@ -16,13 +22,21 @@ def forward(src, dst):
             dst.sendall(data)
     except Exception:
         pass
-    finally:
+    try:
+        dst.shutdown(socket.SHUT_WR)
+    except Exception:
+        pass
+
+
+def pipe(client, target):
+    """Relay both directions; close both sockets after both have finished."""
+    back = threading.Thread(target=forward, args=(target, client), daemon=True)
+    back.start()
+    forward(client, target)
+    back.join()
+    for s in (client, target):
         try:
-            src.close()
-        except Exception:
-            pass
-        try:
-            dst.close()
+            s.close()
         except Exception:
             pass
 
@@ -41,10 +55,7 @@ def main():
             client, addr = server.accept()
             target = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             target.connect(('127.0.0.1', target_port))
-            t1 = threading.Thread(target=forward, args=(client, target), daemon=True)
-            t2 = threading.Thread(target=forward, args=(target, client), daemon=True)
-            t1.start()
-            t2.start()
+            threading.Thread(target=pipe, args=(client, target), daemon=True).start()
         except KeyboardInterrupt:
             break
         except Exception as e:

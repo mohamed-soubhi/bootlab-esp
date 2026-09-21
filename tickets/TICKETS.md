@@ -9,8 +9,8 @@
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 27
-    "blocked" : 9
+    "todo" : 26
+    "blocked" : 10
     "done" : 11
 ```
 
@@ -64,6 +64,7 @@ flowchart LR
 - 🟥 **BL-023** IDF self-test + mark valid 
 - 🟥 **BL-024** IDF WiFi + token provisioning via NVS 
 - 🟥 **BL-025** IDF HTTPS control server (/ota, /version) 
+- 🟥 **BL-026** IDF WiFi OTA (esp_https_ota pull) 
 - 🟥 **BL-041** identify, info, status, measure 
 
 ## Tickets by epic
@@ -283,7 +284,7 @@ One source, two build integrations. [BLOCKED: AC requires Zephyr native_sim + ID
 | 🟥 | BL-023 | IDF self-test + mark valid | S | idf | BL-021 |  |
 | 🟥 | BL-024 | IDF WiFi + token provisioning via NVS | S | idf | BL-020 |  |
 | 🟥 | BL-025 | IDF HTTPS control server (/ota, /version) | M | idf | BL-024 |  |
-| ⬜ | BL-026 | IDF WiFi OTA (esp_https_ota pull) | M | idf | BL-025, BL-023 |  |
+| 🟥 | BL-026 | IDF WiFi OTA (esp_https_ota pull) | M | idf | BL-025, BL-023 |  |
 | ⬜ | BL-027 | IDF BLE OTA (ble_ota + NimBLE + coexistence) | L | idf | BL-023 |  |
 | ⬜ | BL-028 | IDF phase acceptance run | S | idf | BL-022, BL-026, BL-027 |  |
 
@@ -381,14 +382,14 @@ Bearer token, RPi4 self-signed CA pinned. [PROGRESS 2026-09-21 DONE: Generated L
 
 </details>
 
-<details><summary>⬜ <b>BL-026</b> — IDF WiFi OTA (esp_https_ota pull)</summary>
+<details><summary>🟥 <b>BL-026</b> — IDF WiFi OTA (esp_https_ota pull)</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** idf  
 - **Depends on:** BL-025, BL-023  
 - **Plan:** §4.2, §5, §6, §7.2, §8 P1
 
-Pull from RPi4 HTTPS server, signature check on update. [PROGRESS 2026-09-21 -- NOT PASSING YET. Firmware OTA pull task + variants compile (commit b440568); scripts/ota_check.py written (8c2132d). First live run on E0:72:A1:AA:23:90 FAILED: AC1 v2 never appeared in 150 s (board stayed 1.0.0 slot 0 confirmed). AC2: bad_sig_tamper.bin and bad_sig_key.bin were fully downloaded (1052672/1052672 B) and the running image was unchanged, but the board was unreachable ~20 s (39 polls) during each attempt -- cause unknown (reboot vs starved HTTPS task); 'restore v1' passed vacuously (already on v1). Hypothesis, UNVERIFIED: ota_task starves the idle task and trips the task WDT. Next: capture the console log (native Windows serial_watch on COM14) during one v2 OTA. Note: the earlier bad_sig artifact was still validly signed; real ones built (tamper, foreign key) and confirmed failing espsecure verify-signature. hang.bin needs a rebuild for revert scenarios.]
+Pull from RPi4 HTTPS server, signature check on update. [PROGRESS 2026-09-21 -- NOT PASSING YET. Firmware OTA pull task + variants compile (commit b440568); scripts/ota_check.py written (8c2132d). First live run on E0:72:A1:AA:23:90 FAILED: AC1 v2 never appeared in 150 s (board stayed 1.0.0 slot 0 confirmed). AC2: bad_sig_tamper.bin and bad_sig_key.bin were fully downloaded (1052672/1052672 B) and the running image was unchanged, but the board was unreachable ~20 s (39 polls) during each attempt -- cause unknown (reboot vs starved HTTPS task); 'restore v1' passed vacuously (already on v1). Hypothesis, UNVERIFIED: ota_task starves the idle task and trips the task WDT. Next: capture the console log (native Windows serial_watch on COM14) during one v2 OTA. Note: the earlier bad_sig artifact was still validly signed; real ones built (tamper, foreign key) and confirmed failing espsecure verify-signature. hang.bin needs a rebuild for revert scenarios.] [UPDATE 2026-09-21 -- BOTH ACs PASS with live on-target console evidence (scripts/evidence/bl026_ota_acceptance.md); supersedes the earlier 'not passing' note. Root cause of the first failed run: scripts/tcp_forwarder.py closed both sockets on first EOF -> RST truncated the 1 MB download (fixed: half-close; server now HTTP/1.1 + Content-Length). The board never rebooted in that run; the 'unreachable' polls were mbedTLS contention from polling during the OTA. AC1 v1->v2: slot 0->1, app 2.0.0, confirmed, 4.20 Hz (scripts/rate_check.py over native Windows LABID). AC2 bad_sig refused: bad_sig_key.bin (foreign RSA-3072 key) = real signature rejection on the board ('Secure boot signature verification failed', OTA_VALIDATE_FAILED), shows the trust key is pinned; bad_sig_tamper.bin = rejected by image CHECKSUM only (integrity, not a signature test); no reboot, running image unchanged. Earlier server-side 'bytes served' refusal evidence was vacuous and is withdrawn. Not covered: no_confirm/hang revert (rebuild hang.bin), valid-checksum/invalid-signature tamper. Board left on v1.]
 
 **Acceptance criteria**
 - [ ] v1 → v2 over WiFi, 4 Hz, confirmed=1
@@ -884,7 +885,7 @@ flowchart TB
         BL023["BL-023"]:::blocked
         BL024["BL-024"]:::blocked
         BL025["BL-025"]:::blocked
-        BL026["BL-026"]:::todo
+        BL026["BL-026"]:::blocked
         BL027["BL-027"]:::todo
         BL028["BL-028"]:::todo
     end

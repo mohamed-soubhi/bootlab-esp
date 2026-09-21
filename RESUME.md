@@ -16,8 +16,32 @@ Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
     on both boards (the current IDF build does not enable PSRAM, so it cannot be detected yet).
   - BL-014: AC needs Zephyr native_sim + IDF linux builds; Zephyr on hold.
   - BL-041: host code done + mock-verified; live LABID firmware now running on IDF board.
-- TODO, IDF chain: BL-026 (IDF WiFi OTA pull) -> BL-027 (IDF BLE OTA).
+  - BL-026: both ACs PASS with live on-target console evidence (2026-09-21); blocked only on deps BL-023/BL-025.
+- TODO, IDF chain: BL-027 (IDF BLE OTA).
 - Zephyr chain (BL-030 ...) stays on hold.
+
+## BL-026 status (COMPLETE — both ACs pass with live on-target console evidence)
+Evidence: `scripts/evidence/bl026_ota_acceptance.md`. Board left on **v1** (1.0.0, slot 0, confirmed).
+- Firmware: `esp_https_ota` pull task in `esp_idf/main/app_http_server.c` (POST /ota -> 202, 409 if busy,
+  pinned Lab Root CA); `PROJECT_VER` per variant; `sdkconfig.{v2,hang,no_confirm}` fragments.
+- AC1 v1->v2 over WiFi: PASS (slot 0->1, app 2.0.0, confirmed, 4.20 Hz via `scripts/rate_check.py`).
+- AC2 bad_sig refused: PASS. `bad_sig_key.bin` (foreign RSA key) = real signature rejection on the board;
+  `bad_sig_tamper.bin` = rejected by image CHECKSUM only (integrity, not a signature test).
+- LESSONS (do not repeat): (1) the first run failed because `tcp_forwarder.py` RST-truncated the download
+  (fixed: half-close); (2) "bytes served" by the server does NOT prove the board received them, and polling
+  `/version` during an OTA starves the board's TLS — refusal evidence must come from the board's console
+  (`ota_check.py --console-log`); (3) the original `bad_sig.bin` (zeros in the empty signature blocks) was
+  still validly signed; always confirm artifacts fail `espsecure verify-signature`.
+- NOT covered: no_confirm/hang revert (rebuild `hang.bin` — the scratchpad one is a stale pre-WiFi build);
+  tampered image with valid checksum + invalid signature.
+- HOW TO RUN (WSL, everything Windows-side via `powershell.exe ... < /dev/null`):
+  1. detach board: `powershell.exe -Command "usbipd detach --busid 7-4" < /dev/null`
+  2. forwarder: `powershell.exe -Command "(Start-Process python -ArgumentList 'C:\MSA\embedded-OS\bootlab-esp\scripts\tcp_forwarder.py 8443 8443' -PassThru).Id" < /dev/null` (copy the script to that path first)
+  3. console capture in background: `powershell.exe -Command "python C:\...\scripts\serial_watch.py COM14" < /dev/null > LOG &`
+  4. `python3 scripts/ota_check.py --ip 192.168.1.152 --host-ip 192.168.1.134 --stage <images> --console-log LOG`
+  5. stop leftovers: Get-CimInstance Win32_Process filtered on serial_watch|tcp_forwarder, Stop-Process.
+  Images are built with per-dir sdkconfig and staged in a scratchpad dir (v1.bin v2.bin bad_sig_*.bin);
+  keys stay in gitignored `keys/`, token in gitignored `credentials.env`.
 
 ## BL-025 status (COMPLETE — all 2 ACs pass with live on-target evidence)
 - Generated Lab Root CA (`keys/ca.pem`) and ESP32 server certificate/key (`keys/server_cert.pem`,
