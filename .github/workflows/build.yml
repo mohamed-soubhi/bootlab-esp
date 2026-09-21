@@ -36,6 +36,9 @@ jobs:
 
       - name: Build and run LABID Unity tests
         run: |
+          if [ ! -d common/labid/tests/unity/src ]; then
+            git clone --depth 1 https://github.com/ThrowTheSwitch/Unity.git common/labid/tests/unity
+          fi
           cmake -B common/labid/tests/build common/labid/tests
           cmake --build common/labid/tests/build
           ctest --test-dir common/labid/tests/build --output-on-failure
@@ -63,7 +66,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e host pytest pytest-cov ruff mypy types-pyserial types-PyYAML pyyaml pyserial bleak
+          pip install -e host pytest pytest-cov ruff mypy types-pyserial types-PyYAML pyyaml pyserial bleak esp-idf-nvs-partition-gen esptool
 
       - name: Lint and type check (BL-046)
         run: |
