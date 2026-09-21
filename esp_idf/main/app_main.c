@@ -69,12 +69,31 @@ const char *app_get_variant(void)
 #endif
 }
 
+static app_variant_t app_variant_id(void)
+{
+#if CONFIG_APP_VARIANT_V1
+    return APP_VARIANT_V1;
+#elif CONFIG_APP_VARIANT_V2
+    return APP_VARIANT_V2;
+#elif CONFIG_APP_VARIANT_NO_CONFIRM
+    return APP_VARIANT_NO_CONFIRM;
+#elif CONFIG_APP_VARIANT_HANG
+    return APP_VARIANT_HANG;
+#else
+    return APP_VARIANT_BAD_SIG;
+#endif
+}
+
 static void blink_task(void *arg)
 {
     led_strip_handle_t strip = (led_strip_handle_t)arg;
     esp_task_wdt_add(NULL);
 
 #if CONFIG_APP_VARIANT_HANG
+    /* Solid red so a stuck image is visible before the watchdog resets it. */
+    const app_rgb_t stuck = app_blink_color(APP_VARIANT_HANG, 0);
+    (void)led_strip_set_pixel(strip, 0, stuck.r, stuck.g, stuck.b);
+    (void)led_strip_refresh(strip);
     /* Deliberately never feed the watchdog or yield: CONFIG_ESP_TASK_WDT_PANIC
      * plus CONFIG_ESP_TASK_WDT_TIMEOUT_S=5 (sdkconfig.defaults) must reset the
      * chip well within the 10s AC. */
@@ -92,15 +111,17 @@ static void blink_task(void *arg)
     const TickType_t half_period = pdMS_TO_TICKS(app_blink_half_period_ms(0));
 #endif
 
-    /* "Blink" for this WS2812/addressable RGB LED means toggling between a
-     * fixed dim-white pixel (R=G=B=16 out of 255 -- deliberately dim, not a
-     * default/arbitrary value) and off, at the rate from
-     * app_blink_half_period_ms() above. */
+    /* "Blink" for this WS2812/addressable RGB LED means toggling between a dim
+     * colored pixel and off, at the rate from app_blink_half_period_ms() above.
+     * The COLOR carries the state (amber = not yet confirmed, green = v1,
+     * blue = v2; see app_blink_color()); it is re-read on every "on" so it
+     * turns from amber to its final color when the self-test confirms. */
     bool on = false;
     for (;;) {
         on = !on;
         if (on) {
-            (void)led_strip_set_pixel(strip, 0, 16, 16, 16);
+            const app_rgb_t c = app_blink_color(app_variant_id(), app_is_confirmed());
+            (void)led_strip_set_pixel(strip, 0, c.r, c.g, c.b);
             (void)led_strip_refresh(strip);
         } else {
             (void)led_strip_clear(strip);

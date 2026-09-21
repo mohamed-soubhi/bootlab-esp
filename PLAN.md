@@ -259,6 +259,24 @@ stateDiagram-v2
 - Zephyr: hardware watchdog enabled (`CONFIG_WATCHDOG`, `CONFIG_TASK_WDT` with HW fallback).
 - IDF: `CONFIG_ESP_TASK_WDT_PANIC=y` so a hang resets the chip (→ rollback in `PENDING_VERIFY`).
 
+#### 5.3.1 LED color scheme (added 2026-09-21)
+
+The blink **color carries the state**; the rate stays 1 Hz / 4 Hz (LABID `blink_hz` is unchanged).
+Dim on purpose (every channel ≤ 16/255). Implemented as the pure function `app_blink_color()`
+(`esp_idf/main/app_blink_timing.[ch]`, host test `esp_idf/host_tests/test_blink_color.c`).
+
+| State | Color | Reads as |
+|---|---|---|
+| Booted, not yet confirmed (`PENDING_VERIFY`, first ~5 s; `no_confirm` forever) | **Amber** | "on trial, self-test not passed yet" |
+| `v1`, confirmed | **Green** | healthy factory image |
+| `v2`, confirmed (4 Hz) | **Blue** | the updated image, distinguishable from `v1` at a glance |
+| `hang` | **Solid red** | stuck, then the watchdog resets it |
+| `bad_sig` | **Magenta** | should never run (refused at OTA) |
+
+An OTA therefore reads on the LED as: green → (reboot) amber → blue. A rollback reads as amber → green.
+Status: IDF implemented; Zephyr to follow the same table when BL-031 resumes (Zephyr hold).
+The color is self-reported like the rate (R12): it shows what the firmware chose, not a measured LED.
+
 ### 5.4 OTA sequence — Zephyr over BLE (SMP)
 
 ```mermaid

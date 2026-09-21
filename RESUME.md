@@ -132,6 +132,9 @@ NEXT:
 - idf board: `/dev/lab-esp-idf`, USB serial `E0:72:A1:AA:23:90`, usbipd busid 7-4, Windows COM14.
   Flashed with BL-025 v1 signed build (HTTPS control server on port 443, WiFi STA connected to IP 192.168.1.152,
   NVS credentials provisioned at 0x9000, dual OTA partitions, rollback enabled, 1 Hz blink on GPIO48, confirms after 5s).
+  After BL-026 the board runs v1 1.0.0 in slot 0 (WHITE blink: the old firmware). The LED COLOR scheme (PLAN 5.3.1:
+  amber pending / green v1 / blue v2 / red hang / magenta bad_sig) is built for v1+v2 in `esp_idf/build`, `build_v2`
+  but NOT flashed yet; flashing needs owner go-ahead and a visual check (a v1->v2 OTA should read green, amber, blue).
 - zephyr board: `/dev/lab-esp-zephyr`, USB serial `AC:A7:04:2C:3B:04`, busid 6-3. Untouched.
 
 ## Settled findings (see PLAN Sec 9)
