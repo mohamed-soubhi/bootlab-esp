@@ -20,6 +20,29 @@ Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
 - TODO, IDF chain: BL-027 (IDF BLE OTA).
 - Zephyr chain (BL-030 ...) stays on hold.
 
+## BL-027 status (IN PROGRESS — firmware + host client built and unit-tested; NOT flashed, NO on-target result yet)
+Done and pushed (HEAD ~ab048a2):
+- `espressif/ble_ota` 0.1.18 pinned (ESCALATE gate cleared, see versions.env). Firmware: `esp_idf/main/app_ble_ota.[ch]`
+  (flash write via esp_ota_*, `esp_ota_end` enforces the RSA signature, activation only after verification, GAP-disconnect
+  listener discards a half-received image, app-owned `notify_sem` mutex the component links against),
+  `sdkconfig.defaults` (NimBLE peripheral, 1 conn, SW coex, host stack 8192), wired in `app_main.c` after WiFi init.
+  v1/v2 build clean (0 warnings; +131 KB; 72% of the slot free) and verify signed.
+- Host client `host/labflash/idf_ble_ota.py` (protocol read from the component source; 15 pytest tests, no hardware).
+  Runs NATIVELY on Windows: `C:\MSA\embedded-OS\bootlab-esp\.venv_win_ble\Scripts\python.exe` (bleak 3.0.2, pyserial 3.5).
+  bleak verified to scan on the laptop's adapter (19 devices).
+NEXT (each flash needs owner go-ahead; verify ID_SERIAL_SHORT E0:72:A1:AA:23:90 first):
+1. Flash BLE-enabled v1 (`esp_idf/build`, per-dir sdkconfig; verify `CONFIG_BT_NIMBLE_ENABLED` AFTER building) to ota_0.
+2. From Windows: `... idf_ble_ota.py --scan-only --board-mac E0:72:A1:AA:23:90` (BLE addr = base MAC + 2, so first 5 octets match).
+3. AC1: v1 -> v2 -> v1 over BLE; evidence = board console (`serial_watch.py`) + `/version`.
+4. AC2: WiFi stays connected during BLE OTA -- poll `/version` SPARINGLY (polling starves the board's TLS, see BL-026) and
+   check the console for WiFi disconnect events.
+5. AC3: `--abort-after N` -> console must show 'partial image discarded'; `/version` unchanged; then a clean OTA still works.
+UNTESTED ON TARGET (fix if they fail): heap with WiFi+TLS+NimBLE; NimBLE host task stack for esp_ota_end; advertised
+service UUID / name (client falls back to name `nimble-ble-ota`); MTU negotiation on Windows; first-sector ACK latency.
+TRAPS: an existing `build*/sdkconfig` OVERRIDES sdkconfig.defaults (the BLE options were silently ignored until I
+regenerated it) -- always verify options in `<dir>/sdkconfig` after building; the component needs an app-defined global
+`notify_sem` or the link fails.
+
 ## BL-026 status (COMPLETE — both ACs pass with live on-target console evidence)
 Evidence: `scripts/evidence/bl026_ota_acceptance.md`. Board left on **v1** (1.0.0, slot 0, confirmed).
 - Firmware: `esp_https_ota` pull task in `esp_idf/main/app_http_server.c` (POST /ota -> 202, 409 if busy,
