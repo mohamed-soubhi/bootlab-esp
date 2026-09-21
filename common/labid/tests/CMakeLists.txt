@@ -35,5 +35,18 @@ target_include_directories(test_labid PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR}   # for test_vectors.h
 )
 
+# BL-022 — request dispatcher (HELLO/ID?/VER?/STATE?/PING, ERR codes, rx_err)
+add_executable(test_dispatch
+    test_dispatch.c
+    ${UNITY_DIR}/src/unity.c
+    ../src/labid.c
+    ../src/labid_dispatch.c
+)
+target_include_directories(test_dispatch PRIVATE
+    ../include
+    ${UNITY_DIR}/src
+)
+
 enable_testing()
 add_test(NAME labid COMMAND test_labid)
+add_test(NAME labid_dispatch COMMAND test_dispatch)

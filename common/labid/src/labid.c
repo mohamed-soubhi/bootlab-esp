@@ -119,14 +119,20 @@ int labid_feed(struct labid_parser *p, uint8_t ch)
 
     /* not started: only a '$' at line start matters */
     if (!p->started) {
+        if (ch == '\n') {
+            p->started = 0; p->len = 0; p->skip = 0;
+            return LABID_FEED_IGNORED;
+        }
+        if (p->skip) { return LABID_FEED_IGNORED; }   /* device mode: dropping this line */
         if (ch == '$') {
             p->started = 1;
             p->buf[0] = (char)ch;   /* store '$' so payload starts at buf[1] */
             p->len = 1;
             p->crc_ok = 0;
+            p->err = LABID_ERR_NONE;
+        } else if (p->accept_nocrc) {
+            p->skip = 1;            /* line does not start with '$': a log line */
         }
-        /* any other char ignored (normal log line); reset on \n to be safe */
-        if (ch == '\n') { p->started = 0; p->len = 0; }
         return LABID_FEED_IGNORED;
     }
 
@@ -140,6 +146,8 @@ int labid_feed(struct labid_parser *p, uint8_t ch)
     if (p->len >= sizeof(p->buf) - 1u) {
         /* overflow -> drop until \n */
         p->started = 0; p->len = 0;
+        p->err = LABID_ERR_LEN;
+        if (p->accept_nocrc) { p->skip = 1; }
         return LABID_FEED_ERROR;
     }
     p->buf[p->len++] = (char)ch;
@@ -152,27 +160,36 @@ int labid_feed(struct labid_parser *p, uint8_t ch)
  */
 int labid_parser_end(struct labid_parser *p)
 {
+    /* device mode: tolerate a terminal that sends "\r\n" */
+    if (p->accept_nocrc && p->len > 0 && p->buf[p->len - 1] == '\r') { p->len--; }
     /* frame == $ <payload> * <4hex> */
     if (p->len < 3) { p->len = 0; return LABID_FEED_IGNORED; }
     /* find last '*' */
     int star = -1;
     for (size_t i = 1; i < p->len; i++) { if (p->buf[i]=='*') star = (int)i; }
-    if (star < 0) { 
+    if (star < 0) {
+        if (p->accept_nocrc) {
+            /* host request without CRC (PLAN 7.3.1): accept "$LAB,..." as a frame;
+             * crc_ok stays 0 (a wrong CRC is an error, an absent one is not) */
+            if (p->len >= 5 && memcmp(&p->buf[1], "LAB,", 4) == 0) { return LABID_FEED_FRAME; }
+            p->len = 0; p->err = LABID_ERR_SYNTAX;
+            return LABID_FEED_ERROR;
+        }
         /* not a LABID frame (no CRC); treat as ignored log line */
         p->len = 0;
         return LABID_FEED_IGNORED;
     }
     /* need at least 4 hex chars after '*', and 'LAB,' prefix check */
-    if ((int)p->len - star - 1 < 4) { p->len = 0; return LABID_FEED_ERROR; }
+    if ((int)p->len - star - 1 < 4) { p->len = 0; p->err = LABID_ERR_SYNTAX; return LABID_FEED_ERROR; }
     /* CRC chars */
     const char *cr = &p->buf[star+1];
-    for (int i=0;i<4;i++) if (hexval(cr[i])<0) { p->len=0; return LABID_FEED_ERROR; }
+    for (int i=0;i<4;i++) if (hexval(cr[i])<0) { p->len=0; p->err = LABID_ERR_SYNTAX; return LABID_FEED_ERROR; }
     hex_to_bytes(cr, &p->crc_hi, &p->crc_lo);
     uint16_t crc = (uint16_t)(p->crc_hi<<8 | p->crc_lo);
     /* payload = buf[1..star-1] */
     uint16_t calc = labid_crc16((const uint8_t*)&p->buf[1], (size_t)(star-1));
     p->crc_ok = (calc == crc) ? 1 : 0;
-    if (!p->crc_ok) { p->len = 0; return LABID_FEED_ERROR; }
+    if (!p->crc_ok) { p->len = 0; p->err = LABID_ERR_CRC; return LABID_FEED_ERROR; }
     /* success: keep frame in p->buf; payload spans buf[1..star-1],
      * buf[0] is the leading '$'. Trim the trailing CRC (leave at buffer end). */
     p->len = (size_t)star;   /* index of '*' — payload is buf[1..star-1] */
@@ -233,4 +250,17 @@ void labid_parser_init(struct labid_parser *p)
     if (!p) return;
     p->len = 0; p->started = 0; p->crc_ok = 0;
     p->crc_hi = p->crc_lo = 0;
+    p->accept_nocrc = 0; p->skip = 0; p->err = LABID_ERR_NONE;
+}
+
+void labid_parser_init_device(struct labid_parser *p)
+{
+    if (!p) return;
+    labid_parser_init(p);
+    p->accept_nocrc = 1;
+}
+
+int labid_parser_err(const struct labid_parser *p)
+{
+    return p ? p->err : LABID_ERR_NONE;
 }

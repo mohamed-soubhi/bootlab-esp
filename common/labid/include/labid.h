@@ -59,10 +59,25 @@ struct labid_parser {
     int      started;       /* seen leading '$' */
     int      crc_ok;        /* set when CRC validated */
     uint8_t  crc_hi, crc_lo;/* parsed CRC hex bytes */
+    int      accept_nocrc;  /* device mode: accept CRC-less "$LAB," requests (PLAN 7.3.1) */
+    int      skip;          /* device mode: dropping the rest of the current line */
+    int      err;           /* LABID_ERR_* reason for the last LABID_FEED_ERROR */
 };
+
+/* Reason codes behind LABID_FEED_ERROR; map 1:1 to "ERR,code=" (PLAN 7.3.3). */
+#define LABID_ERR_NONE    0
+#define LABID_ERR_CRC     1   /* CRC present but wrong */
+#define LABID_ERR_LEN     2   /* frame longer than LABID_MAX_FRAME */
+#define LABID_ERR_SYNTAX  3   /* not parseable */
 
 int labid_feed(struct labid_parser *p, uint8_t ch);
 void labid_parser_init(struct labid_parser *p);
+/* Device-side parser: like labid_parser_init(), but host requests may omit the
+ * CRC, a trailing '\r' is tolerated, and after an overflow or a non-'$' line
+ * everything up to the next '\n' is dropped ("drop until \n", PLAN 7.3.4). */
+void labid_parser_init_device(struct labid_parser *p);
+/* Reason for the most recent LABID_FEED_ERROR (LABID_ERR_*). */
+int labid_parser_err(const struct labid_parser *p);
 /* Internal finalizer — exposed for the Unity test harness. */
 int labid_parser_end(struct labid_parser *p);
 /* After FRAME: return pointers into parser->buf. */
