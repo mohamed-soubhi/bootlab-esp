@@ -19,8 +19,7 @@ from tests_hil.conftest import HilRig
 @pytest.mark.slow
 def test_t16_soak_alternating_updates(hil_rig: HilRig, request: pytest.FixtureRequest) -> None:
     """T16: Alternating updates (v1 <-> v2) with >= 99% pass rate."""
-    # Default iterations: 100 for soak, or can be overridden via env
-    soak_count = 100 if hil_rig.is_mock else 10  # Live smoke or full 100
+    soak_count = int(request.config.getoption("--soak-cycles"))
     passes = 0
     failures: list[dict[str, str]] = []
 
@@ -58,6 +57,7 @@ def test_t16_soak_alternating_updates(hil_rig: HilRig, request: pytest.FixtureRe
     pass_rate = (passes / total) * 100.0 if total > 0 else 0.0
 
     report = {
+        "mode": hil_rig.mode,  # "mock" results are simulation, never hardware evidence
         "board": hil_rig.board,
         "total_cycles": total,
         "passes": passes,

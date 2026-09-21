@@ -29,6 +29,7 @@ import urllib.request
 import json
 import ssl
 
+from tests_hil.live_backend import LiveBackend, LiveRigError
 from labflash.core import DEFAULT_RIG_PATH, BoardResolutionError, load_rig_config, resolve_board
 
 DEFAULT_REPORTS_DIR = Path(__file__).resolve().parent / "reports"
@@ -77,6 +78,11 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=str(DEFAULT_REPORTS_DIR),
         help="Directory to save HIL test artifacts and logs",
     )
+    group.addoption("--soak-cycles", action="store", type=int, default=100, help="T16 soak cycles (default 100)")
+    group.addoption("--board-ip", action="store", default="192.168.1.152", help="Board IP for HTTPS (live mode)")
+    group.addoption("--images-dir", action="store", default=None, help="Dir holding build*/bootlab_idf_blink.bin")
+    group.addoption("--keys-dir", action="store", default=None, help="Dir with ca.pem/server_cert.pem/server_key.pem")
+    group.addoption("--env-file", action="store", default=None, help="credentials.env with OTA_TOKEN (live mode)")
     group.addoption(
         "--mock-rig",
         action="store_true",
@@ -162,18 +168,10 @@ def serial_capture(
             f.write("[MOCK] Serial console capture stopped\n")
         return
 
-    # Real hardware console capture if port available
-    port = port_override or get_board_port(board_cfg.get("board_name", ""))
-    if not port or not os.path.exists(port):
-        with open(console_log, "w", encoding="utf-8") as f:
-            f.write(f"[NOTE] Serial port not accessible ({port}); console capture skipped\n")
-        yield console_log
-        return
-
-    # Start background reader if possible
+    # Live: the port is used exclusively by LABID queries (a second reader would corrupt frames and, under
+    # usbipd, reset the board). LABID verification output goes to update.log instead.
     with open(console_log, "w", encoding="utf-8") as f:
-        f.write(f"[INFO] Console capture attached to {port}\n")
-
+        f.write("[LIVE] raw console not captured; LABID queries and update output are in update.log\n")
     yield console_log
 
 
@@ -219,8 +217,14 @@ class HilRig:
     is_mock: bool
     mock_version: str = "1.0.0"
     mock_slot: int = 0
+    backend: "LiveBackend | None" = None
+    board_ip: str = "192.168.1.152"
 
-    def query_http_version(self, ip: str = "192.168.1.152", timeout: float = 3.0) -> dict[str, Any] | None:
+    @property
+    def mode(self) -> str:
+        return "mock" if self.is_mock else "live"
+
+    def query_http_version(self, ip: str | None = None, timeout: float = 3.0) -> dict[str, Any] | None:
         """Query running app version via HTTPS /version."""
         if self.is_mock:
             return {
@@ -230,7 +234,7 @@ class HilRig:
                 "confirmed": True,
                 "board": "idf",
             }
-        url = f"https://{ip}/version"
+        url = f"https://{ip or self.board_ip}/version"
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
@@ -247,7 +251,7 @@ class HilRig:
         self,
         url: str = "https://192.168.1.134:8443/update.bin",
         token: str = "wrong-token",
-        ip: str = "192.168.1.152",
+        ip: str | None = None,
         timeout: float = 5.0,
     ) -> int:
         """Trigger POST /ota on the target board and return the HTTP status code."""
@@ -255,7 +259,7 @@ class HilRig:
             if token != "lab-bearer-token-secret-12345":
                 return 401
             return 202
-        endpoint = f"https://{ip}/ota"
+        endpoint = f"https://{ip or self.board_ip}/ota"
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
@@ -282,14 +286,13 @@ class HilRig:
         """Query board identity and version via LABID framing."""
         if self.is_mock:
             return {"board": "idf", "v": "1.0.0", "app": "bootlab_idf_blink", "slot": "0"}
-        # If live port available, attempt query
-        if not self.port:
-            return None
-        return None
+        assert self.backend is not None
+        return self.backend.labid_info()
 
     def log_artifact(self, filename: str, content: str) -> Path:
         p = self.artifacts_dir / filename
-        p.write_text(content, encoding="utf-8")
+        header = "" if filename.endswith(".json") else f"mode: {self.mode}\n"  # JSON carries its own "mode" key
+        p.write_text(header + content, encoding="utf-8")
         return p
 
     def measure_blink_rate(
@@ -302,19 +305,8 @@ class HilRig:
         if self.is_mock:
             hz = 4.0 if self.mock_version == "2.0.0" else 1.0
             return hz, (abs(hz - expect_hz) < 0.1)
-        port = self.port or "COM14"
-        cmd = f'cd C:\\MSA\\embedded-OS\\bootlab-esp\\host; python -m labflash measure idf --port {port} --expect-hz {expect_hz} --seconds {duration_s} --tolerance {tolerance}'
-        res = subprocess.run(
-            ["powershell.exe", "-Command", cmd],
-            stdin=subprocess.DEVNULL,
-            capture_output=True,
-            text=True,
-        )
-        passed = "[PASS]" in res.stdout
-        import re
-        m = re.search(r"=\s*([0-9.]+)\s*Hz", res.stdout)
-        hz = float(m.group(1)) if m else (expect_hz if passed else 0.0)
-        return hz, passed
+        assert self.backend is not None
+        return self.backend.measure(duration_s, expect_hz, tolerance)
 
     def update_ota(self, variant: str, transport: str = "wifi") -> bool:
         """Perform an OTA update to a specified variant (e.g. 'v1' or 'v2')."""
@@ -326,75 +318,43 @@ class HilRig:
                 self.mock_version = "1.0.0"
                 self.mock_slot = 0
             return True
-        port = self.port or "COM14"
-        img_map = {
-            "v1": r"..\esp_idf\build\bootlab_idf_blink.bin",
-            "v2": r"..\esp_idf\build_v2\bootlab_idf_blink.bin",
-            "no_confirm": r"..\esp_idf\build_no_confirm\bootlab_idf_blink.bin",
-            "hang": r"..\esp_idf\build_hang\bootlab_idf_blink.bin",
-            "bad_sig": r"..\esp_idf\build_bad_sig\bootlab_idf_blink.bin",
-        }
-        img = img_map.get(variant)
-        if not img:
-            raise ValueError(f"Unknown variant {variant}")
-
-        if transport == "ble":
-            cmd = f'cd C:\\MSA\\embedded-OS\\bootlab-esp\\host; python -m labflash update idf --image {img} --transport ble --labid-port {port} --board-mac E0:72:A1:AA:23:90'
-            res = subprocess.run(
-                ["powershell.exe", "-Command", cmd],
-                stdin=subprocess.DEVNULL,
-                capture_output=True,
-                text=True,
-                timeout=240,
-            )
-            return "UPDATE OK" in res.stdout
-        elif transport == "wifi":
-            # Copy server key temporarily
-            shutil.copy("keys/server_key.pem", "/mnt/c/MSA/embedded-OS/bootlab-esp/keys/server_key.pem")
-            try:
-                cmd = f'cd C:\\MSA\\embedded-OS\\bootlab-esp\\host; python -m labflash update idf --image {img} --transport wifi --board-ip 192.168.1.152 --labid-port {port} --keys C:\\MSA\\embedded-OS\\bootlab-esp\\keys --token lab-bearer-token-secret-12345'
-                res = subprocess.run(
-                    ["powershell.exe", "-Command", cmd],
-                    stdin=subprocess.DEVNULL,
-                    capture_output=True,
-                    text=True,
-                    timeout=240,
-                )
-                return "UPDATE OK" in res.stdout
-            finally:
-                # Always remove temporary server key
-                key_path = Path("/mnt/c/MSA/embedded-OS/bootlab-esp/keys/server_key.pem")
-                if key_path.exists():
-                    try:
-                        key_path.unlink()
-                    except OSError:
-                        pass
-        return False
+        assert self.backend is not None
+        return self.backend.update(variant, transport, self.artifacts_dir / "update.log")
 
 
 @pytest.fixture
-def factory_reset(
-    request: pytest.FixtureRequest,
-    board_name: str,
-    board_cfg: dict[str, Any],
-) -> Generator[Callable[[], bool], None, None]:
-    """Fixture ensuring the board starts on confirmed v1 and restores v1 upon test completion."""
-    mock_mode = request.config.getoption("--mock-rig")
+def live_backend(request: pytest.FixtureRequest, board_cfg: dict[str, Any], artifacts_dir: Path) -> LiveBackend | None:
+    """Real-board backend, or None with --mock-rig. Refuses (fails) rather than falling back to a mock."""
+    if request.config.getoption("--mock-rig"):
+        return None
+    port = request.config.getoption("--port") or get_board_port(board_cfg.get("board_name", ""))
+    if not port:
+        pytest.fail("live HIL: board serial port not found (pass --port COMx, or use --mock-rig for a simulation)")
+    opt = request.config.getoption
+    try:
+        return LiveBackend.create(
+            port=port, board_ip=opt("--board-ip"),
+            images_dir=Path(opt("--images-dir")) if opt("--images-dir") else None,
+            keys_dir=Path(opt("--keys-dir")) if opt("--keys-dir") else None,
+            env_file=opt("--env-file"), rig_path=opt("--rig-config"))
+    except LiveRigError as err:
+        pytest.fail(f"live HIL unavailable: {err}")
+
+
+@pytest.fixture
+def factory_reset(live_backend: LiveBackend | None, artifacts_dir: Path) -> Generator[Callable[[], bool], None, None]:
+    """Board starts on confirmed v1 and is restored to v1 afterwards. Live: verified through LABID."""
 
     def reset_to_v1() -> bool:
-        if mock_mode:
+        if live_backend is None:
             return True
-        # On real hardware, check if already v1
-        # If not v1, flash or OTA update to v1
-        return True
+        return live_backend.reset_to_v1(artifacts_dir / "update.log")
 
-    # Pre-test check/reset
-    reset_to_v1()
-
+    if not reset_to_v1():
+        pytest.fail("live HIL: could not bring the board to confirmed v1 before the test")
     yield reset_to_v1
-
-    # Post-test teardown restore
-    reset_to_v1()
+    if not reset_to_v1():
+        pytest.fail("live HIL: could not restore the board to confirmed v1 after the test")
 
 
 @pytest.fixture
@@ -405,17 +365,16 @@ def hil_rig(
     artifacts_dir: Path,
     serial_capture: Path,
     btmon_capture: Path,
+    live_backend: LiveBackend | None,
     factory_reset: Callable[[], bool],
 ) -> HilRig:
     """Primary HIL test harness fixture combining board config, logging, and reset."""
-    port_override = request.config.getoption("--port")
-    mock_mode = request.config.getoption("--mock-rig")
-    port = port_override or get_board_port(board_cfg.get("board_name", ""))
-
     return HilRig(
         board=board_name,
         config=board_cfg,
         artifacts_dir=artifacts_dir,
-        port=port,
-        is_mock=mock_mode,
+        port=live_backend.port if live_backend else request.config.getoption("--port"),
+        is_mock=live_backend is None,
+        backend=live_backend,
+        board_ip=request.config.getoption("--board-ip"),
     )
