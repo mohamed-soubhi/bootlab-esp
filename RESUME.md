@@ -14,6 +14,34 @@ Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
 - TODO, IDF chain: BL-022 (LABID on USB-Serial-JTAG) -> BL-021 (partitions/signing/rollback) -> BL-024.
 - Zephyr chain (BL-030 ...) stays on hold.
 
+## BL-022 status (IN PROGRESS — steps A, B, C done; step D pending)
+Done and pushed (HEAD ~800ede0):
+- A: `common/labid/{include/labid_dispatch.h,src/labid_dispatch.c}` + device-mode parser
+  (`labid_parser_init_device`: CRC-less requests, trailing CR, drop-until-newline, error reasons).
+  20 new Unity tests (`common/labid/tests/test_dispatch.c`) + 26 legacy pass; ASan/UBSan clean;
+  line coverage 99.0% dispatch / 95.5% parser. GAP: dispatch branch-taken coverage 71.6% (< BL-011's 90%).
+- B: `esp_idf/components/labid_port/` (driver RX task prio 2, providers, ANNOUNCE ~1 s after start,
+  one-fputs atomic frames, LF TX endings), wired in `esp_idf/main/app_main.c`;
+  `esp_idf/CMakeLists.txt` adds `EXTRA_COMPONENT_DIRS ../common/labid`; `common/labid/CMakeLists.txt`
+  builds labid_dispatch.c in both IDF and Zephyr branches (Zephyr NOT built — hold).
+- C: v1 builds clean with a per-dir sdkconfig; variant verified after build (V1, GPIO48).
+- Host: `identify.SerialLineTransport` holds DTR/RTS inactive before open (R14). No host pytest suite exists.
+
+NEXT (step D) — needs explicit owner go-ahead to flash E0:72:A1:AA:23:90:
+1. Verify `ID_SERIAL_SHORT` of /dev/lab-esp-idf, then from WSL:
+   `. ~/tools/esp-idf/export.sh && cd esp_idf && idf.py -B build -p /dev/lab-esp-idf flash`
+   (rebuild first if needed: `idf.py -B build -DSDKCONFIG=build/sdkconfig -DSDKCONFIG_DEFAULTS=sdkconfig.defaults build`;
+   confirm `build/config/sdkconfig.h` says CONFIG_APP_VARIANT_V1 AFTER the build).
+2. `usbipd.exe detach --busid 7-4`; owner replugs the board.
+3. Owner runs on Windows: `python scripts\labid_check.py COM14` (then replug for the ANNOUNCE check).
+   Confirm on-target from the boot log that App version / Compile time / ELF SHA256 match the new build.
+4. UNTESTED ON TARGET (fix if they fail): USB-Serial-JTAG driver install alongside the console VFS;
+   frame vs log interleaving; ANNOUNCE reaching a host that opens the port after ~600 ms.
+5. If all ACs pass with pasted evidence: record in tickets.json (BL-022 desc), raise or waive the
+   branch-coverage gap, `tickets_tool.py render/csv/check`, commit, push. Then BL-021, BL-041 (IDF-only).
+   BL-022 cannot be set `done` while dep BL-020 is not done (BL-020 waits on BL-005/BL-014).
+- Cosmetic: `app_main.c` still has the TEMPORARY blink_diag logging (3 lines/s); removable now.
+
 ## Hardware state (2026-09-21)
 - idf board: `/dev/lab-esp-idf`, USB serial `E0:72:A1:AA:23:90`, usbipd busid 7-4, Windows COM14.
   Flashed with the **v1** build (blinks 1 Hz on GPIO48).
