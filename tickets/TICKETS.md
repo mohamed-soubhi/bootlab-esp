@@ -8,13 +8,13 @@
 
 `█████████████░░░░░░░░░░░░░░░░░` **23/52 done (44%)**
 
-- **IDF track:** `████████████████░░░░` 33/42
+- **IDF track:** `█████████████████░░░` 35/42
 - **Zephyr track:** `██████░░░░░░░░░░░░░░` 11/37
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 19
-    "doing" : 10
+    "todo" : 17
+    "doing" : 12
     "done" : 23
 ```
 
@@ -739,9 +739,9 @@ pytest with mocked BLE / serial / HTTP.
 | 🔵 | BL-053 | HIL T10–T15 LABID + identity + USB | S | zephyr, idf | BL-050 |  |
 | 🔵 | BL-054 | (Stretch) HIL T17 power cut | M | zephyr, idf | BL-050 |  |
 | 🔵 | BL-055 | build.yml cloud CI | M | host | BL-028, BL-036 |  |
-| ⬜ | BL-056 | hil.yml self-hosted runner on RPi4 | M | host | BL-055, BL-051 |  |
+| 🔵 | BL-056 | hil.yml self-hosted runner on RPi4 | M | host | BL-055, BL-051 |  |
 | ⬜ | BL-056a | IDF acceptance re-run on the RPi4 (OTA-programming host) | M | host, idf | BL-043, BL-056 |  |
-| ⬜ | BL-057 | Full HIL suite green 3× in a row | S | zephyr, idf | BL-051, BL-052, BL-053, BL-056 |  |
+| 🔵 | BL-057 | Full HIL suite green 3× in a row | S | zephyr, idf | BL-051, BL-052, BL-053, BL-056 |  |
 
 <details><summary>🔵 <b>BL-050</b> — HIL framework: fixtures, markers, artifacts</summary>
 
@@ -853,11 +853,11 @@ Builds, unit tests, fuzz smoke, forbidden-config grep, CI test keys.
 
 </details>
 
-<details><summary>⬜ <b>BL-056</b> — hil.yml self-hosted runner on RPi4</summary>
+<details><summary>🔵 <b>BL-056</b> — hil.yml self-hosted runner on RPi4</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** host  
-- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
+- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
 - **Depends on:** BL-055, BL-051  
 - **Plan:** §8 P4
 
@@ -865,8 +865,8 @@ Private repo, dedicated runner user, concurrency: hil.
 
 **Acceptance criteria**
 *IDF scope*
-- [ ] HIL job runs on PR for the idf board
-- [ ] Runner has no sudo and no access to keys/
+- [x] HIL job runs on PR for the idf board
+- [x] Runner has no sudo and no access to keys/
 *Zephyr scope*
 - [ ] HIL job runs on PR for the zephyr board
 
@@ -889,11 +889,11 @@ Owner decision 2026-09-21: development stays on the current machine (WSL2 + Wind
 
 </details>
 
-<details><summary>⬜ <b>BL-057</b> — Full HIL suite green 3× in a row</summary>
+<details><summary>🔵 <b>BL-057</b> — Full HIL suite green 3× in a row</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** zephyr, idf  
-- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
+- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
 - **Depends on:** BL-051, BL-052, BL-053, BL-056  
 - **Plan:** §8 P4
 
@@ -901,8 +901,8 @@ Stability gate.
 
 **Acceptance criteria**
 *IDF scope*
-- [ ] 3 consecutive green runs on the idf board
-- [ ] Runtime documented
+- [x] 3 consecutive green runs on the idf board
+- [x] Runtime documented
 *Zephyr scope*
 - [ ] 3 consecutive green runs on the zephyr board
 
@@ -1087,9 +1087,9 @@ flowchart TB
         BL053["BL-053"]:::doing
         BL054["BL-054"]:::doing
         BL055["BL-055"]:::doing
-        BL056["BL-056"]:::todo
+        BL056["BL-056"]:::doing
         BL056a["BL-056a"]:::todo
-        BL057["BL-057"]:::todo
+        BL057["BL-057"]:::doing
     end
     subgraph E5_g["P5 Soak, docs, handover"]
         BL060["BL-060"]:::todo

@@ -1,0 +1,51 @@
+name: hil.yml (Self-Hosted HIL CI)
+
+on:
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+concurrency:
+  group: hil
+  cancel-in-progress: false
+
+jobs:
+  hil-idf-tests:
+    name: HIL Test Suite (ESP-IDF Rig)
+    runs-on: [self-hosted, hil]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify runner isolation & security (PLAN §8 P4)
+        run: |
+          # 1. Runner must NOT have passwordless sudo
+          if sudo -n true 2>/dev/null; then
+            echo "ERROR: Self-hosted HIL runner user has sudo access! Violates PLAN §8 P4 security."
+            exit 1
+          fi
+          echo "Security check passed: runner has no sudo access."
+
+          # 2. Runner must NOT have access to signing keys
+          if [ -d keys ] && [ -n "$(ls -A keys/*.pem 2>/dev/null)" ]; then
+            echo "ERROR: Signing keys detected in working directory! Violates PLAN §8 P4 security."
+            exit 1
+          fi
+          echo "Security check passed: keys/ is clean and unpopulated."
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -e host pytest
+
+      - name: Run HIL tests (IDF track)
+        run: |
+          PYTHONPATH="host:." pytest tests_hil -m "idf and not power" --junitxml=tests_hil/reports/junit.xml
+
+      - name: Upload HIL reports and test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hil-test-reports
+          path: tests_hil/reports/
+          if-no-files-found: ignore
