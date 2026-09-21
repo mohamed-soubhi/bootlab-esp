@@ -36,7 +36,7 @@ def test_update_passes_real_image_and_no_hardcoded_token(tmp_path):
     be, calls = make(tmp_path, [])
     assert be.update("v2", "wifi", tmp_path / "u.log") is True
     a = calls[0]
-    assert a.image.endswith("build_v2/bootlab_idf_blink.bin") and a.transport == "wifi"
+    assert Path(a.image).parts[-2:] == ("build_v2", "bootlab_idf_blink.bin") and a.transport == "wifi"
     assert a.token is None and a.board_ip == "1.2.3.4" and a.labid_port == "COM14"
     assert "UPDATE OK" in (tmp_path / "u.log").read_text()
 
