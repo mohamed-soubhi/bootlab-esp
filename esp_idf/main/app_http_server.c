@@ -148,6 +148,42 @@ static esp_err_t version_get_handler(httpd_req_t *req)
     return httpd_resp_send(req, resp, len);
 }
 
+#include "esp_https_ota.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+static bool s_ota_in_progress = false;
+
+static void ota_task(void *pvParameter)
+{
+    char *url = (char *)pvParameter;
+    ESP_LOGI(TAG, "Starting OTA pull from %s", url);
+
+    esp_http_client_config_t http_config = {
+        .url = url,
+        .cert_pem = (const char *)ca_pem_start,
+        .timeout_ms = 15000,
+        .keep_alive_enable = true,
+        .skip_cert_common_name_check = true,
+    };
+    esp_https_ota_config_t ota_config = {
+        .http_config = &http_config,
+    };
+
+    esp_err_t ret = esp_https_ota(&ota_config);
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "OTA pull and verification successful! Rebooting in 1s...");
+        free(url);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        esp_restart();
+    } else {
+        ESP_LOGE(TAG, "OTA failed: %s (0x%x)", esp_err_to_name(ret), ret);
+        free(url);
+        s_ota_in_progress = false;
+        vTaskDelete(NULL);
+    }
+}
+
 /*
  * POST /ota — Protected endpoint. Requires Authorization: Bearer <token>.
  * Body: {"url": "...", "version": "..."}
@@ -157,6 +193,12 @@ static esp_err_t ota_post_handler(httpd_req_t *req)
 {
     if (!check_bearer_token(req)) {
         return send_unauthorized(req);
+    }
+
+    if (s_ota_in_progress) {
+        httpd_resp_set_status(req, "409 Conflict");
+        httpd_resp_set_type(req, "application/json");
+        return httpd_resp_send(req, "{\"error\":\"ota in progress\"}", HTTPD_RESP_USE_STRLEN);
     }
 
     int total_len = req->content_len;
@@ -190,7 +232,23 @@ static esp_err_t ota_post_handler(httpd_req_t *req)
         return httpd_resp_send(req, "{\"error\":\"missing url or version\"}", HTTPD_RESP_USE_STRLEN);
     }
 
-    ESP_LOGI(TAG, "OTA requested: url=%s, version=%s", url, version);
+    char *url_copy = strdup(url);
+    if (!url_copy) {
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+
+    s_ota_in_progress = true;
+    BaseType_t task_ret = xTaskCreate(ota_task, "ota_task", 10240, url_copy, 5, NULL);
+    if (task_ret != pdPASS) {
+        ESP_LOGE(TAG, "Failed to create OTA task");
+        free(url_copy);
+        s_ota_in_progress = false;
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(TAG, "OTA requested: url=%s, version=%s, task created", url, version);
 
     httpd_resp_set_status(req, "202 Accepted");
     httpd_resp_set_type(req, "application/json");

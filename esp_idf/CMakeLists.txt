@@ -2,5 +2,9 @@
 cmake_minimum_required(VERSION 3.16)
 # Shared LABID library (BL-011/BL-014) lives outside this project tree.
 set(EXTRA_COMPONENT_DIRS ${CMAKE_CURRENT_LIST_DIR}/../common/labid)
+if(NOT DEFINED PROJECT_VER)
+    set(PROJECT_VER "1.0.0")
+endif()
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(bootlab_idf_blink)
+
