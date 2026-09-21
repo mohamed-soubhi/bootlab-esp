@@ -498,6 +498,29 @@ flowchart LR
 ```
 
 - **P1 and P2 are independent** and can run in parallel.
+
+### 8.0 Replan 2026-09-21 — finish the IDF board completely, then Zephyr
+
+Owner decisions (the plan above stays valid; this changes the ORDER and how tickets are scoped):
+
+1. **Order.** The IDF board is completed end to end first: P1, then the IDF part of P3 (labflash), P4 (HIL + CI) and
+   P5 (overnight soak, full documentation, **HTML presentation**). After that comes a **lessons-learned retrospective**
+   (`BL-063a`), and only then the Zephyr board (P2 and the Zephyr part of P3–P5). Zephyr work is gated behind
+   `BL-063b` (the presentation) by an explicit `deps_by_track` gate in `tickets.json`.
+2. **Per-board tickets.** Tickets that cover both boards carry `tracks` (`idf`, `zephyr`) with **their own status and
+   acceptance criteria per board**. A dependency applies to the same board only, so an IDF step never waits on a Zephyr one.
+   A ticket is `done` when every one of its tracks is `done`; `tickets_tool.py set <ID> <status> --track idf|zephyr`.
+3. **Suffix split, numbers kept.** `BL-005` → `BL-005a` (IDF, done) + `BL-005b` (Zephyr); `BL-014` → `BL-014a` (IDF, done)
+   + `BL-014b` (Zephyr native_sim). New tickets reuse the nearest number with a suffix: `BL-056a` (IDF re-run on the RPi4),
+   `BL-063a` (lessons learned), `BL-063b` (HTML presentation). With the split, BL-020…BL-028 are closed.
+4. **Hosts.** Development and evidence-gathering stay on the current machine (WSL2 + Windows-native tools; PLAN R14 explains
+   why the serial port and BLE must be used natively). The **RPi4 has limitations and is the OTA-programming host**: when the
+   IDF track is complete the IDF acceptance is re-run from it (`BL-056a`). Builds stay on the development machine / CI.
+5. **"IDF complete" means:** the IDF acceptance (BL-028, done), the IDF halves of BL-041…BL-063 (including the overnight soak
+   BL-060 and the documentation BL-061…BL-063), the RPi4 re-run (BL-056a), the retrospective (BL-063a) and the HTML
+   presentation (BL-063b).
+
+Progress and dependencies per board are in `tickets/GANTT.md` (one Gantt per track, root blockers, ready-to-start list).
 - **Do P2 step 1 first** (MCUboot swap-with-revert check on ESP32-S3): it is the biggest open risk.
 - One branch + one PR per ticket. Merge only when acceptance passes.
 

@@ -69,6 +69,8 @@ def check(d):
 
     for n in ids:
         visit(n, [])
+    if has_tracks(d):
+        _check_tracks(d, ids, errors)
     return errors
 
 
@@ -76,6 +78,153 @@ def ready(d):
     ids = by_id(d)
     return [t for t in d["tickets"]
             if t["status"] == "todo" and all(ids[x]["status"] == "done" for x in t["deps"])]
+
+
+# ---------------------------------------------------------------- per-board tracks
+# A ticket may be scoped per board ("tracks": ["idf", "zephyr"]) with its own status per board
+# ("track_status"), its own acceptance criteria ("ac_by_track") and explicit cross-track gates
+# ("deps_by_track"). A plain dependency applies to the SAME track only, so an IDF step never waits
+# on a Zephyr one; a ticket without tracks is a shared prerequisite that applies to every track.
+TRACKS = ("idf", "zephyr")
+TRACK_NAMES = {"idf": "IDF", "zephyr": "Zephyr"}
+
+
+def tracks_of(t):
+    return list(t.get("tracks", []))
+
+
+def has_tracks(d):
+    return any(t.get("tracks") for t in d["tickets"])
+
+
+def track_status(t, track):
+    if len(t.get("tracks", [])) > 1 and track:
+        return t.get("track_status", {}).get(track, t["status"])
+    return t["status"]
+
+
+def derive_status(t):
+    """Overall status of a ticket from its per-board statuses."""
+    sts = [track_status(t, k) for k in tracks_of(t)] or [t["status"]]
+    if all(s == "done" for s in sts):
+        return "done"
+    if any(s == "blocked" for s in sts):
+        return "blocked"
+    if any(s in ("doing", "review", "done") for s in sts):
+        return "doing"
+    return "todo"
+
+
+def node_list(t):
+    """The (ticket, track) nodes a ticket is made of; a shared ticket is one node with track ''."""
+    return [(t["id"], k) for k in tracks_of(t)] or [(t["id"], "")]
+
+
+def node_deps(d, node):
+    tid, track = node
+    ids = by_id(d)
+    t = ids[tid]
+    out = []
+    for dep in t["deps"]:
+        dt = tracks_of(ids[dep])
+        if not dt:
+            out.append((dep, ""))
+        elif not track:
+            out.extend((dep, k) for k in dt)
+        elif track in dt:
+            out.append((dep, track))
+    for dep in t.get("deps_by_track", {}).get(track, []):
+        out.extend(node_list(ids[dep]))
+    return list(dict.fromkeys(out))
+
+
+def node_status(d, node):
+    return track_status(by_id(d)[node[0]], node[1])
+
+
+def ready_nodes(d):
+    """(ticket, track) pairs that are todo with every dependency of that track done."""
+    return [(t, node[1]) for t in d["tickets"] for node in node_list(t)
+            if node_status(d, node) == "todo"
+            and all(node_status(d, x) == "done" for x in node_deps(d, node))]
+
+
+def _fmt_node(node):
+    return f"{node[0]}[{node[1]}]" if node[1] else node[0]
+
+
+def apply_set(d, tid, status, track=None, pr=None):
+    """Set one ticket's status (for one board on a per-board ticket). Raises ValueError."""
+    ids = by_id(d)
+    if tid not in ids:
+        raise ValueError(f"unknown ticket {tid}")
+    if status not in d["statuses"]:
+        raise ValueError(f"status must be one of {d['statuses']}")
+    t = ids[tid]
+    tr = tracks_of(t)
+    if len(tr) > 1 and track is None:
+        raise ValueError(f"{tid} has tracks {', '.join(tr)}: pass --track <{'|'.join(tr)}>")
+    if track and tr and track not in tr:
+        raise ValueError(f"{tid} has no track {track} (tracks: {', '.join(tr)})")
+    track = track if len(tr) > 1 else (tr[0] if tr else "")
+    node = (tid, track)
+    if status in ("doing", "review", "done"):
+        open_deps = [x for x in node_deps(d, node) if node_status(d, x) != "done"]
+        if open_deps:
+            raise ValueError(f"{_fmt_node(node)} depends on unfinished {[_fmt_node(x) for x in open_deps]}")
+    if len(tr) > 1:
+        t.setdefault("track_status", {k: t["status"] for k in tr})[track] = status
+        t["status"] = derive_status(t)
+    else:
+        t["status"] = status
+    if pr is not None:
+        t["pr"] = pr
+
+
+def track_progress(d, track):
+    """(done, total) nodes for one board: its own nodes plus the shared prerequisites."""
+    nodes = [node for t in d["tickets"] for node in node_list(t) if node[1] in ("", track)]
+    return sum(node_status(d, n) == "done" for n in nodes), len(nodes)
+
+
+def _check_tracks(d, ids, errors):
+    for t in d["tickets"]:
+        tr = tracks_of(t)
+        for k in tr:
+            if k not in TRACKS:
+                errors.append(f"{t['id']}: unknown track {k}")
+        for k, st in t.get("track_status", {}).items():
+            if k not in tr:
+                errors.append(f"{t['id']}: track_status for {k}, which is not one of its tracks")
+            if st not in d["statuses"]:
+                errors.append(f"{t['id']}: bad track status {st}")
+        for k, gates in t.get("deps_by_track", {}).items():
+            if k not in tr:
+                errors.append(f"{t['id']}: deps_by_track for {k}, which is not one of its tracks")
+            errors.extend(f"{t['id']}: unknown gate {g}" for g in gates if g not in ids)
+        for dep in t["deps"]:
+            dt = tracks_of(ids[dep]) if dep in ids else []
+            if tr and dt and not set(tr) & set(dt):
+                errors.append(f"{t['id']} depends on {dep} but their tracks never overlap "
+                              "(use deps_by_track for a deliberate cross-track gate)")
+    if any("unknown" in e for e in errors):
+        return   # the graph walk below would fail on a missing ticket; those errors are already listed
+    state = {}
+
+    def visit(node, stack):
+        if state.get(node) == 1:
+            errors.append("cycle: " + " -> ".join(_fmt_node(x) for x in stack + [node]))
+            return
+        if state.get(node) == 2:
+            return
+        state[node] = 1
+        for nxt in node_deps(d, node):
+            visit(nxt, stack + [node])
+        state[node] = 2
+
+    for t in d["tickets"]:
+        for node in node_list(t):
+            visit(node, [])
 
 
 def bar(done, total, width=20):
@@ -113,6 +262,11 @@ def render(d):
     w("> **Schedule, progress and what blocks what: see [GANTT.md](GANTT.md).**\n")
     w("## Overall\n")
     w(f"`{bar(done, total, 30)}` **{done}/{total} done ({100*done//total}%)**\n")
+    if has_tracks(d):
+        for k in TRACKS:
+            n_done, n_total = track_progress(d, k)
+            w(f"- **{TRACK_NAMES[k]} track:** `{bar(n_done, n_total, 20)}` {n_done}/{n_total}")
+        w("")
     w("```mermaid")
     w("pie showData title Ticket status")
     for s in d["statuses"]:
@@ -201,12 +355,24 @@ def render(d):
             w(f"<details><summary>{ICON[t['status']]} <b>{t['id']}</b> — {t['title']}</summary>\n")
             w(f"- **Size:** {t['size']} ({d['sizes'][t['size']]})  ")
             w(f"- **Boards:** {', '.join(t['boards'])}  ")
+            if tracks_of(t):
+                w("- **Tracks:** " + " · ".join(f"{TRACK_NAMES[k]} {ICON[track_status(t, k)]} {track_status(t, k)}"
+                                                for k in tracks_of(t)) + "  ")
             w(f"- **Depends on:** {', '.join(t['deps']) or '—'}  ")
+            for k, gates in t.get("deps_by_track", {}).items():
+                w(f"- **Cross-track gate ({TRACK_NAMES[k]}):** waits for {', '.join(gates)}  ")
             w(f"- **Plan:** {e['plan']}\n")
             w(f"{t['desc']}\n")
             w("**Acceptance criteria**")
-            for a in t["ac"]:
-                w(f"- [{chk}] {a}")
+            if t.get("ac_by_track"):
+                for k in tracks_of(t):
+                    tick = "x" if track_status(t, k) == "done" else " "
+                    w(f"*{TRACK_NAMES[k]} scope*")
+                    for a in t["ac_by_track"].get(k, []):
+                        w(f"- [{tick}] {a}")
+            else:
+                for a in t["ac"]:
+                    w(f"- [{chk}] {a}")
             w("\n</details>\n")
 
     w("## Full ticket dependency graph\n")
@@ -243,11 +409,13 @@ def to_csv(d):
     epics = {e["id"]: e for e in d["epics"]}
     with CSV.open("w", newline="", encoding="utf-8") as f:
         wr = csv.writer(f)
-        wr.writerow(["ID", "Summary", "Epic", "Phase", "Size", "Boards", "Depends on", "Status", "Description", "Acceptance criteria"])
+        wr.writerow(["ID", "Summary", "Epic", "Phase", "Size", "Boards", "Tracks", "Depends on", "Status",
+                     "Track status", "Description", "Acceptance criteria"])
         for t in d["tickets"]:
             e = epics[t["epic"]]
             wr.writerow([t["id"], t["title"], f"{e['id']} {e['title']}", e["phase"], t["size"],
-                         ";".join(t["boards"]), ";".join(t["deps"]), t["status"], t["desc"],
+                         ";".join(t["boards"]), ";".join(tracks_of(t)), ";".join(t["deps"]), t["status"],
+                         ";".join(f"{k}={track_status(t, k)}" for k in tracks_of(t)), t["desc"],
                          " | ".join(t["ac"])])
 
 
@@ -324,8 +492,11 @@ def gantt_tag(t):
     return ""
 
 
-def gantt_schedule(d, start=GANTT_START):
-    """Planned (start, end) per ticket: size -> days, starting after the latest dependency."""
+def gantt_schedule(d, start=GANTT_START, track=None):
+    """Planned (start, end) per ticket: size -> days, starting after the latest dependency.
+    With per-board tracks, `track` selects one board's view (its tickets plus shared ones)."""
+    if has_tracks(d):
+        return _tracked_schedule(d, start, track)
     ids = by_id(d)
     memo = {}
 
@@ -360,8 +531,10 @@ def _unfinished_dependents(d):
     return out
 
 
-def gantt_root_blockers(d):
+def gantt_root_blockers(d, track=None):
     """Blocked tickets with nothing unfinished beneath them: what actually gates the rest."""
+    if has_tracks(d):
+        return _tracked_root_blockers(d, track)
     ids = by_id(d)
     downstream = _unfinished_dependents(d)
     roots = [t for t in d["tickets"] if t["status"] == "blocked"
@@ -384,6 +557,8 @@ def _short(text, n=150):
 
 
 def gantt_text(d, start=GANTT_START):
+    if has_tracks(d):
+        return _gantt_text_tracks(d, start)
     ids = by_id(d)
     sched = gantt_schedule(d, start)
     total = len(d["tickets"])
@@ -465,6 +640,153 @@ def gantt_text(d, start=GANTT_START):
     return "\n".join(lines) + "\n"
 
 
+# --- per-board view (used when tickets carry `tracks`) ---
+def _view_nodes(d, track):
+    return [node for t in d["tickets"] for node in node_list(t) if node[1] in ("", track)]
+
+
+def _node_schedule(d, start):
+    ids = by_id(d)
+    memo = {}
+
+    def plan(node):
+        if node not in memo:
+            begin = max((plan(x)[1] for x in node_deps(d, node)), default=start)
+            memo[node] = (begin, begin + timedelta(days=GANTT_DAYS[ids[node[0]]["size"]]))
+        return memo[node]
+
+    for t in d["tickets"]:
+        for node in node_list(t):
+            plan(node)
+    return memo
+
+
+def _tracked_schedule(d, start, track):
+    memo = _node_schedule(d, start)
+    if track is None:
+        out = {}
+        for (tid, _), (b, e) in memo.items():
+            ob, oe = out.get(tid, (b, e))
+            out[tid] = (min(b, ob), max(e, oe))
+        return out
+    return {node[0]: memo[node] for node in _view_nodes(d, track)}
+
+
+def _blocked_why(t):
+    reason = (t.get("block_reason") or "").strip()
+    if reason:
+        return reason
+    note = re.search(r"\[BLOCKED[:\s][^\]]*\]", t.get("desc") or "")
+    return note.group(0).strip("[]") if note else ""
+
+
+def _node_tag(d, node):
+    t, st = by_id(d)[node[0]], node_status(d, node)
+    if st == "done":
+        return "done"
+    if st in ("doing", "review") or (st == "blocked" and "PASS" in (t.get("block_reason") or "")):
+        return "active"
+    return "crit" if st == "blocked" else ""
+
+
+def _tracked_root_blockers(d, track):
+    ids = by_id(d)
+    view = _view_nodes(d, track)
+    in_view = set(view)
+    direct = defaultdict(set)
+    for t in d["tickets"]:
+        for node in node_list(t):
+            for dep in node_deps(d, node):
+                direct[dep].add(node)
+
+    def unfinished_dependents(node):
+        seen, stack = set(), list(direct[node])
+        while stack:
+            cur = stack.pop()
+            if cur not in seen:
+                seen.add(cur)
+                stack.extend(direct[cur])
+        return {x for x in seen if x in in_view and node_status(d, x) != "done"}
+
+    rows = [{"id": n[0], "title": ids[n[0]]["title"], "unblocks": len(unfinished_dependents(n)),
+             "why": _blocked_why(ids[n[0]]), "track": n[1]}
+            for n in view
+            if node_status(d, n) == "blocked" and all(node_status(d, x) == "done" for x in node_deps(d, n))]
+    return sorted(rows, key=lambda r: (-r["unblocks"], r["id"]))
+
+
+def _gantt_text_tracks(d, start):
+    ids = by_id(d)
+    memo = _node_schedule(d, start)
+    gates = [(t["id"], k, g) for t in d["tickets"] for k, g in t.get("deps_by_track", {}).items()]
+    lines = [
+        "# Gantt — schedule, progress and dependencies (per board)",
+        "",
+        "> Generated from `tickets.json` by `python3 tickets/tickets_tool.py gantt` (also refreshed by `set`).",
+        "> **Do not edit.** Bar **colours are the actual status**; bar **positions are a plan** computed from ticket",
+        f"> size (S=1 d, M=2 d, L=4 d) and dependencies, starting {start.isoformat()} — not a record of when work ran.",
+        "> A dependency applies to the **same board only**, so an IDF step never waits on a Zephyr one.",
+    ]
+    for tid, k, g in gates:
+        lines.append(f"> Cross-track gate: **{tid}** [{k}] waits for {', '.join(g)}.")
+    lines += ["", "## Progress", ""]
+    for k in TRACKS:
+        n_done, n_total = track_progress(d, k)
+        lines.append(f"- **{TRACK_NAMES[k]} track:** `{bar(n_done, n_total, 30)}` **{n_done}/{n_total} done**")
+    lines += ["", "| Epic | Phase | " + " | ".join(TRACK_NAMES[k] for k in TRACKS) + " |",
+              "|---|---|" + "---|" * len(TRACKS)]
+    for e in d["epics"]:
+        cells = []
+        for k in TRACKS:
+            nodes = [n for n in _view_nodes(d, k) if ids[n[0]]["epic"] == e["id"]]
+            n_done = sum(node_status(d, n) == "done" for n in nodes)
+            cells.append(f"`{bar(n_done, len(nodes), 10)}` {n_done}/{len(nodes)}" if nodes else "—")
+        lines.append(f"| {e['id']} {e['title']} | {e['phase']} | " + " | ".join(cells) + " |")
+
+    for k in TRACKS:
+        name, view = TRACK_NAMES[k], _view_nodes(d, k)
+        lines += ["", f"## Gantt — {name} track", "", "```mermaid", "gantt",
+                  f"    title bootlab-esp — {name} track (colour = actual status, position = planned schedule)",
+                  "    dateFormat YYYY-MM-DD", "    axisFormat %d %b",
+                  "    todayMarker stroke-width:3px,stroke:#f80,opacity:0.7"]
+        for e in d["epics"]:
+            nodes = sorted((n for n in view if ids[n[0]]["epic"] == e["id"]), key=lambda n: n[0])
+            if not nodes:
+                continue
+            lines.append("    section " + " ".join(f"{e['phase']} {e['title']}".translate(_MERMAID_BAD).split()))
+            for node in nodes:
+                begin, end = memo[node]
+                tag = _node_tag(d, node)
+                prefix = f"{tag}, " if tag else ""
+                lines.append(f"    {gantt_label(ids[node[0]])} :{prefix}{gantt_id(node[0])}, "
+                             f"{begin.isoformat()}, {(end - begin).days}d")
+        lines += ["```", "",
+                  "**Legend:** green = ✅ done · blue = 🔵 acceptance criteria pass, held only by a dependency · "
+                  "red = 🟥 blocked · plain = ⬜ todo · orange line = today.",
+                  "", f"### Root blockers — {name} track", ""]
+        roots = _tracked_root_blockers(d, k)
+        if roots:
+            lines += ["| Ticket | Blocks | Why it is blocked |", "|---|---|---|"]
+            lines += [f"| **{r['id']}** {gantt_label({'id': '', 'title': r['title']})} | "
+                      f"{r['unblocks']} tickets | {_short(r['why']) or '—'} |" for r in roots]
+        else:
+            lines.append("None: nothing on this board is blocked.")
+        lines += ["", f"### Ready to start — {name} track (todo, every dependency of this board done)", ""]
+        ready_here = [(t, kk) for t, kk in ready_nodes(d) if kk in ("", k)]
+        lines += [f"- **{t['id']}** [{t['size']}] {t['title']}" for t, _ in ready_here] or ["- none"]
+        lines += ["", f"### Waiting-on — {name} track", "",
+                  "| Ticket | Status | Waiting on (unfinished dependencies) |", "|---|---|---|"]
+        for node in view:
+            if node_status(d, node) == "done":
+                continue
+            st = node_status(d, node)
+            waiting = [f"{_fmt_node(x)} {ICON[node_status(d, x)]}" for x in node_deps(d, node)
+                       if node_status(d, x) != "done"]
+            lines.append(f"| {gantt_label({'id': node[0], 'title': ids[node[0]]['title']})} | "
+                         f"{ICON[st]} {st} | {', '.join(waiting) or '—'} |")
+    return "\n".join(lines) + "\n"
+
+
 def write_gantt(d):
     GANTT_MD.write_text(gantt_text(d), encoding="utf-8")
 
@@ -481,6 +803,8 @@ def main():
     s.add_argument("id")
     s.add_argument("status")
     s.add_argument("--pr", default=None)
+    s.add_argument("--track", choices=TRACKS, default=None,
+                   help="board to update on a per-board ticket (required when the ticket has two tracks)")
     g = sub.add_parser("gh")
     g.add_argument("--apply", action="store_true")
     a = p.parse_args()
@@ -494,8 +818,12 @@ def main():
     if a.cmd == "check":
         print(f"OK: {len(d['tickets'])} tickets, {len(d['epics'])} epics, no dependency errors")
     elif a.cmd == "next":
-        for t in ready(d):
-            print(f"{t['id']}  [{t['size']}]  {t['title']}")
+        if has_tracks(d):
+            for t, k in ready_nodes(d):
+                print(f"{t['id']}  [{t['size']}]  {('[' + k + '] ') if k else ''}{t['title']}")
+        else:
+            for t in ready(d):
+                print(f"{t['id']}  [{t['size']}]  {t['title']}")
     elif a.cmd == "render":
         render(d)
         print(f"wrote {MD.name}")
@@ -506,23 +834,14 @@ def main():
         to_csv(d)
         print(f"wrote {CSV.name}")
     elif a.cmd == "set":
-        ids = by_id(d)
-        if a.id not in ids:
-            sys.exit(f"unknown ticket {a.id}")
-        if a.status not in d["statuses"]:
-            sys.exit(f"status must be one of {d['statuses']}")
-        t = ids[a.id]
-        if a.status in ("doing", "review", "done"):
-            open_deps = [x for x in t["deps"] if ids[x]["status"] != "done"]
-            if open_deps:
-                sys.exit(f"{a.id} depends on unfinished {open_deps}")
-        t["status"] = a.status
-        if a.pr is not None:
-            t["pr"] = a.pr
+        try:
+            apply_set(d, a.id, a.status, track=a.track, pr=a.pr)
+        except ValueError as err:
+            sys.exit(str(err))
         save(d)
         render(d)
         write_gantt(d)
-        print(f"{a.id} -> {a.status}")
+        print(f"{a.id}{('[' + a.track + ']') if a.track else ''} -> {a.status}")
     elif a.cmd == "gh":
         gh(d, a.apply)
 

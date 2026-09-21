@@ -6,45 +6,46 @@
 
 ## Overall
 
-`███████░░░░░░░░░░░░░░░░░░░░░░░` **11/47 done (23%)**
+`█████████████░░░░░░░░░░░░░░░░░` **22/52 done (42%)**
+
+- **IDF track:** `██████████░░░░░░░░░░` 22/42
+- **Zephyr track:** `██████░░░░░░░░░░░░░░` 11/37
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 24
-    "blocked" : 12
-    "done" : 11
+    "todo" : 30
+    "done" : 22
 ```
 
 ## Epics
 
 | Epic | Phase | Title | Progress | Done | Status | Plan |
 |---|---|---|---|---|---|---|
-| E0 | P0 | Host & rig setup | `██████████░░` | 6/7 | 🟥 blocked | §2, §3, §8 P0 |
-| EL | PL | LABID common library | `██████████░░` | 4/5 | 🟥 blocked | §7.3, §8 PL |
-| E1 | P1 | ESP32-S3 #2 — ESP-IDF | `░░░░░░░░░░░░` | 0/9 | 🟥 blocked | §4.2, §5, §6, §7.2, §8 P1 |
-| E2 | P2 | ESP32-S3 #1 — Zephyr | `░░░░░░░░░░░░` | 0/7 | ⬜ todo | §4.1, §5, §6, §7.1, §8 P2 |
-| E3 | P3 | labflash CLI | `██░░░░░░░░░░` | 1/7 | 🟥 blocked | §8 P3 |
-| E4 | P4 | HIL tests + CI | `░░░░░░░░░░░░` | 0/8 | ⬜ todo | §8 P4 |
-| E5 | P5 | Soak, docs, handover | `░░░░░░░░░░░░` | 0/4 | ⬜ todo | §8 P5 |
+| E0 | P0 | Host & rig setup | `████████████` | 8/8 | ✅ done | §2, §3, §8 P0 |
+| EL | PL | LABID common library | `████████████` | 4/4 | ✅ done | §7.3, §8 PL |
+| E1 | P1 | ESP32-S3 #2 — ESP-IDF | `████████████` | 9/9 | ✅ done | §4.2, §5, §6, §7.2, §8 P1 |
+| E2 | P2 | ESP32-S3 #1 — Zephyr | `░░░░░░░░░░░░` | 0/9 | ⬜ todo | §4.1, §5, §6, §7.1, §8 P2 |
+| E3 | P3 | labflash CLI | `██░░░░░░░░░░` | 1/7 | 🔵 doing | §8 P3 |
+| E4 | P4 | HIL tests + CI | `░░░░░░░░░░░░` | 0/9 | ⬜ todo | §8 P4 |
+| E5 | P5 | Soak, docs, handover | `░░░░░░░░░░░░` | 0/6 | ⬜ todo | §8 P5 |
 
 ## Epic dependency graph
 
 ```mermaid
 flowchart LR
-    E0["P0 Host & rig setup<br/>6/7"]:::blocked
-    EL["PL LABID common library<br/>4/5"]:::blocked
-    E1["P1 ESP32-S3 #2 — ESP-IDF<br/>0/9"]:::blocked
-    E2["P2 ESP32-S3 #1 — Zephyr<br/>0/7"]:::todo
-    E3["P3 labflash CLI<br/>1/7"]:::blocked
-    E4["P4 HIL tests + CI<br/>0/8"]:::todo
-    E5["P5 Soak, docs, handover<br/>0/4"]:::todo
+    E0["P0 Host & rig setup<br/>8/8"]:::done
+    EL["PL LABID common library<br/>4/4"]:::done
+    E1["P1 ESP32-S3 #2 — ESP-IDF<br/>9/9"]:::done
+    E2["P2 ESP32-S3 #1 — Zephyr<br/>0/9"]:::todo
+    E3["P3 labflash CLI<br/>1/7"]:::doing
+    E4["P4 HIL tests + CI<br/>0/9"]:::todo
+    E5["P5 Soak, docs, handover<br/>0/6"]:::todo
     E0 --> EL
     E1 --> E3
     E2 --> E3
     E3 --> E4
     E4 --> E5
-    EL --> E1
-    EL --> E2
+    EL --> E0
     classDef todo fill:#eeeeee,stroke:#999,color:#333
     classDef doing fill:#cfe3ff,stroke:#2f6fdb,color:#123
     classDef blocked fill:#ffd6d6,stroke:#c62828,color:#400
@@ -53,22 +54,10 @@ flowchart LR
 
 ## Ready to start now
 
+- **BL-005b** Detect board hardware → rig.yaml (Zephyr board) (S) — E2
+- **BL-014b** Packaging: Zephyr module (native_sim) (S) — E2
 - **BL-030** Zephyr west + sysbuild MCUboot + swap-with-revert check (M) — E2
-
-## Blocked
-
-- 🟥 **BL-005** Detect board hardware → rig.yaml 
-- 🟥 **BL-014** Packaging: Zephyr module + IDF component 
-- 🟥 **BL-020** IDF blink app + toggles + 5 variants + task WDT 
-- 🟥 **BL-021** IDF partitions + signing + rollback config 
-- 🟥 **BL-022** IDF LABID port on USB-Serial-JTAG 
-- 🟥 **BL-023** IDF self-test + mark valid 
-- 🟥 **BL-024** IDF WiFi + token provisioning via NVS 
-- 🟥 **BL-025** IDF HTTPS control server (/ota, /version) 
-- 🟥 **BL-026** IDF WiFi OTA (esp_https_ota pull) 
-- 🟥 **BL-027** IDF BLE OTA (ble_ota + NimBLE + coexistence) 
-- 🟥 **BL-028** IDF phase acceptance run 
-- 🟥 **BL-041** identify, info, status, measure 
+- **BL-043** update idf --transport ble|wifi (M) — E3
 
 ## Tickets by epic
 
@@ -80,9 +69,10 @@ flowchart LR
 | ✅ | BL-002 | Install toolchains on RPi4 | M | host | BL-001 |  |
 | ✅ | BL-003 | Powered USB hub, udev rules by serial, groups | S | host | BL-002 |  |
 | ✅ | BL-004 | Back up both ESP32-S3 boards | S | zephyr, idf | BL-003 |  |
-| 🟥 | BL-005 | Detect board hardware → rig.yaml | S | zephyr, idf | BL-003 |  |
+| ✅ | BL-005a | Detect board hardware → rig.yaml (IDF board) | S | idf | BL-003 |  |
 | ✅ | BL-006 | Generate lab signing keys | S | host | BL-002 |  |
 | ✅ | BL-007 | labflash doctor (stub) | S | host | BL-003 |  |
+| ✅ | BL-014a | Packaging: IDF component (linux target) | S | common | BL-010 |  |
 
 <details><summary>✅ <b>BL-001</b> — Repo skeleton + pinned versions</summary>
 
@@ -147,18 +137,19 @@ esptool read_flash of the current firmware before any erase.
 
 </details>
 
-<details><summary>🟥 <b>BL-005</b> — Detect board hardware → rig.yaml</summary>
+<details><summary>✅ <b>BL-005a</b> — Detect board hardware → rig.yaml (IDF board)</summary>
 
 - **Size:** S (≤ 0.5 day)  
-- **Boards:** zephyr, idf  
+- **Boards:** idf  
+- **Tracks:** IDF ✅ done  
 - **Depends on:** BL-003  
 - **Plan:** §2, §3, §8 P0
 
-Flash size, PSRAM, board revision, RGB LED GPIO (48 or 38), USB serial per board. [PARTIAL 2026-09-20: idf board's led_gpio confirmed 48 via a real physical power-cycle test during BL-020 (see PLAN Sec 9 R14) -- rig.yaml updated. This is only half the AC: zephyr's led_gpio remains unknown (Zephyr path on hold), and psram_mode (quad/octal) is still unverified for BOTH boards. Staying blocked.] [PROGRESS 2026-09-21 -- ONE ITEM LEFT: the zephyr board's LED GPIO. DONE: (1) PSRAM mode. Both boards' pre-project eFuse dumps are identical in every PSRAM field (8M, vendor AP_3v3; 'AP_3v3' is the 3.3 V variant, not 'quad'; on the ESP32-S3 8 MB embedded PSRAM is the Octal part). idf board: CONFIRMED octal by booting an Octal-PSRAM detection build (esp_idf/sdkconfig.psram, not a product image): octal_psram vendor AP / 64 Mbit / 3V, 'Found 8MB PSRAM device', 'SPI SRAM memory test OK', 8192K added to the heap; board restored to v1. zephyr board: octal INFERRED from identical eFuses, not run-tested. host/config/rig.yaml now says octal for both, with the confidence in the comments. (2) idf led_gpio=48 (BL-020). Evidence: scripts/evidence/bl005_hardware_detection.md. REMAINING: zephyr led_gpio -- needs a blink app on that board, i.e. writing its flash (backup: backups/esp_ACA7042C3B04.bin + .sha256; identity AC:A7:04:2C:3B:04). Needs the owner's per-instance go-ahead; an IDF blink build would do it without touching the Zephyr toolchain, and the backup is restored afterwards.]
+Split from BL-005 on 2026-09-21 (replan: IDF first). DONE with evidence in scripts/evidence/bl005_hardware_detection.md: idf led_gpio=48 confirmed by a real blink (BL-020, PLAN R14); flash 16 MB quad; PSRAM 8 MB OCTAL run-tested (octal_psram driver, 'Found 8MB PSRAM device', memory test OK); host/config/rig.yaml idf entry filled. HISTORY (original BL-005): Flash size, PSRAM, board revision, RGB LED GPIO (48 or 38), USB serial per board. [PARTIAL 2026-09-20: idf board's led_gpio confirmed 48 via a real physical power-cycle test during BL-020 (see PLAN Sec 9 R14) -- rig.yaml updated. This is only half the AC: zephyr's led_gpio remains unknown (Zephyr path on hold), and psram_mode (quad/octal) is still unverified for BOTH boards. Staying blocked.] [PROGRESS 2026-09-21 -- ONE ITEM LEFT: the zephyr board's LED GPIO. DONE: (1) PSRAM mode. Both boards' pre-project eFuse dumps are identical in every PSRAM field (8M, vendor AP_3v3; 'AP_3v3' is the 3.3 V variant, not 'quad'; on the ESP32-S3 8 MB embedded PSRAM is the Octal part). idf board: CONFIRMED octal by booting an Octal-PSRAM detection build (esp_idf/sdkconfig.psram, not a product image): octal_psram vendor AP / 64 Mbit / 3V, 'Found 8MB PSRAM device', 'SPI SRAM memory test OK', 8192K added to the heap; board restored to v1. zephyr board: octal INFERRED from identical eFuses, not run-tested. host/config/rig.yaml now says octal for both, with the confidence in the comments. (2) idf led_gpio=48 (BL-020). Evidence: scripts/evidence/bl005_hardware_detection.md. REMAINING: zephyr led_gpio -- needs a blink app on that board, i.e. writing its flash (backup: backups/esp_ACA7042C3B04.bin + .sha256; identity AC:A7:04:2C:3B:04). Needs the owner's per-instance go-ahead; an IDF blink build would do it without touching the Zephyr toolchain, and the backup is restored afterwards.]
 
 **Acceptance criteria**
-- [ ] host/config/rig.yaml filled for both boards
-- [ ] LED GPIO confirmed by a quick blink
+- [x] host/config/rig.yaml filled for the idf board
+- [x] LED GPIO confirmed by a quick blink (idf board)
 
 </details>
 
@@ -193,6 +184,21 @@ Minimal environment check. [EVIDENCE 2026-09-17 on RPi4: doctor verified OK whil
 
 </details>
 
+<details><summary>✅ <b>BL-014a</b> — Packaging: IDF component (linux target)</summary>
+
+- **Size:** S (≤ 0.5 day)  
+- **Boards:** common  
+- **Tracks:** IDF ✅ done  
+- **Depends on:** BL-010  
+- **Plan:** §2, §3, §8 P0
+
+Split from BL-014 on 2026-09-21. DONE: scripts/idf_linux_test.sh builds the packaged labid component (labid.c + labid_dispatch.c) for the ESP-IDF linux target and runs the smoke test (0 warnings, exit 0). HISTORY (original BL-014): One source, two build integrations. [BLOCKED: AC requires Zephyr native_sim + IDF linux builds; Zephyr path on hold + throttle != 0x0] [PROGRESS 2026-09-21 -- IDF HALF VERIFIED, Zephyr half NOT. 'Builds for ... IDF linux target': PASS. scripts/idf_linux_test.sh builds the packaged labid component (labid.c + labid_dispatch.c) for the ESP-IDF linux (host) target and RUNS a smoke test (esp_idf/test/main/main.c: CRC check vector, writer, and the dispatcher answering HELLO / ID? / an unknown request with ERR, via a fake provider): build exit 0, 0 warnings, process exit status 0, 'linux-target smoke: all checks passed'; verified again from a clean environment. Found while doing it: the old smoke test defined main() and could never have linked on the IDF linux target (the FreeRTOS simulator calls app_main()); it now uses app_main() + exit(status). It also did not cover labid_dispatch.c, so the package would not have noticed that file missing; it does now. Prerequisite: IDF's linux target needs libbsd-dev; the script uses the system package when present and otherwise unpacks the matching .deb into .cache/ (gitignored), so it works where sudo needs a password. NOT VERIFIED: 'Zephyr native_sim' (Zephyr hold), and the Zephyr branch of common/labid/CMakeLists.txt that I edited to add labid_dispatch.c (BL-022) has never been built. Ticket stays blocked on the native_sim half; an owner decision is needed to split or re-scope it (see tickets/GANTT.md root blockers).]
+
+**Acceptance criteria**
+- [x] Builds for the IDF linux target
+
+</details>
+
 ### EL · PL — LABID common library
 
 | | ID | Title | Size | Boards | Depends on | PR |
@@ -201,7 +207,6 @@ Minimal environment check. [EVIDENCE 2026-09-17 on RPi4: doctor verified OK whil
 | ✅ | BL-011 | Golden test vectors + Unity tests | M | common | BL-010 |  |
 | ✅ | BL-012 | LABID parser fuzz target | S | common | BL-010 |  |
 | ✅ | BL-013 | Python labid.py | S | host | BL-011 |  |
-| 🟥 | BL-014 | Packaging: Zephyr module + IDF component | S | common | BL-010 |  |
 
 <details><summary>✅ <b>BL-010</b> — LABID C parser, writer, CRC-16</summary>
 
@@ -263,170 +268,165 @@ Same framing + CRC in host/labflash/labid.py.
 
 </details>
 
-<details><summary>🟥 <b>BL-014</b> — Packaging: Zephyr module + IDF component</summary>
-
-- **Size:** S (≤ 0.5 day)  
-- **Boards:** common  
-- **Depends on:** BL-010  
-- **Plan:** §7.3, §8 PL
-
-One source, two build integrations. [BLOCKED: AC requires Zephyr native_sim + IDF linux builds; Zephyr path on hold + throttle != 0x0] [PROGRESS 2026-09-21 -- IDF HALF VERIFIED, Zephyr half NOT. 'Builds for ... IDF linux target': PASS. scripts/idf_linux_test.sh builds the packaged labid component (labid.c + labid_dispatch.c) for the ESP-IDF linux (host) target and RUNS a smoke test (esp_idf/test/main/main.c: CRC check vector, writer, and the dispatcher answering HELLO / ID? / an unknown request with ERR, via a fake provider): build exit 0, 0 warnings, process exit status 0, 'linux-target smoke: all checks passed'; verified again from a clean environment. Found while doing it: the old smoke test defined main() and could never have linked on the IDF linux target (the FreeRTOS simulator calls app_main()); it now uses app_main() + exit(status). It also did not cover labid_dispatch.c, so the package would not have noticed that file missing; it does now. Prerequisite: IDF's linux target needs libbsd-dev; the script uses the system package when present and otherwise unpacks the matching .deb into .cache/ (gitignored), so it works where sudo needs a password. NOT VERIFIED: 'Zephyr native_sim' (Zephyr hold), and the Zephyr branch of common/labid/CMakeLists.txt that I edited to add labid_dispatch.c (BL-022) has never been built. Ticket stays blocked on the native_sim half; an owner decision is needed to split or re-scope it (see tickets/GANTT.md root blockers).]
-
-**Acceptance criteria**
-- [ ] Builds for Zephyr native_sim and IDF linux target
-
-</details>
-
 ### E1 · P1 — ESP32-S3 #2 — ESP-IDF
 
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
-| 🟥 | BL-020 | IDF blink app + toggles + 5 variants + task WDT | M | idf | BL-005, BL-014 |  |
-| 🟥 | BL-021 | IDF partitions + signing + rollback config | S | idf | BL-020, BL-006 |  |
-| 🟥 | BL-022 | IDF LABID port on USB-Serial-JTAG | S | idf | BL-020, BL-013 |  |
-| 🟥 | BL-023 | IDF self-test + mark valid | S | idf | BL-021 |  |
-| 🟥 | BL-024 | IDF WiFi + token provisioning via NVS | S | idf | BL-020 |  |
-| 🟥 | BL-025 | IDF HTTPS control server (/ota, /version) | M | idf | BL-024 |  |
-| 🟥 | BL-026 | IDF WiFi OTA (esp_https_ota pull) | M | idf | BL-025, BL-023 |  |
-| 🟥 | BL-027 | IDF BLE OTA (ble_ota + NimBLE + coexistence) | L | idf | BL-023 |  |
-| 🟥 | BL-028 | IDF phase acceptance run | S | idf | BL-022, BL-026, BL-027 |  |
+| ✅ | BL-020 | IDF blink app + toggles + 5 variants + task WDT | M | idf | BL-005a, BL-014a |  |
+| ✅ | BL-021 | IDF partitions + signing + rollback config | S | idf | BL-020, BL-006 |  |
+| ✅ | BL-022 | IDF LABID port on USB-Serial-JTAG | S | idf | BL-020, BL-013 |  |
+| ✅ | BL-023 | IDF self-test + mark valid | S | idf | BL-021 |  |
+| ✅ | BL-024 | IDF WiFi + token provisioning via NVS | S | idf | BL-020 |  |
+| ✅ | BL-025 | IDF HTTPS control server (/ota, /version) | M | idf | BL-024 |  |
+| ✅ | BL-026 | IDF WiFi OTA (esp_https_ota pull) | M | idf | BL-025, BL-023 |  |
+| ✅ | BL-027 | IDF BLE OTA (ble_ota + NimBLE + coexistence) | L | idf | BL-023 |  |
+| ✅ | BL-028 | IDF phase acceptance run | S | idf | BL-022, BL-026, BL-027 |  |
 
-<details><summary>🟥 <b>BL-020</b> — IDF blink app + toggles + 5 variants + task WDT</summary>
+<details><summary>✅ <b>BL-020</b> — IDF blink app + toggles + 5 variants + task WDT</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** idf  
-- **Depends on:** BL-005, BL-014  
+- **Tracks:** IDF ✅ done  
+- **Depends on:** BL-005a, BL-014a  
 - **Plan:** §4.2, §5, §6, §7.2, §8 P1
 
-FreeRTOS blink task (led_strip), toggles counter, variants per PLAN §5.3, CONFIG_ESP_TASK_WDT_PANIC. [PROGRESS 2026-09-20: ESP-IDF v6.0.3 installed on this host (git clone --recursive --branch v6.0.3, install.sh esp32s3), idf.py --version confirms 'ESP-IDF v6.0.3' exact. All 5 variants built for real against the esp32s3 target: v1 (default build/), v2, no_confirm, hang, bad_sig each in their own -B build dir with a per-variant sdkconfig fragment, all exit 0. Verified each build actually compiled with the INTENDED variant selected (not silently defaulting to v1) by reading each build dir's generated config/sdkconfig.h: build/=CONFIG_APP_VARIANT_V1, build_v2/=CONFIG_APP_VARIANT_V2, build_no_confirm/=CONFIG_APP_VARIANT_NO_CONFIRM, build_hang/=CONFIG_APP_VARIANT_HANG, build_bad_sig/=CONFIG_APP_VARIANT_BAD_SIG. Real bug found and fixed along the way: (1) REQUIRES esp_task_wdt in main/CMakeLists.txt failed cmake configure -- that component was merged into esp_system in IDF v6, header now lives at esp_system/include/esp_task_wdt.h, fixed to REQUIRES esp_system. (2) app_main.c passed the Kconfig macro CONFIG_APP_VARIANT_V2 directly as a runtime function argument -- compile error 'undeclared', because IDF Kconfig choice macros for UNSELECTED options are not defined as 0, they simply don't exist as a symbol; fixed by wrapping in #if CONFIG_APP_VARIANT_V2/#else at compile time instead. .gitignore extended for esp_idf/build*/, managed_components/, sdkconfig.old (the per-variant build dirs weren't covered by the existing literal 'build/' pattern). 'All 5 variants build' AC is now genuinely met with real evidence. Still blocked -- 'v1 blinks 1 Hz', 'hang variant resets within 10s', and the R13 USB-serial-as-MAC AC all require an authorized real flash, which has not happened.] [EVIDENCE 2026-09-20, full honest chain: GPIO48 (Kconfig default) tried first -> LED showed steady, non-blinking light -> GPIO38 tried based on that signal (also steady) -> console-routing fix attempted (CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y) -> still zero serial output across every capture method (idf.py monitor with/without --no-reset, raw cat, pyserial with dtr/rts forced False) -> discovered the board resets into ROM bootloader on ANY port open, confirmed via esptool --before no-reset repeatedly reporting 'Stub flasher is already running' / 'Staying in bootloader' -> DTR/RTS suppression tested and ruled out as a fix -> a TRUE PHYSICAL power-cycle (unplug/replug on the Windows host, bypassing usbipd/DTR-RTS entirely) produced a stable running state: lab-esp-idf blinked white at 1Hz on GPIO48, visually counted and confirmed by the owner. This proves GPIO48 was correct all along and the blink logic was never buggy -- every 'steady light' observation before this was R14's reset-into-bootloader behavior, not a code or pin defect. Full root-cause and impact recorded as PLAN Sec 9 R14 (this also revealed R14 as a likely HARD BLOCKER for BL-022, which needs sustained bidirectional serial). 'v1 blinks 1 Hz' AC: PASS. R13 AC: PASS, unaffected by any of this (confirmed via USB descriptor enumeration, not app-level serial). 'hang variant resets within 10s' AC: still open, and its testability itself is now in question -- a watchdog-triggered reset and an R14 bootloader-reset may be visually indistinguishable without reliable serial confirmation of the actual reset cause. Kconfig.projbuild's default is 48 (unchanged from before this cycle, comment updated to reflect confirmed status); rig.yaml's idf.led_gpio updated from 'unknown' to 48; BL-005 updated to reflect partial resolution (idf side only, stays blocked on zephyr + PSRAM).] [UPDATE 2026-09-21: R14 root cause narrowed -- the reset-on-open is caused by the usbipd/WSL2 bridge, not the chip. With the idf board detached from usbipd and opened natively on Windows (COM14, miniterm --dtr 0 --rts 0), blink_diag logs streamed and the 1 Hz blink continued, on both a long-running board and a freshly power-cycled one (uptime restarted). So the 'hang variant resets within 10s' AC is testable via native Windows serial: the task-WDT panic and reboot show in the log. Hang variant rebuilt (build_hang, CONFIG_APP_VARIANT_HANG=1, GPIO48); flash + observation pending.] [EVIDENCE 2026-09-21: 'hang variant resets within 10 s' AC: PASS. build_hang (CONFIG_APP_VARIANT_HANG=1, GPIO48) flashed to lab-esp-idf (USB serial E0:72:A1:AA:23:90, identity verified before flash, hash verified). Observed natively on Windows (COM14, miniterm --dtr 0 --rts 0): app_main() at ~90 ms, 'task_wdt: Task watchdog got triggered ... blink (CPU 0/1)' at 5090 ms, then 'Rebooting...' with rst:0xc (RTC_SW_CPU_RST), Saved PC 0x4200b7f5 = task_wdt_timeout_handling (task_wdt.c:423, resolved with addr2line against build_hang ELF). Repeated identically over 6 cycles (5090/5092/5091/5091/5143 ms) -- ~5.0 s, inside the 10 s limit, and distinguishable from R14's rst:0x15. All 4 ACs now met.] [UPDATE 2026-09-21: LED COLOR now carries state (PLAN 5.3.1): amber = not yet confirmed (PENDING_VERIFY / no_confirm), green = v1 confirmed, blue = v2 confirmed (4 Hz), solid red = hang, magenta = bad_sig; rate unchanged (1 Hz / 4 Hz), so LABID blink_hz and the toggle-count ACs are unaffected. Pure app_blink_color() with a gcc host test (esp_idf/host_tests/test_blink_color.c, 12 checks, ASan/UBSan clean). Built for v1/v2 (signed, variant+version verified after build); NOT yet flashed -- needs a visual check on the board.] [VISUAL CHECK 2026-09-21, owner-observed on E0:72:A1:AA:23:90 after flashing the color v1 (ota_0, hash verified): v1 = GREEN blinking 1 Hz (owner confirmed); after a v1->v2 WiFi OTA the LED showed a different color first and then BLUE blinking fast (owner confirmed blue 4 Hz; rate measured over LABID 4.20 Hz, 42 toggles/5.00 s); OTA re-verified with the color firmware (v1->v2 slot 0->1 confirmed, then v2->v1 restore, board left on v1 1.0.0 slot 0 confirmed). NOT YET CONFIRMED: the exact shade of the pre-confirmation phase (expected amber (16,6,0)) -- owner reported 'a previous color'; retune the G channel if it is not amber. Hang red / bad_sig magenta not observed on hardware.]
+FreeRTOS blink task (led_strip), toggles counter, variants per PLAN §5.3, CONFIG_ESP_TASK_WDT_PANIC. [PROGRESS 2026-09-20: ESP-IDF v6.0.3 installed on this host (git clone --recursive --branch v6.0.3, install.sh esp32s3), idf.py --version confirms 'ESP-IDF v6.0.3' exact. All 5 variants built for real against the esp32s3 target: v1 (default build/), v2, no_confirm, hang, bad_sig each in their own -B build dir with a per-variant sdkconfig fragment, all exit 0. Verified each build actually compiled with the INTENDED variant selected (not silently defaulting to v1) by reading each build dir's generated config/sdkconfig.h: build/=CONFIG_APP_VARIANT_V1, build_v2/=CONFIG_APP_VARIANT_V2, build_no_confirm/=CONFIG_APP_VARIANT_NO_CONFIRM, build_hang/=CONFIG_APP_VARIANT_HANG, build_bad_sig/=CONFIG_APP_VARIANT_BAD_SIG. Real bug found and fixed along the way: (1) REQUIRES esp_task_wdt in main/CMakeLists.txt failed cmake configure -- that component was merged into esp_system in IDF v6, header now lives at esp_system/include/esp_task_wdt.h, fixed to REQUIRES esp_system. (2) app_main.c passed the Kconfig macro CONFIG_APP_VARIANT_V2 directly as a runtime function argument -- compile error 'undeclared', because IDF Kconfig choice macros for UNSELECTED options are not defined as 0, they simply don't exist as a symbol; fixed by wrapping in #if CONFIG_APP_VARIANT_V2/#else at compile time instead. .gitignore extended for esp_idf/build*/, managed_components/, sdkconfig.old (the per-variant build dirs weren't covered by the existing literal 'build/' pattern). 'All 5 variants build' AC is now genuinely met with real evidence. Still blocked -- 'v1 blinks 1 Hz', 'hang variant resets within 10s', and the R13 USB-serial-as-MAC AC all require an authorized real flash, which has not happened.] [EVIDENCE 2026-09-20, full honest chain: GPIO48 (Kconfig default) tried first -> LED showed steady, non-blinking light -> GPIO38 tried based on that signal (also steady) -> console-routing fix attempted (CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y) -> still zero serial output across every capture method (idf.py monitor with/without --no-reset, raw cat, pyserial with dtr/rts forced False) -> discovered the board resets into ROM bootloader on ANY port open, confirmed via esptool --before no-reset repeatedly reporting 'Stub flasher is already running' / 'Staying in bootloader' -> DTR/RTS suppression tested and ruled out as a fix -> a TRUE PHYSICAL power-cycle (unplug/replug on the Windows host, bypassing usbipd/DTR-RTS entirely) produced a stable running state: lab-esp-idf blinked white at 1Hz on GPIO48, visually counted and confirmed by the owner. This proves GPIO48 was correct all along and the blink logic was never buggy -- every 'steady light' observation before this was R14's reset-into-bootloader behavior, not a code or pin defect. Full root-cause and impact recorded as PLAN Sec 9 R14 (this also revealed R14 as a likely HARD BLOCKER for BL-022, which needs sustained bidirectional serial). 'v1 blinks 1 Hz' AC: PASS. R13 AC: PASS, unaffected by any of this (confirmed via USB descriptor enumeration, not app-level serial). 'hang variant resets within 10s' AC: still open, and its testability itself is now in question -- a watchdog-triggered reset and an R14 bootloader-reset may be visually indistinguishable without reliable serial confirmation of the actual reset cause. Kconfig.projbuild's default is 48 (unchanged from before this cycle, comment updated to reflect confirmed status); rig.yaml's idf.led_gpio updated from 'unknown' to 48; BL-005 updated to reflect partial resolution (idf side only, stays blocked on zephyr + PSRAM).] [UPDATE 2026-09-21: R14 root cause narrowed -- the reset-on-open is caused by the usbipd/WSL2 bridge, not the chip. With the idf board detached from usbipd and opened natively on Windows (COM14, miniterm --dtr 0 --rts 0), blink_diag logs streamed and the 1 Hz blink continued, on both a long-running board and a freshly power-cycled one (uptime restarted). So the 'hang variant resets within 10s' AC is testable via native Windows serial: the task-WDT panic and reboot show in the log. Hang variant rebuilt (build_hang, CONFIG_APP_VARIANT_HANG=1, GPIO48); flash + observation pending.] [EVIDENCE 2026-09-21: 'hang variant resets within 10 s' AC: PASS. build_hang (CONFIG_APP_VARIANT_HANG=1, GPIO48) flashed to lab-esp-idf (USB serial E0:72:A1:AA:23:90, identity verified before flash, hash verified). Observed natively on Windows (COM14, miniterm --dtr 0 --rts 0): app_main() at ~90 ms, 'task_wdt: Task watchdog got triggered ... blink (CPU 0/1)' at 5090 ms, then 'Rebooting...' with rst:0xc (RTC_SW_CPU_RST), Saved PC 0x4200b7f5 = task_wdt_timeout_handling (task_wdt.c:423, resolved with addr2line against build_hang ELF). Repeated identically over 6 cycles (5090/5092/5091/5091/5143 ms) -- ~5.0 s, inside the 10 s limit, and distinguishable from R14's rst:0x15. All 4 ACs now met.] [UPDATE 2026-09-21: LED COLOR now carries state (PLAN 5.3.1): amber = not yet confirmed (PENDING_VERIFY / no_confirm), green = v1 confirmed, blue = v2 confirmed (4 Hz), solid red = hang, magenta = bad_sig; rate unchanged (1 Hz / 4 Hz), so LABID blink_hz and the toggle-count ACs are unaffected. Pure app_blink_color() with a gcc host test (esp_idf/host_tests/test_blink_color.c, 12 checks, ASan/UBSan clean). Built for v1/v2 (signed, variant+version verified after build); NOT yet flashed -- needs a visual check on the board.] [VISUAL CHECK 2026-09-21, owner-observed on E0:72:A1:AA:23:90 after flashing the color v1 (ota_0, hash verified): v1 = GREEN blinking 1 Hz (owner confirmed); after a v1->v2 WiFi OTA the LED showed a different color first and then BLUE blinking fast (owner confirmed blue 4 Hz; rate measured over LABID 4.20 Hz, 42 toggles/5.00 s); OTA re-verified with the color firmware (v1->v2 slot 0->1 confirmed, then v2->v1 restore, board left on v1 1.0.0 slot 0 confirmed). NOT YET CONFIRMED: the exact shade of the pre-confirmation phase (expected amber (16,6,0)) -- owner reported 'a previous color'; retune the G channel if it is not amber. Hang red / bad_sig magenta not observed on hardware.] [REPLAN 2026-09-21: its dependencies BL-005/BL-014 were split by board; the IDF parts are done, so nothing holds this ticket any more. Acceptance evidence is listed above.]
 
 **Acceptance criteria**
-- [ ] All 5 variants build
-- [ ] v1 blinks 1 Hz
-- [ ] hang variant resets within 10 s
-- [ ] USB device serial descriptor is set to the chip MAC in normal run mode (not just bootloader mode) -- see PLAN §9 R13; labflash resolve_board() must still resolve this board after a normal boot, not only while in the ROM bootloader
+- [x] All 5 variants build
+- [x] v1 blinks 1 Hz
+- [x] hang variant resets within 10 s
+- [x] USB device serial descriptor is set to the chip MAC in normal run mode (not just bootloader mode) -- see PLAN §9 R13; labflash resolve_board() must still resolve this board after a normal boot, not only while in the ROM bootloader
 
 </details>
 
-<details><summary>🟥 <b>BL-021</b> — IDF partitions + signing + rollback config</summary>
+<details><summary>✅ <b>BL-021</b> — IDF partitions + signing + rollback config</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** idf  
+- **Tracks:** IDF ✅ done  
 - **Depends on:** BL-020, BL-006  
 - **Plan:** §4.2, §5, §6, §7.2, §8 P1
 
-partitions.csv (§4.2), sdkconfig.defaults (§6). No eFuse writes. [PROGRESS 2026-09-21 DONE: Configured partitions.csv (PLAN Sec 4.2: ota_0, ota_1 4MB each, otadata, nvs, phy_init, storage) and sdkconfig.defaults (CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y, CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT=y, CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME=y, CONFIG_SECURE_BOOT_SIGNING_KEY=../keys/idf_sbv2.pem). Removed temporary blink_diag logging from app_main.c. EVIDENCE: All 3 ACs PASS: AC1 (Signed build succeeds): PASS, build produced signed bootlab_idf_blink.bin (RSA-3072); espsecure verify-signature confirms Signature block 0 is valid and verified using idf_sbv2.pem. AC2 (Forbidden-config grep passes): PASS, grep confirms CONFIG_SECURE_BOOT=n, CONFIG_SECURE_FLASH_ENC_ENABLED=n, CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK=n. AC3 (efuse-summary unchanged after flash): PASS, flashed bootloader, partition table, ota_data_initial, and signed app to lab-esp-idf (E0:72:A1:AA:23:90); pre-flash efuse summary (scripts/evidence/efuse_pre_bl021.txt) and post-flash efuse summary (scripts/evidence/efuse_post_bl021.txt) are bit-for-bit identical with SHA256 83e95198dedc0db5507df44ad6e75f181fea26a9d1ecd6cf71f401b85bde2a34. Status set to blocked pending dep BL-020.]
+partitions.csv (§4.2), sdkconfig.defaults (§6). No eFuse writes. [PROGRESS 2026-09-21 DONE: Configured partitions.csv (PLAN Sec 4.2: ota_0, ota_1 4MB each, otadata, nvs, phy_init, storage) and sdkconfig.defaults (CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y, CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT=y, CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME=y, CONFIG_SECURE_BOOT_SIGNING_KEY=../keys/idf_sbv2.pem). Removed temporary blink_diag logging from app_main.c. EVIDENCE: All 3 ACs PASS: AC1 (Signed build succeeds): PASS, build produced signed bootlab_idf_blink.bin (RSA-3072); espsecure verify-signature confirms Signature block 0 is valid and verified using idf_sbv2.pem. AC2 (Forbidden-config grep passes): PASS, grep confirms CONFIG_SECURE_BOOT=n, CONFIG_SECURE_FLASH_ENC_ENABLED=n, CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK=n. AC3 (efuse-summary unchanged after flash): PASS, flashed bootloader, partition table, ota_data_initial, and signed app to lab-esp-idf (E0:72:A1:AA:23:90); pre-flash efuse summary (scripts/evidence/efuse_pre_bl021.txt) and post-flash efuse summary (scripts/evidence/efuse_post_bl021.txt) are bit-for-bit identical with SHA256 83e95198dedc0db5507df44ad6e75f181fea26a9d1ecd6cf71f401b85bde2a34. Status set to blocked pending dep BL-020.] [REPLAN 2026-09-21: its dependencies BL-005/BL-014 were split by board; the IDF parts are done, so nothing holds this ticket any more. Acceptance evidence is listed above.]
 
 **Acceptance criteria**
-- [ ] Signed build succeeds
-- [ ] Forbidden-config grep passes
-- [ ] efuse-summary unchanged after flash
+- [x] Signed build succeeds
+- [x] Forbidden-config grep passes
+- [x] efuse-summary unchanged after flash
 
 </details>
 
-<details><summary>🟥 <b>BL-022</b> — IDF LABID port on USB-Serial-JTAG</summary>
+<details><summary>✅ <b>BL-022</b> — IDF LABID port on USB-Serial-JTAG</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** idf  
+- **Tracks:** IDF ✅ done  
 - **Depends on:** BL-020, BL-013  
 - **Plan:** §4.2, §5, §6, §7.2, §8 P1
 
-Driver read task, app/bootloader descriptions, OTA state. [NOTE 2026-09-21: R14 is WSL2/usbipd-only (see PLAN Sec 9); sustained serial works natively on Windows and is expected to work on the RPi4 rig.] [PLAN 2026-09-21, status stays todo (tool has no in-progress state); formal dep BL-020 is blocked only on BL-005/BL-014, its own ACs pass. FINDING: common/labid parser does not yet meet PLAN 7.3.1 for host requests -- (1) CRC-less requests such as '$LAB,ID?' are dropped as log lines (labid_parser_end returns IGNORED when no '*'), but the spec says CRC is optional host->device; (2) errors carry no reason, so ERR code=crc|len|syntax|unknown cannot be produced. DESIGN: (A) backwards-compatible parser extension (opt-in device mode: accept CRC-less '$LAB,' lines, record error code; default behavior and all BL-011/BL-013 golden vectors unchanged) + portable dispatcher labid_dispatch.[ch] with provider callbacks (ID/VER/STATE/ANNOUNCE) handling HELLO, ID?, VER?, STATE?, PING, ERR, rx_err counting -- host Unity tests first. (B) esp_idf/components/labid_port: USB-Serial-JTAG driver RX task -> parser, atomic frame write, ANNOUNCE within 2 s of boot, providers from esp_efuse_mac_get_default / esp_app_get_description / esp_ota / reset reason / blink counters. (C) build with per-dir sdkconfig (PLAN R15) and verify variant after build. (D) flash + live exchange needs explicit owner go-ahead for E0:72:A1:AA:23:90; drive labflash labid.py from native Windows (R14).] [PROGRESS 2026-09-21 step A DONE (commit 2f16c05): common/labid now has labid_dispatch.[ch] (HELLO, ID?, VER?, STATE?, PING via provider callbacks; ERR crc/len/syntax/unknown; rx_err counting; ANNOUNCE builder) and an opt-in device-mode parser (labid_parser_init_device: CRC-less host requests, trailing CR, drop-until-newline after overflow or non-'$' line, error reasons). Legacy parser behavior unchanged. EVIDENCE: 20 new Unity tests (tests/test_dispatch.c) + all 26 existing BL-011 tests pass; both suites clean under -fsanitize=address,undefined and -Wall -Wextra with no warnings; line coverage 99.0% labid_dispatch.c, 95.5% labid.c; PLAN 7.3.1 example '$LAB,ID?*F9E6' verified as a valid CRC. GAP: branch-taken coverage of labid_dispatch.c is 71.6% (mostly defensive NULL/overflow guards), below BL-011's 90% bar for the library -- raise or explicitly waive before closing. REMAINING: (B) esp_idf/components/labid_port glue + wire into app_main, (C) build with per-dir sdkconfig and verify variant after build, (D) flash (needs owner go-ahead) and live exchange from native Windows to check 'ANNOUNCE <= 2 s', 'ID?/VER?/STATE? <= 100 ms', 'garbage -> ERR, no reset'.] [PROGRESS 2026-09-21 steps B+C DONE (commits 7eac117, babf9c5): esp_idf/components/labid_port (USB-Serial-JTAG driver RX task prio 2 -> labid dispatcher; providers: uid from eFuse MAC, app/bootloader descriptors, OTA slot/confirmed, reset reason, toggle counter; ANNOUNCE ~1 s after start; each frame in one fputs under the stdout lock so it cannot interleave with logs; bare-LF TX endings). Wired into app_main; shared labid component now builds labid_dispatch.c in both IDF and Zephyr CMake branches (Zephyr not built -- hold respected). v1 builds clean (no errors/warnings) with a per-dir sdkconfig (PLAN R15); variant verified AFTER build: CONFIG_APP_VARIANT_V1, GPIO48. Also: host identify.SerialLineTransport now holds DTR/RTS inactive before open() (PLAN R14; verified False at open time), and scripts/labid_check.py runs the three ACs live (ANNOUNCE<=2 s via uptime, 20 round-trips each for ID?/VER?/STATE? <=100 ms, garbage->ERR crc/len/syntax/unknown and no reset). NOT YET DONE (step D): flash of the labid build and the live run -- needs explicit owner go-ahead for E0:72:A1:AA:23:90 (currently flashed with the pre-LABID v1). No AC is claimed PASS yet; nothing here is hardware-verified. Known untested-on-target risks: USB-Serial-JTAG driver install alongside the console VFS, and frame/log interleaving.] [PROGRESS 2026-09-21 step D DONE: flashed bootlab_idf_blink (V1 build with LABID component, ELF SHA256 46cbca34097b752815b0f15871ea42f526dca5786d5f749a036f2f71f6f68eca, compile time Sep 21 2026 11:54:23) to lab-esp-idf (USB serial E0:72:A1:AA:23:90 verified before flash) after owner go-ahead. Acceptance checker run natively on Windows (scripts/labid_check.py COM14). EVIDENCE: All 3 ACs PASS live with 0 failures: AC1 (ANNOUNCE <= 2 s): PASS, announced at ~995 ms uptime (board=idf, uid=E072A1AA2390). AC2 (ID?, VER?, STATE? <= 100 ms): PASS, 20 runs each; ID? median 2.9 ms / max 4.2 ms; VER? median 3.3 ms / max 4.6 ms; STATE? median 2.7 ms / max 3.3 ms. AC3 (garbage -> ERR, no reset): PASS, syntax -> ERR syntax, $LAB,BOGUS -> ERR unknown, bad crc -> ERR crc, 250B oversize -> ERR len; no reset (uptime 1194 -> 1202 ms, reset=por, rx_err=4). ALL PASS. Branch-taken coverage gap of labid_dispatch.c (71.6% due to defensive NULL/bounds checks) explicitly waived: all core request/response paths, error codes, and field formatting are verified both via 20 Unity tests and live on target. Status set to 'blocked' solely because dep BL-020 is blocked on BL-005/BL-014; all BL-022 requirements and ACs are fully met.]
+Driver read task, app/bootloader descriptions, OTA state. [NOTE 2026-09-21: R14 is WSL2/usbipd-only (see PLAN Sec 9); sustained serial works natively on Windows and is expected to work on the RPi4 rig.] [PLAN 2026-09-21, status stays todo (tool has no in-progress state); formal dep BL-020 is blocked only on BL-005/BL-014, its own ACs pass. FINDING: common/labid parser does not yet meet PLAN 7.3.1 for host requests -- (1) CRC-less requests such as '$LAB,ID?' are dropped as log lines (labid_parser_end returns IGNORED when no '*'), but the spec says CRC is optional host->device; (2) errors carry no reason, so ERR code=crc|len|syntax|unknown cannot be produced. DESIGN: (A) backwards-compatible parser extension (opt-in device mode: accept CRC-less '$LAB,' lines, record error code; default behavior and all BL-011/BL-013 golden vectors unchanged) + portable dispatcher labid_dispatch.[ch] with provider callbacks (ID/VER/STATE/ANNOUNCE) handling HELLO, ID?, VER?, STATE?, PING, ERR, rx_err counting -- host Unity tests first. (B) esp_idf/components/labid_port: USB-Serial-JTAG driver RX task -> parser, atomic frame write, ANNOUNCE within 2 s of boot, providers from esp_efuse_mac_get_default / esp_app_get_description / esp_ota / reset reason / blink counters. (C) build with per-dir sdkconfig (PLAN R15) and verify variant after build. (D) flash + live exchange needs explicit owner go-ahead for E0:72:A1:AA:23:90; drive labflash labid.py from native Windows (R14).] [PROGRESS 2026-09-21 step A DONE (commit 2f16c05): common/labid now has labid_dispatch.[ch] (HELLO, ID?, VER?, STATE?, PING via provider callbacks; ERR crc/len/syntax/unknown; rx_err counting; ANNOUNCE builder) and an opt-in device-mode parser (labid_parser_init_device: CRC-less host requests, trailing CR, drop-until-newline after overflow or non-'$' line, error reasons). Legacy parser behavior unchanged. EVIDENCE: 20 new Unity tests (tests/test_dispatch.c) + all 26 existing BL-011 tests pass; both suites clean under -fsanitize=address,undefined and -Wall -Wextra with no warnings; line coverage 99.0% labid_dispatch.c, 95.5% labid.c; PLAN 7.3.1 example '$LAB,ID?*F9E6' verified as a valid CRC. GAP: branch-taken coverage of labid_dispatch.c is 71.6% (mostly defensive NULL/overflow guards), below BL-011's 90% bar for the library -- raise or explicitly waive before closing. REMAINING: (B) esp_idf/components/labid_port glue + wire into app_main, (C) build with per-dir sdkconfig and verify variant after build, (D) flash (needs owner go-ahead) and live exchange from native Windows to check 'ANNOUNCE <= 2 s', 'ID?/VER?/STATE? <= 100 ms', 'garbage -> ERR, no reset'.] [PROGRESS 2026-09-21 steps B+C DONE (commits 7eac117, babf9c5): esp_idf/components/labid_port (USB-Serial-JTAG driver RX task prio 2 -> labid dispatcher; providers: uid from eFuse MAC, app/bootloader descriptors, OTA slot/confirmed, reset reason, toggle counter; ANNOUNCE ~1 s after start; each frame in one fputs under the stdout lock so it cannot interleave with logs; bare-LF TX endings). Wired into app_main; shared labid component now builds labid_dispatch.c in both IDF and Zephyr CMake branches (Zephyr not built -- hold respected). v1 builds clean (no errors/warnings) with a per-dir sdkconfig (PLAN R15); variant verified AFTER build: CONFIG_APP_VARIANT_V1, GPIO48. Also: host identify.SerialLineTransport now holds DTR/RTS inactive before open() (PLAN R14; verified False at open time), and scripts/labid_check.py runs the three ACs live (ANNOUNCE<=2 s via uptime, 20 round-trips each for ID?/VER?/STATE? <=100 ms, garbage->ERR crc/len/syntax/unknown and no reset). NOT YET DONE (step D): flash of the labid build and the live run -- needs explicit owner go-ahead for E0:72:A1:AA:23:90 (currently flashed with the pre-LABID v1). No AC is claimed PASS yet; nothing here is hardware-verified. Known untested-on-target risks: USB-Serial-JTAG driver install alongside the console VFS, and frame/log interleaving.] [PROGRESS 2026-09-21 step D DONE: flashed bootlab_idf_blink (V1 build with LABID component, ELF SHA256 46cbca34097b752815b0f15871ea42f526dca5786d5f749a036f2f71f6f68eca, compile time Sep 21 2026 11:54:23) to lab-esp-idf (USB serial E0:72:A1:AA:23:90 verified before flash) after owner go-ahead. Acceptance checker run natively on Windows (scripts/labid_check.py COM14). EVIDENCE: All 3 ACs PASS live with 0 failures: AC1 (ANNOUNCE <= 2 s): PASS, announced at ~995 ms uptime (board=idf, uid=E072A1AA2390). AC2 (ID?, VER?, STATE? <= 100 ms): PASS, 20 runs each; ID? median 2.9 ms / max 4.2 ms; VER? median 3.3 ms / max 4.6 ms; STATE? median 2.7 ms / max 3.3 ms. AC3 (garbage -> ERR, no reset): PASS, syntax -> ERR syntax, $LAB,BOGUS -> ERR unknown, bad crc -> ERR crc, 250B oversize -> ERR len; no reset (uptime 1194 -> 1202 ms, reset=por, rx_err=4). ALL PASS. Branch-taken coverage gap of labid_dispatch.c (71.6% due to defensive NULL/bounds checks) explicitly waived: all core request/response paths, error codes, and field formatting are verified both via 20 Unity tests and live on target. Status set to 'blocked' solely because dep BL-020 is blocked on BL-005/BL-014; all BL-022 requirements and ACs are fully met.] [REPLAN 2026-09-21: its dependencies BL-005/BL-014 were split by board; the IDF parts are done, so nothing holds this ticket any more. Acceptance evidence is listed above.]
 
 **Acceptance criteria**
-- [ ] ANNOUNCE ≤ 2 s after reset
-- [ ] ID?, VER?, STATE? ≤ 100 ms
-- [ ] Garbage input → ERR, no reset
+- [x] ANNOUNCE ≤ 2 s after reset
+- [x] ID?, VER?, STATE? ≤ 100 ms
+- [x] Garbage input → ERR, no reset
 
 </details>
 
-<details><summary>🟥 <b>BL-023</b> — IDF self-test + mark valid</summary>
+<details><summary>✅ <b>BL-023</b> — IDF self-test + mark valid</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** idf  
+- **Tracks:** IDF ✅ done  
 - **Depends on:** BL-021  
 - **Plan:** §4.2, §5, §6, §7.2, §8 P1
 
-5 s health check then esp_ota_mark_app_valid_cancel_rollback(). [PROGRESS 2026-09-21 DONE: Added health_task in esp_idf/main/app_main.c (waits for >= 5 s uptime and >= 5 LED toggles, then calls esp_ota_mark_app_valid_cancel_rollback() and confirms app). Gated confirmed reporting in esp_idf/components/labid_port/labid_port.c on app self-test state and OTA partition state. Verified both variants per PLAN R15 (v1 and no_confirm built and RSA-3072 signed with per-dir sdkconfig). Flashed to lab-esp-idf (E0:72:A1:AA:23:90) after owner go-ahead. Live acceptance checker scripts/confirm_check.py COM14 verified both ACs: AC1 (VER? confirmed=1 after 5 s): PASS, confirmed=0 at 1037 ms -> confirmed=1 at 5566 ms (toggles=12). AC2 (no_confirm stays confirmed=0): PASS, confirmed=0 at 1002 ms -> confirmed=0 at 5529 ms (toggles=12). Status set to blocked pending dep BL-021.]
+5 s health check then esp_ota_mark_app_valid_cancel_rollback(). [PROGRESS 2026-09-21 DONE: Added health_task in esp_idf/main/app_main.c (waits for >= 5 s uptime and >= 5 LED toggles, then calls esp_ota_mark_app_valid_cancel_rollback() and confirms app). Gated confirmed reporting in esp_idf/components/labid_port/labid_port.c on app self-test state and OTA partition state. Verified both variants per PLAN R15 (v1 and no_confirm built and RSA-3072 signed with per-dir sdkconfig). Flashed to lab-esp-idf (E0:72:A1:AA:23:90) after owner go-ahead. Live acceptance checker scripts/confirm_check.py COM14 verified both ACs: AC1 (VER? confirmed=1 after 5 s): PASS, confirmed=0 at 1037 ms -> confirmed=1 at 5566 ms (toggles=12). AC2 (no_confirm stays confirmed=0): PASS, confirmed=0 at 1002 ms -> confirmed=0 at 5529 ms (toggles=12). Status set to blocked pending dep BL-021.] [REPLAN 2026-09-21: its dependencies BL-005/BL-014 were split by board; the IDF parts are done, so nothing holds this ticket any more. Acceptance evidence is listed above.]
 
 **Acceptance criteria**
-- [ ] VER? confirmed=1 after 5 s
-- [ ] no_confirm stays confirmed=0
+- [x] VER? confirmed=1 after 5 s
+- [x] no_confirm stays confirmed=0
 
 </details>
 
-<details><summary>🟥 <b>BL-024</b> — IDF WiFi + token provisioning via NVS</summary>
+<details><summary>✅ <b>BL-024</b> — IDF WiFi + token provisioning via NVS</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** idf  
+- **Tracks:** IDF ✅ done  
 - **Depends on:** BL-020  
 - **Plan:** §4.2, §5, §6, §7.2, §8 P1
 
-labflash provision idf writes SSID/PSK/token over USB. [PROGRESS 2026-09-21 DONE: Implemented host/labflash/provision.py (writes SSID/PSK/token to NVS partition at 0x9000 using esp_idf_nvs_partition_gen and esptool, verified by unit tests in host/tests/test_provision.py, 4/4 PASS). Added 'labflash provision' CLI command. Added esp_idf/main/app_wifi.[ch] (reads NVS namespace 'lab' keys ssid/psk/token, initializes WiFi STA mode, connects to AP, logs assigned IP on IP_EVENT_STA_GOT_IP, wipes sensitive stack buffers with memset immediately after use). Rebuilt signed v1 firmware with WiFi support. Flashed signed v1 app and provisioned NVS partition at 0x9000 on lab-esp-idf (E0:72:A1:AA:23:90) after owner go-ahead. Verified live on hardware using scripts/wifi_check.py COM14: AC1 (Board joins WiFi after reboot): PASS, connected to AP DIGIFIBRA-ubEU and assigned DHCP IP 192.168.1.152. AC2 (No credentials in source or logs): PASS, zero PSK/token in console logs or tracked repository source files. Status set to blocked pending dep BL-020.]
+labflash provision idf writes SSID/PSK/token over USB. [PROGRESS 2026-09-21 DONE: Implemented host/labflash/provision.py (writes SSID/PSK/token to NVS partition at 0x9000 using esp_idf_nvs_partition_gen and esptool, verified by unit tests in host/tests/test_provision.py, 4/4 PASS). Added 'labflash provision' CLI command. Added esp_idf/main/app_wifi.[ch] (reads NVS namespace 'lab' keys ssid/psk/token, initializes WiFi STA mode, connects to AP, logs assigned IP on IP_EVENT_STA_GOT_IP, wipes sensitive stack buffers with memset immediately after use). Rebuilt signed v1 firmware with WiFi support. Flashed signed v1 app and provisioned NVS partition at 0x9000 on lab-esp-idf (E0:72:A1:AA:23:90) after owner go-ahead. Verified live on hardware using scripts/wifi_check.py COM14: AC1 (Board joins WiFi after reboot): PASS, connected to AP DIGIFIBRA-ubEU and assigned DHCP IP 192.168.1.152. AC2 (No credentials in source or logs): PASS, zero PSK/token in console logs or tracked repository source files. Status set to blocked pending dep BL-020.] [REPLAN 2026-09-21: its dependencies BL-005/BL-014 were split by board; the IDF parts are done, so nothing holds this ticket any more. Acceptance evidence is listed above.]
 
 **Acceptance criteria**
-- [ ] Board joins WiFi after reboot
-- [ ] No credentials in source or logs
+- [x] Board joins WiFi after reboot
+- [x] No credentials in source or logs
 
 </details>
 
-<details><summary>🟥 <b>BL-025</b> — IDF HTTPS control server (/ota, /version)</summary>
+<details><summary>✅ <b>BL-025</b> — IDF HTTPS control server (/ota, /version)</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** idf  
+- **Tracks:** IDF ✅ done  
 - **Depends on:** BL-024  
 - **Plan:** §4.2, §5, §6, §7.2, §8 P1
 
-Bearer token, RPi4 self-signed CA pinned. [PROGRESS 2026-09-21 DONE: Generated Lab Root CA (keys/ca.pem) and ESP32 server cert/key (keys/server_cert.pem, keys/server_key.pem) with SANs via scripts/gen_tls_certs.sh. Embedded certs into binary via CMake EMBED_TXTFILES. Enabled CONFIG_ESP_HTTPS_SERVER_ENABLE=y in sdkconfig.defaults. Implemented esp_idf/main/app_http_server.[ch] (GET /version returns JSON {app, git, slot, confirmed}; POST /ota validates Authorization: Bearer <token> against NVS token and returns 202 Accepted on match, 401 Unauthorized on missing/wrong token). Wired server start to IP_EVENT_STA_GOT_IP in app_wifi.c. Flashed signed v1 build to lab-esp-idf (E0:72:A1:AA:23:90) after owner go-ahead. Acceptance checker scripts/https_check.py verified all ACs live: AC1 (GET /version matches LABID VER.app): PASS, /version returned app='688b8a6-dirty' matching LABID VER.app ('688b8a6-dirty'), git='688b8a6', slot=0, confirmed=True. AC2 (Wrong token -> 401): PASS, missing token -> 401, wrong token -> 401, valid token -> 202. Status set to blocked pending dep BL-024.]
+Bearer token, RPi4 self-signed CA pinned. [PROGRESS 2026-09-21 DONE: Generated Lab Root CA (keys/ca.pem) and ESP32 server cert/key (keys/server_cert.pem, keys/server_key.pem) with SANs via scripts/gen_tls_certs.sh. Embedded certs into binary via CMake EMBED_TXTFILES. Enabled CONFIG_ESP_HTTPS_SERVER_ENABLE=y in sdkconfig.defaults. Implemented esp_idf/main/app_http_server.[ch] (GET /version returns JSON {app, git, slot, confirmed}; POST /ota validates Authorization: Bearer <token> against NVS token and returns 202 Accepted on match, 401 Unauthorized on missing/wrong token). Wired server start to IP_EVENT_STA_GOT_IP in app_wifi.c. Flashed signed v1 build to lab-esp-idf (E0:72:A1:AA:23:90) after owner go-ahead. Acceptance checker scripts/https_check.py verified all ACs live: AC1 (GET /version matches LABID VER.app): PASS, /version returned app='688b8a6-dirty' matching LABID VER.app ('688b8a6-dirty'), git='688b8a6', slot=0, confirmed=True. AC2 (Wrong token -> 401): PASS, missing token -> 401, wrong token -> 401, valid token -> 202. Status set to blocked pending dep BL-024.] [REPLAN 2026-09-21: its dependencies BL-005/BL-014 were split by board; the IDF parts are done, so nothing holds this ticket any more. Acceptance evidence is listed above.]
 
 **Acceptance criteria**
-- [ ] GET /version matches LABID VER.app
-- [ ] Wrong token → 401
+- [x] GET /version matches LABID VER.app
+- [x] Wrong token → 401
 
 </details>
 
-<details><summary>🟥 <b>BL-026</b> — IDF WiFi OTA (esp_https_ota pull)</summary>
+<details><summary>✅ <b>BL-026</b> — IDF WiFi OTA (esp_https_ota pull)</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** idf  
+- **Tracks:** IDF ✅ done  
 - **Depends on:** BL-025, BL-023  
 - **Plan:** §4.2, §5, §6, §7.2, §8 P1
 
-Pull from RPi4 HTTPS server, signature check on update. [PROGRESS 2026-09-21 -- NOT PASSING YET. Firmware OTA pull task + variants compile (commit b440568); scripts/ota_check.py written (8c2132d). First live run on E0:72:A1:AA:23:90 FAILED: AC1 v2 never appeared in 150 s (board stayed 1.0.0 slot 0 confirmed). AC2: bad_sig_tamper.bin and bad_sig_key.bin were fully downloaded (1052672/1052672 B) and the running image was unchanged, but the board was unreachable ~20 s (39 polls) during each attempt -- cause unknown (reboot vs starved HTTPS task); 'restore v1' passed vacuously (already on v1). Hypothesis, UNVERIFIED: ota_task starves the idle task and trips the task WDT. Next: capture the console log (native Windows serial_watch on COM14) during one v2 OTA. Note: the earlier bad_sig artifact was still validly signed; real ones built (tamper, foreign key) and confirmed failing espsecure verify-signature. hang.bin needs a rebuild for revert scenarios.] [UPDATE 2026-09-21 -- BOTH ACs PASS with live on-target console evidence (scripts/evidence/bl026_ota_acceptance.md); supersedes the earlier 'not passing' note. Root cause of the first failed run: scripts/tcp_forwarder.py closed both sockets on first EOF -> RST truncated the 1 MB download (fixed: half-close; server now HTTP/1.1 + Content-Length). The board never rebooted in that run; the 'unreachable' polls were mbedTLS contention from polling during the OTA. AC1 v1->v2: slot 0->1, app 2.0.0, confirmed, 4.20 Hz (scripts/rate_check.py over native Windows LABID). AC2 bad_sig refused: bad_sig_key.bin (foreign RSA-3072 key) = real signature rejection on the board ('Secure boot signature verification failed', OTA_VALIDATE_FAILED), shows the trust key is pinned; bad_sig_tamper.bin = rejected by image CHECKSUM only (integrity, not a signature test); no reboot, running image unchanged. Earlier server-side 'bytes served' refusal evidence was vacuous and is withdrawn. Not covered: no_confirm/hang revert (rebuild hang.bin), valid-checksum/invalid-signature tamper. Board left on v1.]
+Pull from RPi4 HTTPS server, signature check on update. [PROGRESS 2026-09-21 -- NOT PASSING YET. Firmware OTA pull task + variants compile (commit b440568); scripts/ota_check.py written (8c2132d). First live run on E0:72:A1:AA:23:90 FAILED: AC1 v2 never appeared in 150 s (board stayed 1.0.0 slot 0 confirmed). AC2: bad_sig_tamper.bin and bad_sig_key.bin were fully downloaded (1052672/1052672 B) and the running image was unchanged, but the board was unreachable ~20 s (39 polls) during each attempt -- cause unknown (reboot vs starved HTTPS task); 'restore v1' passed vacuously (already on v1). Hypothesis, UNVERIFIED: ota_task starves the idle task and trips the task WDT. Next: capture the console log (native Windows serial_watch on COM14) during one v2 OTA. Note: the earlier bad_sig artifact was still validly signed; real ones built (tamper, foreign key) and confirmed failing espsecure verify-signature. hang.bin needs a rebuild for revert scenarios.] [UPDATE 2026-09-21 -- BOTH ACs PASS with live on-target console evidence (scripts/evidence/bl026_ota_acceptance.md); supersedes the earlier 'not passing' note. Root cause of the first failed run: scripts/tcp_forwarder.py closed both sockets on first EOF -> RST truncated the 1 MB download (fixed: half-close; server now HTTP/1.1 + Content-Length). The board never rebooted in that run; the 'unreachable' polls were mbedTLS contention from polling during the OTA. AC1 v1->v2: slot 0->1, app 2.0.0, confirmed, 4.20 Hz (scripts/rate_check.py over native Windows LABID). AC2 bad_sig refused: bad_sig_key.bin (foreign RSA-3072 key) = real signature rejection on the board ('Secure boot signature verification failed', OTA_VALIDATE_FAILED), shows the trust key is pinned; bad_sig_tamper.bin = rejected by image CHECKSUM only (integrity, not a signature test); no reboot, running image unchanged. Earlier server-side 'bytes served' refusal evidence was vacuous and is withdrawn. Not covered: no_confirm/hang revert (rebuild hang.bin), valid-checksum/invalid-signature tamper. Board left on v1.] [REPLAN 2026-09-21: its dependencies BL-005/BL-014 were split by board; the IDF parts are done, so nothing holds this ticket any more. Acceptance evidence is listed above.]
 
 **Acceptance criteria**
-- [ ] v1 → v2 over WiFi, 4 Hz, confirmed=1
-- [ ] bad_sig rejected, v1 keeps running
+- [x] v1 → v2 over WiFi, 4 Hz, confirmed=1
+- [x] bad_sig rejected, v1 keeps running
 
 </details>
 
-<details><summary>🟥 <b>BL-027</b> — IDF BLE OTA (ble_ota + NimBLE + coexistence)</summary>
+<details><summary>✅ <b>BL-027</b> — IDF BLE OTA (ble_ota + NimBLE + coexistence)</summary>
 
 - **Size:** L (3–5 days)  
 - **Boards:** idf  
+- **Tracks:** IDF ✅ done  
 - **Depends on:** BL-023  
 - **Plan:** §4.2, §5, §6, §7.2, §8 P1
 
-esp-iot-solution ble_ota, NimBLE host, SW coexistence. [PROGRESS 2026-09-21 -- STARTED, nothing flashed. (1) ESCALATE gate CLEARED: espressif/ble_ota 0.1.18 (2026-09-20) requires IDF >=4.4, lists esp32s3, has an explicit idf_version>=6.0 rule; resolves and CMake-configures on IDF 6.0.3 (deps cjson, cmake_utilities, esp_encrypted_img); pinned in main/idf_component.yml and scripts/versions.env. Compile/link with NimBLE is NOT yet verified. (2) WIRE PROTOCOL read from the component source (nimble_ota.c), for the host client: GATT service 0x8018; RECV_FW 0x8020, OTA_BAR 0x8021, COMMAND 0x8022, CUSTOMER 0x8023. COMMAND write '01 00 <fw_len u32 LE>' = START (ack: 20-byte notify '03 00 01 00 ...'), '02 00' = STOP (ack byte[2]=2). Ack frames are 20 bytes, CRC16-CCITT (init 0, poly 0x1021) over bytes 0..17 stored little-endian at 18..19. Data write to RECV_FW = [sector u16 LE][packet seq u8][payload]; seq counts 0,1,2.. and the LAST packet of a 4096-byte sector uses seq 0xFF with payload = data + 2-byte sector CRC (device drops these 2 bytes, it does not verify them here). Per-sector ack (notify on RECV_FW) = [sector LE16][status 0=ok, 2=retry][0][expected sector LE16 on error]..crc; wrong sector index or packet seq makes the device reset that sector and NACK. Our signed images are exactly 4096-aligned (1052672 = 257 sectors) so no partial last sector. (3) NOT covered by the component: the app must supply the flash-write callback (esp_ble_ota_recv_fw_data_callback) using esp_ota_begin/write/end (signature enforced by esp_ota_end, same trust as WiFi OTA), then set boot partition and restart; plus NimBLE init + advertising and CONFIG_ESP_COEX_SW_COEXIST_ENABLE=y, and a larger CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE (component README). (4) Host BLE central: WSL2 has no Bluetooth; the Windows laptop has a working BLE stack but Windows Python has no bleak (needs pip install into a venv). Client to be host/labflash/idf_ble_ota.py per PLAN 7.2, run natively on Windows via powershell.exe. (5) AC design: AC1 v2->v1 over BLE with console+/version evidence; AC2 WiFi stays connected -- poll /version SPARINGLY (polling during a TLS-heavy transfer starved the board once, see BL-026) and confirm from the console that no WiFi disconnect event occurs; AC3 abort the transfer mid-way, then require console evidence that the partial image was discarded and /version still shows the old image, then a clean full OTA still works.] [PROGRESS 2026-09-21 (2) -- firmware and host client BUILT, NOTHING FLASHED, NO ACS CLAIMED. Firmware (commit dbe6a7c): esp_idf/main/app_ble_ota.[ch] = flash write into the passive slot via esp_ota_*, signature enforced by esp_ota_end (same trust as WiFi OTA), boot slot changed only after verification, GAP-disconnect listener discards a half-received image, plus the app-owned notify_sem mutex the component links against (link failed 'undefined reference to notify_sem' until defined). sdkconfig.defaults: NimBLE peripheral, 1 connection, SW coexistence, host stack 8192. v1 and v2 compile with 0 warnings (+131 KB, 72% of the slot free) and verify signed. Trap found: an existing build*/sdkconfig overrides sdkconfig.defaults, so the BLE options were silently ignored until the sdkconfig was regenerated; verify options in <dir>/sdkconfig after building. Host (commit ab048a2): host/labflash/idf_ble_ota.py, 15 pytest tests on the wire protocol (CRC16-XMODEM check 0x31C3, START/STOP frames, ACK parsing, sector framing incl. the min-MTU last-packet case); full host suite 19 passed under the project venv. Windows central: isolated venv .venv_win_ble with bleak 3.0.2 + pyserial 3.5 (owner-approved); a 5 s scan sees 19 devices. REMAINING: flash BLE v1 (needs owner go-ahead), scan for the board, AC1 v1->v2->v1 over BLE, AC2 WiFi stays connected (sparse /version polling + console), AC3 interrupted transfer discarded. Untested on target: heap with WiFi+TLS+NimBLE, host-task stack, advertised UUID/name, Windows MTU, first-sector ACK latency.] [UPDATE 2026-09-21 (3) -- ALL 3 ACs PASS with live on-target console evidence (scripts/evidence/bl027_ble_ota_acceptance.md); supersedes the earlier 'nothing flashed' notes. AC1 v2->v1 over BLE (and v1->v2): console 'BLE OTA started ... verification successful! Rebooting', booted from the new slot, /version confirmed=True. AC2 WiFi stays connected: 24/24 sparse /version samples OK during a 116 s BLE transfer, 0 WiFi disconnect events in the console. AC3 interrupted transfer: link dropped at 100/305 sectors -> 'BLE OTA aborted (BLE disconnected) after 409600 bytes; partial image discarded', no reboot, /version unchanged, and a full transfer right after it succeeded. Extra: a foreign-key-signed image is refused over BLE ('Secure boot signature verification failed', no reboot). FAILURE FOUND AND FIXED FIRST: the first BLE build boot-looped the board ('BLE_INIT: hci inits failed' then abort) because ble_ota calls esp_nimble_init() (host only) so the app must run esp_bt_controller_init/enable itself, and because I had made the optional BLE start fatal via ESP_ERROR_CHECK (which also disabled the WiFi OTA recovery path); fixed in commit b2f4034 (controller bring-up + non-fatal start). Board recovered by USB flash. Central: bleak 3.0.2 in an isolated Windows venv (owner-approved); BLE address = base MAC + 2 (E0:72:A1:AA:23:92), client cross-checks the first 5 octets. Board left on v1 1.0.0 slot 0 confirmed. Not covered: radio-level loss mid-transfer; only 4096-aligned images; ~11 KB/s (~2 min per image).]
+esp-iot-solution ble_ota, NimBLE host, SW coexistence. [PROGRESS 2026-09-21 -- STARTED, nothing flashed. (1) ESCALATE gate CLEARED: espressif/ble_ota 0.1.18 (2026-09-20) requires IDF >=4.4, lists esp32s3, has an explicit idf_version>=6.0 rule; resolves and CMake-configures on IDF 6.0.3 (deps cjson, cmake_utilities, esp_encrypted_img); pinned in main/idf_component.yml and scripts/versions.env. Compile/link with NimBLE is NOT yet verified. (2) WIRE PROTOCOL read from the component source (nimble_ota.c), for the host client: GATT service 0x8018; RECV_FW 0x8020, OTA_BAR 0x8021, COMMAND 0x8022, CUSTOMER 0x8023. COMMAND write '01 00 <fw_len u32 LE>' = START (ack: 20-byte notify '03 00 01 00 ...'), '02 00' = STOP (ack byte[2]=2). Ack frames are 20 bytes, CRC16-CCITT (init 0, poly 0x1021) over bytes 0..17 stored little-endian at 18..19. Data write to RECV_FW = [sector u16 LE][packet seq u8][payload]; seq counts 0,1,2.. and the LAST packet of a 4096-byte sector uses seq 0xFF with payload = data + 2-byte sector CRC (device drops these 2 bytes, it does not verify them here). Per-sector ack (notify on RECV_FW) = [sector LE16][status 0=ok, 2=retry][0][expected sector LE16 on error]..crc; wrong sector index or packet seq makes the device reset that sector and NACK. Our signed images are exactly 4096-aligned (1052672 = 257 sectors) so no partial last sector. (3) NOT covered by the component: the app must supply the flash-write callback (esp_ble_ota_recv_fw_data_callback) using esp_ota_begin/write/end (signature enforced by esp_ota_end, same trust as WiFi OTA), then set boot partition and restart; plus NimBLE init + advertising and CONFIG_ESP_COEX_SW_COEXIST_ENABLE=y, and a larger CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE (component README). (4) Host BLE central: WSL2 has no Bluetooth; the Windows laptop has a working BLE stack but Windows Python has no bleak (needs pip install into a venv). Client to be host/labflash/idf_ble_ota.py per PLAN 7.2, run natively on Windows via powershell.exe. (5) AC design: AC1 v2->v1 over BLE with console+/version evidence; AC2 WiFi stays connected -- poll /version SPARINGLY (polling during a TLS-heavy transfer starved the board once, see BL-026) and confirm from the console that no WiFi disconnect event occurs; AC3 abort the transfer mid-way, then require console evidence that the partial image was discarded and /version still shows the old image, then a clean full OTA still works.] [PROGRESS 2026-09-21 (2) -- firmware and host client BUILT, NOTHING FLASHED, NO ACS CLAIMED. Firmware (commit dbe6a7c): esp_idf/main/app_ble_ota.[ch] = flash write into the passive slot via esp_ota_*, signature enforced by esp_ota_end (same trust as WiFi OTA), boot slot changed only after verification, GAP-disconnect listener discards a half-received image, plus the app-owned notify_sem mutex the component links against (link failed 'undefined reference to notify_sem' until defined). sdkconfig.defaults: NimBLE peripheral, 1 connection, SW coexistence, host stack 8192. v1 and v2 compile with 0 warnings (+131 KB, 72% of the slot free) and verify signed. Trap found: an existing build*/sdkconfig overrides sdkconfig.defaults, so the BLE options were silently ignored until the sdkconfig was regenerated; verify options in <dir>/sdkconfig after building. Host (commit ab048a2): host/labflash/idf_ble_ota.py, 15 pytest tests on the wire protocol (CRC16-XMODEM check 0x31C3, START/STOP frames, ACK parsing, sector framing incl. the min-MTU last-packet case); full host suite 19 passed under the project venv. Windows central: isolated venv .venv_win_ble with bleak 3.0.2 + pyserial 3.5 (owner-approved); a 5 s scan sees 19 devices. REMAINING: flash BLE v1 (needs owner go-ahead), scan for the board, AC1 v1->v2->v1 over BLE, AC2 WiFi stays connected (sparse /version polling + console), AC3 interrupted transfer discarded. Untested on target: heap with WiFi+TLS+NimBLE, host-task stack, advertised UUID/name, Windows MTU, first-sector ACK latency.] [UPDATE 2026-09-21 (3) -- ALL 3 ACs PASS with live on-target console evidence (scripts/evidence/bl027_ble_ota_acceptance.md); supersedes the earlier 'nothing flashed' notes. AC1 v2->v1 over BLE (and v1->v2): console 'BLE OTA started ... verification successful! Rebooting', booted from the new slot, /version confirmed=True. AC2 WiFi stays connected: 24/24 sparse /version samples OK during a 116 s BLE transfer, 0 WiFi disconnect events in the console. AC3 interrupted transfer: link dropped at 100/305 sectors -> 'BLE OTA aborted (BLE disconnected) after 409600 bytes; partial image discarded', no reboot, /version unchanged, and a full transfer right after it succeeded. Extra: a foreign-key-signed image is refused over BLE ('Secure boot signature verification failed', no reboot). FAILURE FOUND AND FIXED FIRST: the first BLE build boot-looped the board ('BLE_INIT: hci inits failed' then abort) because ble_ota calls esp_nimble_init() (host only) so the app must run esp_bt_controller_init/enable itself, and because I had made the optional BLE start fatal via ESP_ERROR_CHECK (which also disabled the WiFi OTA recovery path); fixed in commit b2f4034 (controller bring-up + non-fatal start). Board recovered by USB flash. Central: bleak 3.0.2 in an isolated Windows venv (owner-approved); BLE address = base MAC + 2 (E0:72:A1:AA:23:92), client cross-checks the first 5 octets. Board left on v1 1.0.0 slot 0 confirmed. Not covered: radio-level loss mid-transfer; only 4096-aligned images; ~11 KB/s (~2 min per image).] [REPLAN 2026-09-21: its dependencies BL-005/BL-014 were split by board; the IDF parts are done, so nothing holds this ticket any more. Acceptance evidence is listed above.]
 
 **Acceptance criteria**
-- [ ] v2 → v1 over BLE
-- [ ] WiFi stays connected during BLE OTA
-- [ ] Interrupted transfer → old image still running
+- [x] v2 → v1 over BLE
+- [x] WiFi stays connected during BLE OTA
+- [x] Interrupted transfer → old image still running
 
 </details>
 
-<details><summary>🟥 <b>BL-028</b> — IDF phase acceptance run</summary>
+<details><summary>✅ <b>BL-028</b> — IDF phase acceptance run</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** idf  
+- **Tracks:** IDF ✅ done  
 - **Depends on:** BL-022, BL-026, BL-027  
 - **Plan:** §4.2, §5, §6, §7.2, §8 P1
 
-Run all P1 acceptance checks. [RESULT 2026-09-21 -- ALL 6 PLAN P1 CHECKBOXES PASS on the FINAL P1 firmware (WiFi+HTTPS OTA+BLE OTA+LABID+colour LED), evidence in scripts/evidence/bl028_idf_phase_acceptance.md, PLAN 8 P1 boxes ticked. (1) v1 1.00 Hz; ANNOUNCE ~1003 ms, ID?/VER?/STATE? max 5.6 ms, 4 garbage frames -> ERR, no reset. (2) WiFi OTA v1->v2: LABID VER? app=2.0.0 slot=1 confirmed=1, 4.10 Hz. (3) BLE OTA v2->v1: VER? app=1.0.0 slot=0 confirmed=1, 1.00 Hz. (4) hang: full console (task WDT panic at 5138 ms, then 'Loaded app ... 0x420000' = previous slot), back on v2 in 17 s with no manual reset; no_confirm: still confirmed=false after 12 s, after a hardware RST the board reports 2.0.0 slot 1 confirmed -- proven by state, NOT by a bootloader log line (a hardware RST drops the USB port for ~600 ms so the capture missed the bootloader). (5) bad_sig: foreign-key image refused over WiFi and BLE with console evidence, no reboot. (6) efuse summary identical to the pre-project backup, checked mid-run and LAST (SHA-256 match, 187 lines). Tooling fixed: labid_check assumed the port drops on reset, but a software reset (OTA reboot, WDT) does not drop the ESP32-S3 USB port; it now waits for the boot ANNOUNCE (--wait). Added labid_query.py. Board left on v1 1.0.0 slot 0 confirmed.]
+Run all P1 acceptance checks. [RESULT 2026-09-21 -- ALL 6 PLAN P1 CHECKBOXES PASS on the FINAL P1 firmware (WiFi+HTTPS OTA+BLE OTA+LABID+colour LED), evidence in scripts/evidence/bl028_idf_phase_acceptance.md, PLAN 8 P1 boxes ticked. (1) v1 1.00 Hz; ANNOUNCE ~1003 ms, ID?/VER?/STATE? max 5.6 ms, 4 garbage frames -> ERR, no reset. (2) WiFi OTA v1->v2: LABID VER? app=2.0.0 slot=1 confirmed=1, 4.10 Hz. (3) BLE OTA v2->v1: VER? app=1.0.0 slot=0 confirmed=1, 1.00 Hz. (4) hang: full console (task WDT panic at 5138 ms, then 'Loaded app ... 0x420000' = previous slot), back on v2 in 17 s with no manual reset; no_confirm: still confirmed=false after 12 s, after a hardware RST the board reports 2.0.0 slot 1 confirmed -- proven by state, NOT by a bootloader log line (a hardware RST drops the USB port for ~600 ms so the capture missed the bootloader). (5) bad_sig: foreign-key image refused over WiFi and BLE with console evidence, no reboot. (6) efuse summary identical to the pre-project backup, checked mid-run and LAST (SHA-256 match, 187 lines). Tooling fixed: labid_check assumed the port drops on reset, but a software reset (OTA reboot, WDT) does not drop the ESP32-S3 USB port; it now waits for the boot ANNOUNCE (--wait). Added labid_query.py. Board left on v1 1.0.0 slot 0 confirmed.] [REPLAN 2026-09-21: its dependencies BL-005/BL-014 were split by board; the IDF parts are done, so nothing holds this ticket any more. Acceptance evidence is listed above.]
 
 **Acceptance criteria**
-- [ ] All P1 checkboxes ticked with logs in the PR
+- [x] All P1 checkboxes ticked with logs in the PR
 
 </details>
 
@@ -434,19 +434,56 @@ Run all P1 acceptance checks. [RESULT 2026-09-21 -- ALL 6 PLAN P1 CHECKBOXES PAS
 
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
+| ⬜ | BL-005b | Detect board hardware → rig.yaml (Zephyr board) | S | zephyr | BL-003 |  |
+| ⬜ | BL-014b | Packaging: Zephyr module (native_sim) | S | common, zephyr | BL-010 |  |
 | ⬜ | BL-030 | Zephyr west + sysbuild MCUboot + swap-with-revert check | M | zephyr | BL-002, BL-006 |  |
-| ⬜ | BL-031 | Zephyr blink app + toggles + 5 variants + watchdog | M | zephyr | BL-030, BL-005 |  |
-| ⬜ | BL-032 | Zephyr LABID port on console | S | zephyr | BL-031, BL-014 |  |
+| ⬜ | BL-031 | Zephyr blink app + toggles + 5 variants + watchdog | M | zephyr | BL-030, BL-005b |  |
+| ⬜ | BL-032 | Zephyr LABID port on console | S | zephyr | BL-031, BL-014b |  |
 | ⬜ | BL-033 | Zephyr self-test + confirm + twister tests | S | zephyr | BL-031 |  |
 | ⬜ | BL-034 | Zephyr mcumgr SMP over BLE | M | zephyr | BL-033 |  |
 | ⬜ | BL-035 | Zephyr WiFi + SMP over UDP (single build with BT) | L | zephyr | BL-034 |  |
 | ⬜ | BL-036 | Zephyr phase acceptance run | S | zephyr | BL-032, BL-035 |  |
 
+<details><summary>⬜ <b>BL-005b</b> — Detect board hardware → rig.yaml (Zephyr board)</summary>
+
+- **Size:** S (≤ 0.5 day)  
+- **Boards:** zephyr  
+- **Tracks:** Zephyr ⬜ todo  
+- **Depends on:** BL-003  
+- **Cross-track gate (Zephyr):** waits for BL-063b  
+- **Plan:** §4.1, §5, §6, §7.1, §8 P2
+
+Split from BL-005 on 2026-09-21. REMAINING: the zephyr board's led_gpio (needs a blink app on that board, i.e. writing its flash; backup backups/esp_ACA7042C3B04.bin + .sha256; identity AC:A7:04:2C:3B:04) and the run-test of its PSRAM mode (octal is INFERRED from eFuses identical to the idf board's). Gated behind the IDF track (BL-063b); an IDF blink build is enough, no Zephyr toolchain needed.
+
+**Acceptance criteria**
+- [ ] host/config/rig.yaml filled for the zephyr board
+- [ ] LED GPIO confirmed by a quick blink (zephyr board)
+
+</details>
+
+<details><summary>⬜ <b>BL-014b</b> — Packaging: Zephyr module (native_sim)</summary>
+
+- **Size:** S (≤ 0.5 day)  
+- **Boards:** common, zephyr  
+- **Tracks:** Zephyr ⬜ todo  
+- **Depends on:** BL-010  
+- **Cross-track gate (Zephyr):** waits for BL-063b  
+- **Plan:** §4.1, §5, §6, §7.1, §8 P2
+
+Split from BL-014 on 2026-09-21. REMAINING: build the labid Zephyr module for native_sim. Also verifies the Zephyr branch of common/labid/CMakeLists.txt, which gained labid_dispatch.c (BL-022) and has never been built. Zephyr hold applies; gated behind the IDF track (BL-063b).
+
+**Acceptance criteria**
+- [ ] Builds for Zephyr native_sim
+
+</details>
+
 <details><summary>⬜ <b>BL-030</b> — Zephyr west + sysbuild MCUboot + swap-with-revert check</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** zephyr  
+- **Tracks:** Zephyr ⬜ todo  
 - **Depends on:** BL-002, BL-006  
+- **Cross-track gate (Zephyr):** waits for BL-063b  
 - **Plan:** §4.1, §5, §6, §7.1, §8 P2
 
 FIRST ticket for Zephyr. Verify revert-capable swap mode on ESP32-S3.
@@ -462,7 +499,8 @@ FIRST ticket for Zephyr. Verify revert-capable swap mode on ESP32-S3.
 
 - **Size:** M (1–2 days)  
 - **Boards:** zephyr  
-- **Depends on:** BL-030, BL-005  
+- **Tracks:** Zephyr ⬜ todo  
+- **Depends on:** BL-030, BL-005b  
 - **Plan:** §4.1, §5, §6, §7.1, §8 P2
 
 LED strip driver (verify WS2812 backend), toggles, variants, hardware watchdog. [NOTE 2026-09-21: when the Zephyr path resumes, implement the same LED color scheme as PLAN 5.3.1 (amber pending, green v1, blue v2, red hang, magenta bad_sig).]
@@ -479,7 +517,8 @@ LED strip driver (verify WS2812 backend), toggles, variants, hardware watchdog. 
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** zephyr  
-- **Depends on:** BL-031, BL-014  
+- **Tracks:** Zephyr ⬜ todo  
+- **Depends on:** BL-031, BL-014b  
 - **Plan:** §4.1, §5, §6, §7.1, §8 P2
 
 Console device (USB-Serial-JTAG), irq RX, hwinfo UID, boot API, shell off.
@@ -495,6 +534,7 @@ Console device (USB-Serial-JTAG), irq RX, hwinfo UID, boot API, shell off.
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** zephyr  
+- **Tracks:** Zephyr ⬜ todo  
 - **Depends on:** BL-031  
 - **Plan:** §4.1, §5, §6, §7.1, §8 P2
 
@@ -510,6 +550,7 @@ boot_write_img_confirmed() after 5 s; native_sim tests with mocked boot API.
 
 - **Size:** M (1–2 days)  
 - **Boards:** zephyr  
+- **Tracks:** Zephyr ⬜ todo  
 - **Depends on:** BL-033  
 - **Plan:** §4.1, §5, §6, §7.1, §8 P2
 
@@ -526,6 +567,7 @@ MCUMGR image + os groups over BT.
 
 - **Size:** L (3–5 days)  
 - **Boards:** zephyr  
+- **Tracks:** Zephyr ⬜ todo  
 - **Depends on:** BL-034  
 - **Plan:** §4.1, §5, §6, §7.1, §8 P2
 
@@ -541,6 +583,7 @@ WiFi STA, DHCP, UDP SMP port 1337.
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** zephyr  
+- **Tracks:** Zephyr ⬜ todo  
 - **Depends on:** BL-032, BL-035  
 - **Plan:** §4.1, §5, §6, §7.1, §8 P2
 
@@ -556,8 +599,8 @@ Run all P2 acceptance checks.
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
 | ✅ | BL-040 | labflash core: config, UID resolution, re-enumeration wait | M | host | BL-013, BL-007 |  |
-| 🟥 | BL-041 | identify, info, status, measure | S | host | BL-040, BL-020, BL-022 |  |
-| ⬜ | BL-042 | flash, recover, provision (USB) | S | host | BL-040, BL-020, BL-021 |  |
+| ⬜ | BL-041 | identify, info, status, measure | S | host | BL-040, BL-020, BL-022, BL-031, BL-032 |  |
+| ⬜ | BL-042 | flash, recover, provision (USB) | S | host | BL-040, BL-020, BL-021, BL-030, BL-031 |  |
 | ⬜ | BL-043 | update idf --transport ble|wifi | M | host, idf | BL-040, BL-028 |  |
 | ⬜ | BL-044 | update zephyr --transport ble|udp | M | host, zephyr | BL-040, BL-036 |  |
 | ⬜ | BL-045 | build + sign orchestration | S | host | BL-040, BL-020, BL-021, BL-030, BL-031 |  |
@@ -578,18 +621,23 @@ rig.yaml, resolve ports by UID, wait ≤ 5 s after resets, --json. [DONE 2026-09
 
 </details>
 
-<details><summary>🟥 <b>BL-041</b> — identify, info, status, measure</summary>
+<details><summary>⬜ <b>BL-041</b> — identify, info, status, measure</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
-- **Depends on:** BL-040, BL-020, BL-022  
+- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
+- **Depends on:** BL-040, BL-020, BL-022, BL-031, BL-032  
 - **Plan:** §8 P3
 
 LABID discovery, cross-check, toggle-based Hz. Deps corrected 2026-09-20: AC needs real LABID+blink firmware, not just host code -- BL-020/BL-022 (IDF blink+LABID) are the minimum for IDF-side real verification. Full closure (both boards) additionally needs BL-031/BL-032 (Zephyr blink+LABID), which stay on hold until the Zephyr path resumes; this ticket may be closable IDF-only in the meantime with Zephyr verification deferred. [BLOCKED 2026-09-20: host/labflash/identify.py implemented (wait_for_announce, query, identify, get_version, get_state, cross_check_identity, measure_toggles, SerialLineTransport) per PLAN §7.3's exact frame protocol. Host-side logic verified via a mocked LABID transport -- identify() correctly maps both boards' ID frames to rig.yaml by uid/mac and correctly rejects a mismatched cross-check; measure_toggles() correctly computes a toggle delta within ± 1 of a simulated 1Hz blinker's expected count over a 5s window. Cannot close -- AC requires live board evidence from BL-020+BL-022 (IDF blink+LABID firmware), which don't exist yet; SerialLineTransport (the real, non-mocked path) is written but untested against real hardware for the same reason. Will re-verify against real hardware once that firmware is flashed.]
 
 **Acceptance criteria**
-- [ ] identify maps both boards
-- [ ] measure within ± 1 toggle over 5 s
+*IDF scope*
+- [ ] identify maps the idf board (LABID uid matches rig.yaml)
+- [ ] measure within ± 1 toggle over 5 s on the idf board
+*Zephyr scope*
+- [ ] identify maps the zephyr board
+- [ ] measure within ± 1 toggle over 5 s on the zephyr board
 
 </details>
 
@@ -597,13 +645,18 @@ LABID discovery, cross-check, toggle-based Hz. Deps corrected 2026-09-20: AC nee
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
-- **Depends on:** BL-040, BL-020, BL-021  
+- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
+- **Depends on:** BL-040, BL-020, BL-021, BL-030, BL-031  
 - **Plan:** §8 P3
 
 esptool / west / idf.py wrappers with identity check before writing. Deps corrected 2026-09-20: "Factory flash both boards" needs an actual signed image to flash -- BL-020/BL-021 (IDF blink app + partitions/signing) are the minimum for IDF-side real verification. Full closure (both boards) additionally needs BL-030/BL-031 (Zephyr bootloader+blink), which stay on hold until the Zephyr path resumes.
 
 **Acceptance criteria**
-- [ ] Factory flash both boards
+*IDF scope*
+- [ ] Factory flash the idf board
+- [ ] Refuses to flash if board= mismatches
+*Zephyr scope*
+- [ ] Factory flash the zephyr board
 - [ ] Refuses to flash if board= mismatches
 
 </details>
@@ -612,6 +665,7 @@ esptool / west / idf.py wrappers with identity check before writing. Deps correc
 
 - **Size:** M (1–2 days)  
 - **Boards:** host, idf  
+- **Tracks:** IDF ⬜ todo  
 - **Depends on:** BL-040, BL-028  
 - **Plan:** §8 P3
 
@@ -626,6 +680,7 @@ Python ble_ota client + HTTPS trigger + local HTTPS server.
 
 - **Size:** M (1–2 days)  
 - **Boards:** host, zephyr  
+- **Tracks:** Zephyr ⬜ todo  
 - **Depends on:** BL-040, BL-036  
 - **Plan:** §8 P3
 
@@ -640,13 +695,17 @@ SMP client over BLE and UDP.
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
+- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
 - **Depends on:** BL-040, BL-020, BL-021, BL-030, BL-031  
 - **Plan:** §8 P3
 
 labflash build <board|all> --variant. Deps corrected 2026-09-20: AC ("Builds all 10 images, 2 boards x 5 variants") explicitly requires both boards' app code and signing to exist -- BL-020/BL-021 (IDF) and BL-030/BL-031 (Zephyr), unlike BL-041/BL-042 this ticket cannot be partially satisfied IDF-only, so it stays effectively blocked until the Zephyr path resumes.
 
 **Acceptance criteria**
-- [ ] Builds all 10 images (2 boards × 5 variants)
+*IDF scope*
+- [ ] Builds all 5 IDF images (v1, v2, no_confirm, hang, bad_sig)
+*Zephyr scope*
+- [ ] Builds all 5 Zephyr images (v1, v2, no_confirm, hang, bad_sig)
 
 </details>
 
@@ -654,13 +713,18 @@ labflash build <board|all> --variant. Deps corrected 2026-09-20: AC ("Builds all
 
 - **Size:** M (1–2 days)  
 - **Boards:** host  
+- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
 - **Depends on:** BL-041, BL-042, BL-043, BL-044, BL-045  
 - **Plan:** §8 P3
 
 pytest with mocked BLE / serial / HTTP.
 
 **Acceptance criteria**
-- [ ] Line coverage ≥ 80 %
+*IDF scope*
+- [ ] Line coverage ≥ 80 % on the IDF-path modules
+- [ ] ruff + mypy clean
+*Zephyr scope*
+- [ ] Line coverage ≥ 80 % on the Zephyr-path modules
 - [ ] ruff + mypy clean
 
 </details>
@@ -676,19 +740,24 @@ pytest with mocked BLE / serial / HTTP.
 | ⬜ | BL-054 | (Stretch) HIL T17 power cut | M | zephyr, idf | BL-050 |  |
 | ⬜ | BL-055 | build.yml cloud CI | M | host | BL-028, BL-036 |  |
 | ⬜ | BL-056 | hil.yml self-hosted runner on RPi4 | M | host | BL-055, BL-051 |  |
+| ⬜ | BL-056a | IDF acceptance re-run on the RPi4 (OTA-programming host) | M | host, idf | BL-043, BL-056 |  |
 | ⬜ | BL-057 | Full HIL suite green 3× in a row | S | zephyr, idf | BL-051, BL-052, BL-053, BL-056 |  |
 
 <details><summary>⬜ <b>BL-050</b> — HIL framework: fixtures, markers, artifacts</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** host  
+- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
 - **Depends on:** BL-046  
 - **Plan:** §8 P4
 
 rig fixture, factory_reset, btmon capture, JUnit.
 
 **Acceptance criteria**
-- [ ] Dummy HIL test runs on both boards and restores v1
+*IDF scope*
+- [ ] Dummy HIL test runs on the idf board and restores v1
+*Zephyr scope*
+- [ ] Dummy HIL test runs on the zephyr board and restores v1
 
 </details>
 
@@ -696,13 +765,17 @@ rig fixture, factory_reset, btmon capture, JUnit.
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** zephyr, idf  
+- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
 - **Depends on:** BL-050  
 - **Plan:** §8 P4
 
 PLAN §8 P4 matrix.
 
 **Acceptance criteria**
-- [ ] Green on all board/transport combinations
+*IDF scope*
+- [ ] Green on the idf board for both transports (ble, wifi)
+*Zephyr scope*
+- [ ] Green on the zephyr board for both transports (ble, udp)
 
 </details>
 
@@ -710,13 +783,17 @@ PLAN §8 P4 matrix.
 
 - **Size:** M (1–2 days)  
 - **Boards:** zephyr, idf  
+- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
 - **Depends on:** BL-050  
 - **Plan:** §8 P4
 
 no_confirm, hang, bad_sig, corrupt, interrupted, token.
 
 **Acceptance criteria**
-- [ ] Green on all combinations
+*IDF scope*
+- [ ] Green on the idf board for every transport
+*Zephyr scope*
+- [ ] Green on the zephyr board for every transport
 
 </details>
 
@@ -724,13 +801,17 @@ no_confirm, hang, bad_sig, corrupt, interrupted, token.
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** zephyr, idf  
+- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
 - **Depends on:** BL-050  
 - **Plan:** §8 P4
 
 identify, UID stability, version consistency, ERR, heavy logging, 50 resets.
 
 **Acceptance criteria**
-- [ ] All green
+*IDF scope*
+- [ ] All green on the idf board
+*Zephyr scope*
+- [ ] All green on the zephyr board
 
 </details>
 
@@ -738,13 +819,17 @@ identify, UID stability, version consistency, ERR, heavy logging, 50 resets.
 
 - **Size:** M (1–2 days)  
 - **Boards:** zephyr, idf  
+- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
 - **Depends on:** BL-050  
 - **Plan:** §8 P4
 
 Needs per-port switchable hub.
 
 **Acceptance criteria**
-- [ ] Recovers every run, or skipped if no hub
+*IDF scope*
+- [ ] Recovers every run on the idf board, or skipped if no hub
+*Zephyr scope*
+- [ ] Recovers every run on the zephyr board, or skipped if no hub
 
 </details>
 
@@ -752,14 +837,19 @@ Needs per-port switchable hub.
 
 - **Size:** M (1–2 days)  
 - **Boards:** host  
+- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
 - **Depends on:** BL-028, BL-036  
 - **Plan:** §8 P4
 
 Builds, unit tests, fuzz smoke, forbidden-config grep, CI test keys.
 
 **Acceptance criteria**
-- [ ] Green on main
-- [ ] Signed artifacts uploaded
+*IDF scope*
+- [ ] Green on main for the IDF build
+- [ ] Signed IDF artifacts uploaded
+*Zephyr scope*
+- [ ] Green on main for the Zephyr build
+- [ ] Signed Zephyr artifacts uploaded
 
 </details>
 
@@ -767,14 +857,35 @@ Builds, unit tests, fuzz smoke, forbidden-config grep, CI test keys.
 
 - **Size:** M (1–2 days)  
 - **Boards:** host  
+- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
 - **Depends on:** BL-055, BL-051  
 - **Plan:** §8 P4
 
 Private repo, dedicated runner user, concurrency: hil.
 
 **Acceptance criteria**
-- [ ] HIL job runs on PR
+*IDF scope*
+- [ ] HIL job runs on PR for the idf board
 - [ ] Runner has no sudo and no access to keys/
+*Zephyr scope*
+- [ ] HIL job runs on PR for the zephyr board
+
+</details>
+
+<details><summary>⬜ <b>BL-056a</b> — IDF acceptance re-run on the RPi4 (OTA-programming host)</summary>
+
+- **Size:** M (1–2 days)  
+- **Boards:** host, idf  
+- **Tracks:** IDF ⬜ todo  
+- **Depends on:** BL-043, BL-056  
+- **Plan:** §8 P4
+
+Owner decision 2026-09-21: development stays on the current machine (WSL2 + Windows-native tools); the RPi4 has limitations and is used for OTA programming. When the IDF track is done, re-run the IDF acceptance from the RPi4. Builds stay on the development machine / CI; the RPi4 programs and verifies the boards.
+
+**Acceptance criteria**
+- [ ] labflash update idf --transport ble and wifi both succeed from the RPi4
+- [ ] LABID VER? and identity verified from the RPi4 after each update
+- [ ] RPi4 limitations documented (what runs there, what stays on the dev machine or CI)
 
 </details>
 
@@ -782,14 +893,18 @@ Private repo, dedicated runner user, concurrency: hil.
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** zephyr, idf  
+- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
 - **Depends on:** BL-051, BL-052, BL-053, BL-056  
 - **Plan:** §8 P4
 
 Stability gate.
 
 **Acceptance criteria**
-- [ ] 3 consecutive green runs
+*IDF scope*
+- [ ] 3 consecutive green runs on the idf board
 - [ ] Runtime documented
+*Zephyr scope*
+- [ ] 3 consecutive green runs on the zephyr board
 
 </details>
 
@@ -801,18 +916,25 @@ Stability gate.
 | ⬜ | BL-061 | README quick start | S | host | BL-057 |  |
 | ⬜ | BL-062 | Recovery runbook + adding-a-board guide | S | host | BL-057 |  |
 | ⬜ | BL-063 | Final PLAN.md update | S | host | BL-060 |  |
+| ⬜ | BL-063a | IDF lessons learned (retrospective) | S | host | BL-060, BL-061, BL-062, BL-063, BL-056a |  |
+| ⬜ | BL-063b | HTML presentation of the IDF track | M | host | BL-063a |  |
 
 <details><summary>⬜ <b>BL-060</b> — Overnight soak ×100</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** zephyr, idf  
+- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
 - **Depends on:** BL-057  
 - **Plan:** §8 P5
 
 T16 repeated per board/transport.
 
 **Acceptance criteria**
-- [ ] Pass rate ≥ 99 %
+*IDF scope*
+- [ ] Pass rate ≥ 99 % on the idf board (ble + wifi)
+- [ ] Root cause logged for every failure
+*Zephyr scope*
+- [ ] Pass rate ≥ 99 % on the zephyr board (ble + udp)
 - [ ] Root cause logged for every failure
 
 </details>
@@ -821,13 +943,17 @@ T16 repeated per board/transport.
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
+- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
 - **Depends on:** BL-057  
 - **Plan:** §8 P5
 
 < 5 min from clone to first OTA.
 
 **Acceptance criteria**
-- [ ] Fresh clone reaches T02 green following README only
+*IDF scope*
+- [ ] Fresh clone reaches T02 green on the idf board following README only
+*Zephyr scope*
+- [ ] Fresh clone reaches T02 green on the zephyr board following README only
 
 </details>
 
@@ -835,13 +961,17 @@ T16 repeated per board/transport.
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
+- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
 - **Depends on:** BL-057  
 - **Plan:** §8 P5
 
 docs/recovery.md, docs/adding-a-board.md.
 
 **Acceptance criteria**
-- [ ] Recovery tested once per board from the docs
+*IDF scope*
+- [ ] Recovery tested once for the idf board from the docs
+*Zephyr scope*
+- [ ] Recovery tested once for the zephyr board from the docs
 
 </details>
 
@@ -849,13 +979,51 @@ docs/recovery.md, docs/adding-a-board.md.
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
+- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
 - **Depends on:** BL-060  
 - **Plan:** §8 P5
 
 Pinned versions, Zephyr partitions, deviations.
 
 **Acceptance criteria**
-- [ ] PLAN.md matches the delivered repo
+*IDF scope*
+- [ ] PLAN.md matches the delivered IDF work
+*Zephyr scope*
+- [ ] PLAN.md matches the delivered Zephyr work
+
+</details>
+
+<details><summary>⬜ <b>BL-063a</b> — IDF lessons learned (retrospective)</summary>
+
+- **Size:** S (≤ 0.5 day)  
+- **Boards:** host  
+- **Tracks:** IDF ⬜ todo  
+- **Depends on:** BL-060, BL-061, BL-062, BL-063, BL-056a  
+- **Plan:** §8 P5
+
+Retrospective after the IDF board is complete, BEFORE any Zephyr work starts, so what the IDF track taught shapes the Zephyr plan (PLAN R13/R14/R15, USB reset behaviour, vacuous evidence, optional subsystems, ...).
+
+**Acceptance criteria**
+- [ ] docs/LESSONS_LEARNED.md covers every risk R1–R15 outcome and every trap found during the IDF track
+- [ ] Every lesson has an action: a plan change, a tool change or a checklist item
+- [ ] Owner review recorded
+
+</details>
+
+<details><summary>⬜ <b>BL-063b</b> — HTML presentation of the IDF track</summary>
+
+- **Size:** M (1–2 days)  
+- **Boards:** host  
+- **Tracks:** IDF ⬜ todo  
+- **Depends on:** BL-063a  
+- **Plan:** §8 P5
+
+Owner deliverable: a presentation of the finished IDF track. Completing it is what releases the Zephyr track (explicit gate BL-063b).
+
+**Acceptance criteria**
+- [ ] One self-contained HTML deck: architecture, flows, evidence, lessons learned, Gantt
+- [ ] Every claim links to an evidence file in the repo
+- [ ] Opens and renders offline in a browser
 
 </details>
 
@@ -870,29 +1038,31 @@ flowchart TB
         BL002["BL-002"]:::done
         BL003["BL-003"]:::done
         BL004["BL-004"]:::done
-        BL005["BL-005"]:::blocked
+        BL005a["BL-005a"]:::done
         BL006["BL-006"]:::done
         BL007["BL-007"]:::done
+        BL014a["BL-014a"]:::done
     end
     subgraph EL_g["PL LABID common library"]
         BL010["BL-010"]:::done
         BL011["BL-011"]:::done
         BL012["BL-012"]:::done
         BL013["BL-013"]:::done
-        BL014["BL-014"]:::blocked
     end
     subgraph E1_g["P1 ESP32-S3 #2 — ESP-IDF"]
-        BL020["BL-020"]:::blocked
-        BL021["BL-021"]:::blocked
-        BL022["BL-022"]:::blocked
-        BL023["BL-023"]:::blocked
-        BL024["BL-024"]:::blocked
-        BL025["BL-025"]:::blocked
-        BL026["BL-026"]:::blocked
-        BL027["BL-027"]:::blocked
-        BL028["BL-028"]:::blocked
+        BL020["BL-020"]:::done
+        BL021["BL-021"]:::done
+        BL022["BL-022"]:::done
+        BL023["BL-023"]:::done
+        BL024["BL-024"]:::done
+        BL025["BL-025"]:::done
+        BL026["BL-026"]:::done
+        BL027["BL-027"]:::done
+        BL028["BL-028"]:::done
     end
     subgraph E2_g["P2 ESP32-S3 #1 — Zephyr"]
+        BL005b["BL-005b"]:::todo
+        BL014b["BL-014b"]:::todo
         BL030["BL-030"]:::todo
         BL031["BL-031"]:::todo
         BL032["BL-032"]:::todo
@@ -903,7 +1073,7 @@ flowchart TB
     end
     subgraph E3_g["P3 labflash CLI"]
         BL040["BL-040"]:::done
-        BL041["BL-041"]:::blocked
+        BL041["BL-041"]:::todo
         BL042["BL-042"]:::todo
         BL043["BL-043"]:::todo
         BL044["BL-044"]:::todo
@@ -918,6 +1088,7 @@ flowchart TB
         BL054["BL-054"]:::todo
         BL055["BL-055"]:::todo
         BL056["BL-056"]:::todo
+        BL056a["BL-056a"]:::todo
         BL057["BL-057"]:::todo
     end
     subgraph E5_g["P5 Soak, docs, handover"]
@@ -925,20 +1096,24 @@ flowchart TB
         BL061["BL-061"]:::todo
         BL062["BL-062"]:::todo
         BL063["BL-063"]:::todo
+        BL063a["BL-063a"]:::todo
+        BL063b["BL-063b"]:::todo
     end
     BL001 --> BL002
     BL002 --> BL003
     BL003 --> BL004
-    BL003 --> BL005
+    BL003 --> BL005a
+    BL003 --> BL005b
     BL002 --> BL006
     BL003 --> BL007
     BL001 --> BL010
     BL010 --> BL011
     BL010 --> BL012
     BL011 --> BL013
-    BL010 --> BL014
-    BL005 --> BL020
-    BL014 --> BL020
+    BL010 --> BL014a
+    BL010 --> BL014b
+    BL005a --> BL020
+    BL014a --> BL020
     BL020 --> BL021
     BL006 --> BL021
     BL020 --> BL022
@@ -955,9 +1130,9 @@ flowchart TB
     BL002 --> BL030
     BL006 --> BL030
     BL030 --> BL031
-    BL005 --> BL031
+    BL005b --> BL031
     BL031 --> BL032
-    BL014 --> BL032
+    BL014b --> BL032
     BL031 --> BL033
     BL033 --> BL034
     BL034 --> BL035
@@ -968,9 +1143,13 @@ flowchart TB
     BL040 --> BL041
     BL020 --> BL041
     BL022 --> BL041
+    BL031 --> BL041
+    BL032 --> BL041
     BL040 --> BL042
     BL020 --> BL042
     BL021 --> BL042
+    BL030 --> BL042
+    BL031 --> BL042
     BL040 --> BL043
     BL028 --> BL043
     BL040 --> BL044
@@ -994,6 +1173,8 @@ flowchart TB
     BL036 --> BL055
     BL055 --> BL056
     BL051 --> BL056
+    BL043 --> BL056a
+    BL056 --> BL056a
     BL051 --> BL057
     BL052 --> BL057
     BL053 --> BL057
@@ -1002,6 +1183,12 @@ flowchart TB
     BL057 --> BL061
     BL057 --> BL062
     BL060 --> BL063
+    BL060 --> BL063a
+    BL061 --> BL063a
+    BL062 --> BL063a
+    BL063 --> BL063a
+    BL056a --> BL063a
+    BL063a --> BL063b
     classDef todo fill:#eeeeee,stroke:#999,color:#333
     classDef doing fill:#cfe3ff,stroke:#2f6fdb,color:#123
     classDef blocked fill:#ffd6d6,stroke:#c62828,color:#400

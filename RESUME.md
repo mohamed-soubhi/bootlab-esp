@@ -3,7 +3,29 @@
 Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
 (`C:\MSA\embedded-OS\bootlab-esp`) is a scratch dir; never edit or push from it.
 
-## Ticket state (from tickets.json)
+## REPLAN 2026-09-21 — READ THIS FIRST (supersedes the ticket list below)
+Owner decisions, recorded in PLAN §8.0: finish the **IDF board completely** (incl. overnight soak, full docs, HTML
+presentation), then a **lessons-learned retrospective**, and only then **Zephyr**. `tickets_tool.py` is authoritative;
+the per-ticket bullets below are history.
+- **Per-board tickets:** tickets carry `tracks` (idf/zephyr) with their own status and ACs. `python3 tickets/tickets_tool.py set <ID> <status> --track idf|zephyr`
+  (`--track` is required on a two-board ticket). A dependency applies to the same board only. `next` lists ready work per board;
+  `gantt` regenerates `tickets/GANTT.md` (one Gantt per board, root blockers, waiting-on). Migration: `tickets/migrations/2026-09-21_replan_tracks.py`.
+- **Suffix ids, numbers kept:** BL-005a/b, BL-014a/b (a = IDF, done; b = Zephyr, gated); new BL-056a (IDF re-run on the RPi4),
+  BL-063a (lessons learned), BL-063b (HTML presentation). BL-020…BL-028 are now **done**.
+- **Gate:** all Zephyr work (BL-030, BL-005b, BL-014b and everything behind them) waits for **BL-063b** via `deps_by_track`.
+  The tool refuses to start a Zephyr ticket early. Do not lift this without the owner.
+- **Ready now (all IDF):** BL-041 (identify/measure), BL-042 (flash/recover/provision, identity check before writing),
+  BL-043 (update idf --transport ble|wifi: assemble `idf_ble_ota.py` + `ota_check.py`), BL-045 (build+sign orchestration for the 5 IDF
+  variants; encode PLAN R15), BL-055 (cloud CI, IDF build).
+- **Hosts:** develop here (WSL2 + Windows-native tools, PLAN R14). The **RPi4 has limitations and is the OTA-programming host**: BL-056a re-runs
+  the IDF acceptance from it at the end. Builds stay on the dev machine / CI.
+- **Lessons so far (feed BL-063a):** R13 USB serial descriptor; R14 usbipd resets the board on port open; R15 shared sdkconfig across `-B` dirs;
+  an existing `build*/sdkconfig` overrides `sdkconfig.defaults`; optional subsystems must never be fatal (BLE boot loop);
+  ble_ota needs the app to start the BT controller and define `notify_sem`; a SOFTWARE reset keeps the USB port, a hardware RST drops it
+  (~600 ms, bootloader log lost); server-side "bytes served" is not "bytes received" (RST truncation); polling `/version` during TLS transfers
+  starves the board; evidence that cannot fail is vacuous; AP_3v3 PSRAM is octal on the ESP32-S3 (test it); `ls` is aliased to eza here.
+
+## Ticket state (from tickets.json) — PRE-REPLAN, kept for history
 - DONE: BL-001, 002, 003, 004, 006, 007, 010, 011, 012, 013, 040
 - BLOCKED:
   - BL-020: all 4 ACs PASS with evidence (2026-09-21); blocked only on unfinished deps BL-005, BL-014.
