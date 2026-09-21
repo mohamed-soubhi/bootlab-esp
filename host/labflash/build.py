@@ -20,8 +20,8 @@ import os
 import shutil
 import subprocess
 import sys
+from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Callable, Mapping, Sequence
 
 DEFAULT_REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -337,8 +337,8 @@ def build_board(
 
     if board == "all":
         # Build IDF, report Zephyr gated
-        res = build_idf_all(repo_root=repo_root, clean=clean, runner=runner)
+        all_res = build_idf_all(repo_root=repo_root, clean=clean, runner=runner)
         print("[NOTE] Zephyr track is gated behind BL-063b; only IDF variants built.", file=sys.stderr)
-        return res
+        return all_res
 
     raise BuildError(f"Unknown board '{board}'. Choices: idf, zephyr, all")

@@ -11,8 +11,8 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-import serial.tools.list_ports as list_ports
 import yaml
+from serial.tools import list_ports
 
 DEFAULT_RIG_PATH = Path(__file__).resolve().parents[1] / "config" / "rig.yaml"
 DEFAULT_WAIT_S = 5.0

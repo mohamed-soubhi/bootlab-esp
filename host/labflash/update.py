@@ -14,8 +14,8 @@ HTTPS /version) are injected, so this logic is tested without hardware. Order of
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
 
 SECTOR_SIZE = 4096
 ESP_IMAGE_MAGIC = 0xE9
@@ -100,7 +100,7 @@ def _poll(snapshot_fn, wanted: Callable[[Snapshot], bool], timeout_s: float, pol
     for _ in range(max(1, int(timeout_s / poll_s) + 1)):
         try:
             last = snapshot_fn()
-        except Exception:   # noqa: BLE001 - the board is mid-reboot; keep polling
+        except Exception:   # noqa: S110, BLE001 - the board is mid-reboot; keep polling
             pass
         else:
             if wanted(last):

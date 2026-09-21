@@ -1,6 +1,5 @@
 """Unit tests for host/labflash/identify.py and CLI handlers (BL-041)."""
 import pytest
-
 from labflash import identify as idf
 from labflash.labid import build_frame
 
@@ -107,3 +106,42 @@ def test_measure(monkeypatch):
     assert delta == 10
     assert hz == 1.0
     assert ok is True
+
+
+def test_serial_line_transport():
+    from unittest.mock import MagicMock, patch
+    mock_ser = MagicMock()
+    mock_ser.read.return_value = b"X"
+    with patch("serial.Serial", return_value=mock_ser):
+        trans = idf.SerialLineTransport("/dev/ttyACM0")
+        assert trans.read1() == b"X"
+        trans.write(b"ABC")
+        mock_ser.write.assert_called_once_with(b"ABC")
+        trans.close()
+        mock_ser.close.assert_called_once()
+
+
+def test_wait_for_announce():
+    t = MockTransport()
+    t.read_buf.extend(build_frame("ANNOUNCE", {"uid": "1234", "board": "idf"}).encode())
+    ann = idf.wait_for_announce(t, timeout=0.1)
+    assert ann["uid"] == "1234"
+
+
+def test_wait_for_announce_timeout():
+    t = MockTransport()
+    with pytest.raises(idf.LabidError, match="no ANNOUNCE frame"):
+        idf.wait_for_announce(t, timeout=0.05)
+
+
+def test_query_error_response():
+    t = MockTransport({"BAD?": ("ERR", {"reason": "bad_command"})})
+    with pytest.raises(idf.LabidError, match="device returned ERR"):
+        idf.query(t, "BAD?", timeout=0.1)
+
+
+def test_query_timeout():
+    t = MockTransport()
+    with pytest.raises(idf.LabidError, match="no response"):
+        idf.query(t, "NOOP?", timeout=0.05)
+

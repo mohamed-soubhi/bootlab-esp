@@ -8,7 +8,6 @@ The expected byte layouts come from the component source
   ACK    = 20 bytes: <sector LE16> <status 0=ok 2=retry> 00 <expected sector LE16> .. crc
 """
 import pytest
-
 from labflash import idf_ble_ota as ota
 
 SECTOR = ota.SECTOR_SIZE
@@ -106,3 +105,99 @@ def test_split_sectors_requires_4k_alignment_and_indexes_them():
 
 def test_1mb_image_matches_the_real_signed_image_size():
     assert len(ota.split_sectors(bytes(1052672))) == 257
+
+
+def test_mac_prefix():
+    assert ota._mac_prefix("E0:72:A1:AA:23:90") == "e0:72:a1:aa:23"
+    assert ota._mac_prefix("E0-72-A1-AA-23-90") == "e0:72:a1:aa:23"
+
+
+def test_find_device_success():
+    import asyncio
+    from unittest.mock import MagicMock, patch
+    dev = MagicMock(name="dev", address="E0:72:A1:AA:23:92")
+    dev.name = ota.DEFAULT_NAME
+    adv = MagicMock(service_uuids=[ota.SERVICE_UUID], local_name=ota.DEFAULT_NAME)
+
+    with patch("bleak.BleakScanner.discover", return_value={"k": (dev, adv)}):
+        found = asyncio.run(ota.find_device(board_mac="E0:72:A1:AA:23:90"))
+        assert found == dev
+
+
+def test_find_device_not_found():
+    import asyncio
+    from unittest.mock import patch
+    with patch("bleak.BleakScanner.discover", return_value={}), \
+         pytest.raises(ota.BleOtaError, match="expected exactly one BLE OTA device, found 0"):
+        asyncio.run(ota.find_device(board_mac="E0:72:A1:AA:23:90"))
+
+
+def test_upload_mocked():
+    import asyncio
+    from unittest.mock import AsyncMock, MagicMock, patch
+
+    start_ack = _ack(ota.CMD_ACK, ota.CMD_START)
+    sector_ack = _ack(0, ota.STATUS_OK)
+    stop_ack = _ack(ota.CMD_ACK, ota.CMD_STOP)
+
+    mock_client = MagicMock()
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+    mock_client.mtu_size = 256
+
+    callbacks = {}
+
+    async def fake_start_notify(uuid, cb):
+        callbacks[uuid] = cb
+
+    async def fake_write_gatt_char(uuid, data, response=True):
+        if uuid == ota.COMMAND_UUID:
+            if data[0:2] == b"\x01\x00":  # start command
+                callbacks[ota.COMMAND_UUID](None, bytearray(start_ack))
+            elif data[0:2] == b"\x02\x00":  # stop command
+                callbacks[ota.COMMAND_UUID](None, bytearray(stop_ack))
+        elif uuid == ota.RECV_FW_UUID and data[2] == 0xFF:  # last packet of sector
+            callbacks[ota.RECV_FW_UUID](None, bytearray(sector_ack))
+
+    mock_client.start_notify = fake_start_notify
+    mock_client.write_gatt_char = fake_write_gatt_char
+    mock_client.disconnect = AsyncMock()
+
+    with patch("bleak.BleakClient", return_value=mock_client):
+        img = bytes(4096)  # 1 sector
+        progress_calls = []
+        res = asyncio.run(ota.upload(img, "E0:72:A1:AA:23:92", on_progress=lambda d, t: progress_calls.append((d, t))))
+        assert res["aborted"] is False
+        assert res["sectors_sent"] == 1
+        assert progress_calls == [(1, 1)]
+
+        # Test abort_after_sectors
+        res_abort = asyncio.run(ota.upload(img, "E0:72:A1:AA:23:92", abort_after_sectors=1))
+        assert res_abort["aborted"] is True
+
+
+def test_progress_helper(capsys):
+    ota._progress(1, 10)
+    assert "sector 1/10" in capsys.readouterr().out
+
+
+def test_cli_run_scan_only():
+    import argparse
+    import asyncio
+    from unittest.mock import AsyncMock, MagicMock, patch
+
+    dev = MagicMock(name="dev", address="E0:72:A1:AA:23:92")
+    dev.name = "nimble-ble-ota"
+
+    args = argparse.Namespace(
+        address=None,
+        board_mac="E0:72:A1:AA:23:90",
+        scan_timeout=5.0,
+        scan_only=True,
+    )
+
+    with patch("labflash.idf_ble_ota.find_device", new=AsyncMock(return_value=dev)):
+        rc = asyncio.run(ota._run(args))
+        assert rc == 0
+
+

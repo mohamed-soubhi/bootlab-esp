@@ -1,14 +1,14 @@
 """Unit tests for host/labflash/build.py (BL-045)."""
 import subprocess
-from pathlib import Path
-import pytest
+from unittest.mock import patch
 
+import pytest
 from labflash import build as bld
 
 
 def test_variant_definitions():
     assert set(bld.IDF_VARIANTS.keys()) == {"v1", "v2", "no_confirm", "hang", "bad_sig"}
-    for var, cfg in bld.IDF_VARIANTS.items():
+    for cfg in bld.IDF_VARIANTS.values():
         assert "build_dir" in cfg
         assert "defaults" in cfg
         assert "project_ver" in cfg
@@ -101,3 +101,108 @@ def test_bad_sig_verification_logic(tmp_path):
     assert res.variant == "bad_sig"
     assert res.verified_variant
     assert res.verified_signature
+
+
+def test_stale_sdkconfig_and_clean(tmp_path):
+    esp_idf = tmp_path / "esp_idf"
+    bdir = esp_idf / "build"
+    bdir.mkdir(parents=True)
+    (bdir / "dummy.bin").write_bytes(b"dummy")
+    stale = esp_idf / "sdkconfig"
+    stale.write_text("STALE")
+
+    def mock_runner(cmd, cwd=None):
+        if "generate_signing_key" in cmd or "generate-signing-key" in cmd:
+            (tmp_path / "keys" / "idf_sbv2.pem").write_bytes(b"MOCK KEY")
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="OK", stderr="")
+        bdir.mkdir(parents=True, exist_ok=True)
+        (bdir / "sdkconfig").write_text("CONFIG_APP_VARIANT_V1=y\n")
+        (bdir / bld.BINARY_NAME).write_bytes(b"\xE9" + b"\x00" * 1024)
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="OK", stderr="")
+
+    res = bld.build_idf_variant("v1", repo_root=tmp_path, clean=True, runner=mock_runner)
+    assert not stale.exists()
+    assert res.variant == "v1"
+
+
+def test_build_board_dispatch(tmp_path):
+    # Test invalid board name
+    with pytest.raises(bld.BuildError, match="Unknown board 'unknown'"):
+        bld.build_board("unknown", repo_root=tmp_path)
+
+    # Test build_board for single variant
+    fake_res = bld.BuildResult(
+        board="idf",
+        variant="v1",
+        build_dir=tmp_path / "build",
+        binary_path=tmp_path / "build" / "app.bin",
+        binary_size=100,
+        project_ver="1.0.0",
+        verified_variant=True,
+        verified_signature=True,
+    )
+    with patch("labflash.build.build_idf_variant", return_value=fake_res):
+        res = bld.build_board("idf", variant="v1", repo_root=tmp_path)
+        assert "v1" in res
+        assert res["v1"] == fake_res
+
+    # Test build_board for all variants
+    with patch("labflash.build.build_idf_all", return_value={"v1": fake_res}):
+        res_all = bld.build_board("idf", variant="all", repo_root=tmp_path)
+        assert res_all == {"v1": fake_res}
+
+        # Test board == "all"
+        res_board_all = bld.build_board("all", repo_root=tmp_path)
+        assert res_board_all == {"v1": fake_res}
+
+
+def test_find_idf_export_script(tmp_path, monkeypatch):
+    fake_idf = tmp_path / "esp-idf"
+    fake_idf.mkdir()
+    export_sh = fake_idf / "export.sh"
+    export_sh.write_text("#!/bin/bash\n")
+
+    monkeypatch.setenv("IDF_PATH", str(fake_idf))
+    found = bld.find_idf_export_script()
+    assert found == export_sh
+
+
+def test_run_command_mocked(tmp_path):
+    proc = subprocess.CompletedProcess(args=["echo", "hi"], returncode=0, stdout="hi\n", stderr="")
+    with patch("subprocess.run", return_value=proc):
+        r = bld.run_command(["echo", "hi"], cwd=tmp_path)
+        assert r.returncode == 0
+
+
+def test_ensure_keys_both(tmp_path):
+    def mock_runner(cmd, cwd=None):
+        if "idf_sbv2.pem" in str(cmd):
+            (tmp_path / "keys" / "idf_sbv2.pem").write_bytes(b"KEY1")
+        if "idf_foreign.pem" in str(cmd):
+            (tmp_path / "keys" / "idf_foreign.pem").write_bytes(b"KEY2")
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+
+    bld.ensure_keys(tmp_path, need_foreign=True, runner=mock_runner)
+    assert (tmp_path / "keys" / "idf_sbv2.pem").exists()
+    assert (tmp_path / "keys" / "idf_foreign.pem").exists()
+
+
+def test_verify_sdkconfig_variant_edge_cases(tmp_path):
+    conf = tmp_path / "sdkconfig"
+    assert bld.verify_sdkconfig_variant(conf, "CONFIG_V1=y") is False
+    conf.write_text("CONFIG_V1=y\n")
+    assert bld.verify_sdkconfig_variant(conf, "CONFIG_V1=y") is True
+    assert bld.verify_sdkconfig_variant(conf, "CONFIG_V2=y") is False
+
+
+def test_build_idf_variant_build_failure(tmp_path):
+    (tmp_path / "keys" / "idf_sbv2.pem").parent.mkdir(parents=True, exist_ok=True)
+    (tmp_path / "keys" / "idf_sbv2.pem").write_bytes(b"KEY")
+
+    def failing_runner(cmd, cwd=None):
+        return subprocess.CompletedProcess(args=cmd, returncode=1, stdout="", stderr="Compilation error")
+
+    with pytest.raises(bld.BuildError, match="Build failed for variant 'v1'"):
+        bld.build_idf_variant("v1", repo_root=tmp_path, runner=failing_runner)
+
+

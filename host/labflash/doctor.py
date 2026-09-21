@@ -19,8 +19,8 @@ REQUIRED_ESP_DEVICES = 2
 
 def _run(cmd):
     try:
-        return subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-    except Exception:
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=10, check=False)
+    except Exception:  # noqa: BLE001
         return None
 
 
@@ -31,7 +31,7 @@ def check_esp_usb():
     the OS device list, which works the same on a stock Linux host, an
     RPi4, or a WSL2 image with boards attached through usbipd.
     """
-    import serial.tools.list_ports as list_ports
+    from serial.tools import list_ports
     count = sum(1 for p in list_ports.comports() if p.vid == 0x303A)
     return count, ""
 

@@ -23,8 +23,8 @@ import argparse
 import asyncio
 import sys
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
 
 SECTOR_SIZE = 4096
 CMD_FRAME_LEN = 20
@@ -224,7 +224,7 @@ async def upload(image: bytes, address: str, on_progress: Callable[[int, int], N
         try:   # best effort: the device reboots into the new image right after the last ACK
             await client.write_gatt_char(COMMAND_UUID, stop_command())
             await asyncio.wait_for(cmd_acks.get(), 3.0)
-        except Exception:  # noqa: BLE001 - a dropped link here means the board already rebooted
+        except Exception:  # noqa: S110, BLE001 - a dropped link here means the board already rebooted
             pass
     return {"aborted": False, "sectors_sent": len(sectors), "mtu": mtu,
             "seconds": time.monotonic() - started}
@@ -239,7 +239,7 @@ async def _run(args: argparse.Namespace) -> int:
     print(f"found BLE OTA device {device.name or '?'} at {device.address}", flush=True)
     if args.scan_only:
         return 0
-    with open(args.image, "rb") as fh:
+    with open(args.image, "rb") as fh:  # noqa: ASYNC230
         image = fh.read()
     print(f"uploading {args.image} ({len(image)} bytes, {len(image) // SECTOR_SIZE} sectors)", flush=True)
     result = await upload(image, device.address, _progress, args.abort_after)

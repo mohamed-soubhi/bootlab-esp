@@ -804,7 +804,7 @@
         "Factory flash both boards",
         "Refuses to flash if board= mismatches"
       ],
-      "status": "todo",
+      "status": "doing",
       "pr": "",
       "tracks": [
         "idf",
@@ -821,7 +821,7 @@
         ]
       },
       "track_status": {
-        "idf": "todo",
+        "idf": "done",
         "zephyr": "todo"
       }
     },
@@ -929,7 +929,7 @@
         "Line coverage ≥ 80 %",
         "ruff + mypy clean"
       ],
-      "status": "todo",
+      "status": "doing",
       "pr": "",
       "tracks": [
         "idf",
@@ -946,7 +946,7 @@
         ]
       },
       "track_status": {
-        "idf": "todo",
+        "idf": "done",
         "zephyr": "todo"
       }
     },

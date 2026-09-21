@@ -1,8 +1,7 @@
 """Unit tests for host/labflash/flash.py (BL-042)."""
 import subprocess
-from pathlib import Path
-import pytest
 
+import pytest
 from labflash import flash as fl
 
 
@@ -65,11 +64,6 @@ def test_factory_flash_assembly(tmp_path):
 
 
 def test_recover_erases_first(tmp_path):
-    rig = {
-        "boards": {
-            "idf": {"mac": "E0:72:A1:AA:23:90"},
-        }
-    }
     esp_idf = tmp_path / "esp_idf" / "build"
     esp_idf.mkdir(parents=True)
     (esp_idf / "bootloader").mkdir()

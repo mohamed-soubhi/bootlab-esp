@@ -2,17 +2,15 @@
 import os
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
-
-import pytest
+from unittest.mock import MagicMock, patch
 
 from labflash.provision import (
-    generate_nvs_csv,
+    NVS_PARTITION_OFFSET,
+    NVS_PARTITION_SIZE,
     generate_nvs_bin,
+    generate_nvs_csv,
     load_credentials_from_env,
     provision_idf,
-    NVS_PARTITION_SIZE,
-    NVS_PARTITION_OFFSET,
 )
 
 

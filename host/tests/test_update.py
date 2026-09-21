@@ -6,7 +6,6 @@ import subprocess
 import urllib.request
 
 import pytest
-
 from labflash import update as up
 from labflash.idf_wifi_ota import OtaServer
 
@@ -142,3 +141,43 @@ def test_ota_server_serves_the_image_over_https_and_counts_bytes(tmp_path):
             assert r.headers["Content-Length"] == str(len(body))     # HTTP/1.1 + length: no reliance on close
         assert body == make_image("2.0.0")
         assert srv.served["fw.bin"] == len(body)
+
+
+def test_wifi_board_version_and_trigger(tmp_path):
+    from unittest.mock import MagicMock, patch
+
+    from labflash.idf_wifi_ota import WifiBoard
+
+    ca_file = tmp_path / "ca.pem"
+    ca_file.write_text("FAKE CA")
+
+    with patch("ssl.create_default_context") as mock_ssl:
+        mock_ctx = MagicMock()
+        mock_ssl.return_value = mock_ctx
+        wb = WifiBoard("192.168.1.152", token="test-token", ca_cert=ca_file)
+
+        # Mock version success
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = b'{"app": "1.0.0", "slot": 0, "confirmed": true}'
+        mock_resp.__enter__.return_value = mock_resp
+        with patch("urllib.request.urlopen", return_value=mock_resp):
+            v = wb.version(timeout=1.0)
+            assert v == {"app": "1.0.0", "slot": 0, "confirmed": True}
+
+        # Mock version error
+        with patch("urllib.request.urlopen", side_effect=OSError("network down")):
+            assert wb.version(timeout=1.0) is None
+
+        # Mock trigger success
+        mock_trigger_resp = MagicMock()
+        mock_trigger_resp.status = 202
+        mock_trigger_resp.__enter__.return_value = mock_trigger_resp
+        with patch("urllib.request.urlopen", return_value=mock_trigger_resp):
+            status = wb.trigger("https://192.168.1.134:8443/fw.bin", "2.0.0")
+            assert status == 202
+
+        # Mock trigger HTTPError
+        http_err = urllib.error.HTTPError("url", 409, "Conflict", {}, None)  # type: ignore[arg-type]
+        with patch("urllib.request.urlopen", side_effect=http_err):
+            assert wb.trigger("https://192.168.1.134:8443/fw.bin", "2.0.0") == 409
+

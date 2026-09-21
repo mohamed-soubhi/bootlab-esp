@@ -29,11 +29,24 @@ the per-ticket bullets below are history.
   Live on-target verification on Windows COM14: `identify` maps board `idf` (UID `E072A1AA2390` matches `rig.yaml`); `info` returns
   combined ID, VER, and STATE (human-readable and JSON); `measure` samples toggles over 5 s, returning delta 10 in 5.00s = 1.00 Hz
   (expected 10 toggles, tolerance +/- 1 toggle, PASS). Evidence: `scripts/evidence/bl041_identify_measure.md`.
-- **BL-042 IN PROGRESS (2026-09-21):** `labflash flash`, `recover` (host/labflash/flash.py, __main__.py; 5 unit tests, host suite 51 passed).
-  Pre-write identity check implemented: verifies MAC/serial against `rig.yaml` before issuing any write or erase commands (refuses write
-  if board MAC mismatches). Zephyr gated. Awaiting owner's per-instance authorization before executing live write on hardware.
-- **Ready now (all IDF):** BL-042 (live hardware flash verification), then BL-055 (cloud CI, IDF build). Then BL-046 (mocked tests;
-  add ruff+mypy to the venv — NOT installed yet), BL-050…BL-063 (IDF scope), BL-056a (RPi4 re-run), BL-063a (lessons), BL-063b (HTML presentation).
+- **BL-042 DONE (2026-09-21):** `labflash flash`, `recover` (host/labflash/flash.py, __main__.py; 5 unit tests).
+  Pre-write identity check verified: queries MAC/serial against `rig.yaml` before issuing write/erase commands; mismatch
+  refused before writing (`check_identity_before_write("zephyr", "/dev/lab-esp-idf")` raised `FlashIdentityError`). Live positive
+  check authorized and verified on target `/dev/ttyACM0` (`E0:72:A1:AA:23:90`): factory flashed bootloader, partition table,
+  otadata, and v1 app. Post-flash verified over HTTPS `/version` (1.0.0, slot 0, confirmed), Windows `COM14` LABID `info`,
+  and `measure` (1.00 Hz). Evidence: `scripts/evidence/bl042_flash_recover.md`.
+- **BL-046 DONE (2026-09-21):** `labflash mocked unit tests` (host/tests/test_*.py, 115 unit tests, 84% line coverage).
+  Every IDF-path host module reaches ≥ 80% line coverage: `core.py` 100%, `identify.py` 97%, `idf_wifi_ota.py` 97%, `doctor.py` 91%,
+  `update.py` 90%, `update_cli.py` 89%, `flash.py` 84%, `build.py` 81%, `labid.py` 81%, `idf_ble_ota.py` 80%, `provision.py` 80%,
+  `__main__.py` 72%. Linting and typing 100% clean: `ruff check host/` all checks passed; `mypy host/` passed clean (0 errors).
+  Evidence: `scripts/evidence/bl046_labflash_mocked_tests.md`.
+- **BL-055 IN PROGRESS (2026-09-21):** `build.yml cloud CI` (.github/workflows/build.yml, scripts/check_forbidden_configs.sh).
+  Full workflow encodes: (1) `forbidden-config-grep` (no eFuse burn commands, no hw secure boot in defaults, no committed secrets),
+  (2) `labid-tests` (Unity + libFuzzer smoke), (3) `host-unit-tests` (ruff + mypy + pytest 115 tests with `--cov-fail-under=80`),
+  (4) `idf-build` (runs in `espressif/idf:v6.0.3` container, generates ephemeral CI test keys/certs, builds all 5 variants via
+  `python3 -m labflash build idf`, and uploads signed firmware artifacts). Pushing to origin/master will trigger and verify on GitHub.
+- **Ready now (all IDF):** BL-055 (push to master and verify CI green), then BL-050…BL-054 (HIL framework and tests on target),
+  BL-056a (RPi4 re-run), BL-063a (lessons), BL-063b (HTML presentation).
 - **Open items:** `scripts/ota_check.py` duplicates the server/client now in `labflash.idf_wifi_ota` (fold it in later); PLAN 8.0 documents the replan;
   the Zephyr branch of `common/labid/CMakeLists.txt` (labid_dispatch.c) has never been built (BL-014b).
 - **Hosts:** develop here (WSL2 + Windows-native tools, PLAN R14). The **RPi4 has limitations and is the OTA-programming host**: BL-056a re-runs

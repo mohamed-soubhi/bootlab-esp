@@ -8,13 +8,13 @@
 
 `█████████████░░░░░░░░░░░░░░░░░` **23/52 done (44%)**
 
-- **IDF track:** `████████████░░░░░░░░` 25/42
+- **IDF track:** `█████████████░░░░░░░` 27/42
 - **Zephyr track:** `██████░░░░░░░░░░░░░░` 11/37
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 27
-    "doing" : 2
+    "todo" : 25
+    "doing" : 4
     "done" : 23
 ```
 
@@ -600,11 +600,11 @@ Run all P2 acceptance checks.
 |---|---|---|---|---|---|---|
 | ✅ | BL-040 | labflash core: config, UID resolution, re-enumeration wait | M | host | BL-013, BL-007 |  |
 | 🔵 | BL-041 | identify, info, status, measure | S | host | BL-040, BL-020, BL-022, BL-031, BL-032 |  |
-| ⬜ | BL-042 | flash, recover, provision (USB) | S | host | BL-040, BL-020, BL-021, BL-030, BL-031 |  |
+| 🔵 | BL-042 | flash, recover, provision (USB) | S | host | BL-040, BL-020, BL-021, BL-030, BL-031 |  |
 | ✅ | BL-043 | update idf --transport ble|wifi | M | host, idf | BL-040, BL-028 |  |
 | ⬜ | BL-044 | update zephyr --transport ble|udp | M | host, zephyr | BL-040, BL-036 |  |
 | 🔵 | BL-045 | build + sign orchestration | S | host | BL-040, BL-020, BL-021, BL-030, BL-031 |  |
-| ⬜ | BL-046 | labflash mocked unit tests | M | host | BL-041, BL-042, BL-043, BL-044, BL-045 |  |
+| 🔵 | BL-046 | labflash mocked unit tests | M | host | BL-041, BL-042, BL-043, BL-044, BL-045 |  |
 
 <details><summary>✅ <b>BL-040</b> — labflash core: config, UID resolution, re-enumeration wait</summary>
 
@@ -641,11 +641,11 @@ LABID discovery, cross-check, toggle-based Hz. Deps corrected 2026-09-20: AC nee
 
 </details>
 
-<details><summary>⬜ <b>BL-042</b> — flash, recover, provision (USB)</summary>
+<details><summary>🔵 <b>BL-042</b> — flash, recover, provision (USB)</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
-- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
+- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
 - **Depends on:** BL-040, BL-020, BL-021, BL-030, BL-031  
 - **Plan:** §8 P3
 
@@ -653,8 +653,8 @@ esptool / west / idf.py wrappers with identity check before writing. Deps correc
 
 **Acceptance criteria**
 *IDF scope*
-- [ ] Factory flash the idf board
-- [ ] Refuses to flash if board= mismatches
+- [x] Factory flash the idf board
+- [x] Refuses to flash if board= mismatches
 *Zephyr scope*
 - [ ] Factory flash the zephyr board
 - [ ] Refuses to flash if board= mismatches
@@ -709,11 +709,11 @@ labflash build <board|all> --variant. Deps corrected 2026-09-20: AC ("Builds all
 
 </details>
 
-<details><summary>⬜ <b>BL-046</b> — labflash mocked unit tests</summary>
+<details><summary>🔵 <b>BL-046</b> — labflash mocked unit tests</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** host  
-- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
+- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
 - **Depends on:** BL-041, BL-042, BL-043, BL-044, BL-045  
 - **Plan:** §8 P3
 
@@ -721,8 +721,8 @@ pytest with mocked BLE / serial / HTTP.
 
 **Acceptance criteria**
 *IDF scope*
-- [ ] Line coverage ≥ 80 % on the IDF-path modules
-- [ ] ruff + mypy clean
+- [x] Line coverage ≥ 80 % on the IDF-path modules
+- [x] ruff + mypy clean
 *Zephyr scope*
 - [ ] Line coverage ≥ 80 % on the Zephyr-path modules
 - [ ] ruff + mypy clean
@@ -1074,11 +1074,11 @@ flowchart TB
     subgraph E3_g["P3 labflash CLI"]
         BL040["BL-040"]:::done
         BL041["BL-041"]:::doing
-        BL042["BL-042"]:::todo
+        BL042["BL-042"]:::doing
         BL043["BL-043"]:::done
         BL044["BL-044"]:::todo
         BL045["BL-045"]:::doing
-        BL046["BL-046"]:::todo
+        BL046["BL-046"]:::doing
     end
     subgraph E4_g["P4 HIL tests + CI"]
         BL050["BL-050"]:::todo

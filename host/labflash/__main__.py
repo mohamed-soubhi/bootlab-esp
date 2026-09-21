@@ -1,6 +1,7 @@
 """labflash — command-line entry point."""
 import argparse
 import sys
+from typing import Any
 
 
 def main(argv=None):
@@ -137,6 +138,7 @@ def main(argv=None):
 
 def _provision_cmd(args) -> int:
     import os
+
     from labflash.core import BoardResolutionError, resolve_board
     from labflash.provision import load_credentials_from_env, provision_idf
 
@@ -144,7 +146,7 @@ def _provision_cmd(args) -> int:
     if os.path.exists(args.env_file):
         try:
             creds = load_credentials_from_env(args.env_file)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"Warning: could not load {args.env_file}: {e}", file=sys.stderr)
 
     ssid = args.ssid or creds.get("ssid") or os.environ.get("WIFI_SSID")
@@ -174,7 +176,7 @@ def _provision_cmd(args) -> int:
         provision_idf(port=port, ssid=ssid, psk=psk, token=token)
         print("OK: Provisioning complete. Board will connect to WiFi on next boot.")
         return 0
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"ERROR: Provisioning failed: {e}", file=sys.stderr)
         return 1
 
@@ -227,11 +229,15 @@ def _build_cmd(args) -> int:
 
 def _identify_cmd(args) -> int:
     import json as jsonlib
+
     from labflash.core import BoardResolutionError, load_rig_config, resolve_board
-    from labflash.identify import LabidError, SerialLineTransport, identify, map_board_by_id
+    from labflash.identify import (
+        SerialLineTransport,
+        map_board_by_id,
+    )
 
     rig = load_rig_config()
-    out = {}
+    out: dict[str, dict[str, Any]] = {}
 
     ports_to_check: list[tuple[str, str | None]] = []
     if args.port:
@@ -263,7 +269,7 @@ def _identify_cmd(args) -> int:
                 out[bname] = {"port": port, "id": id_fields}
             finally:
                 trans.close()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             if args.board or args.port:
                 print(f"ERROR on {port}: {e}", file=sys.stderr)
                 return 1
@@ -281,6 +287,7 @@ def _identify_cmd(args) -> int:
 
 def _info_cmd(args) -> int:
     import json as jsonlib
+
     from labflash.core import BoardResolutionError, resolve_board
     from labflash.identify import SerialLineTransport, query_info
 
@@ -298,7 +305,7 @@ def _info_cmd(args) -> int:
             info = query_info(trans)
         finally:
             trans.close()
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"ERROR querying {args.board} on {port}: {e}", file=sys.stderr)
         return 1
 
@@ -335,7 +342,7 @@ def _measure_cmd(args) -> int:
                 try:
                     s = get_state(trans)
                     expect_hz = float(s.get("blink_hz", 1.0))
-                except Exception:
+                except Exception:  # noqa: BLE001
                     expect_hz = 1.0
             delta, hz, ok = measure(
                 trans,
@@ -345,11 +352,11 @@ def _measure_cmd(args) -> int:
             )
         finally:
             trans.close()
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"ERROR measuring {args.board} on {port}: {e}", file=sys.stderr)
         return 1
 
-    expected_toggles = int(round(expect_hz * args.seconds * 2.0))
+    expected_toggles = round(expect_hz * args.seconds * 2.0)
     res_str = "PASS" if ok else "FAIL"
     print(f"[{res_str}] toggles delta={delta} in {args.seconds:.2f}s = {hz:.2f} Hz (expected {expected_toggles} toggles, {expect_hz} Hz, tolerance +/- {args.tolerance})")
     return 0 if ok else 1

@@ -9,15 +9,12 @@ Strict Guardrail:
 from __future__ import annotations
 
 import re
-import shutil
-import subprocess
-import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Sequence
 
-import serial.tools.list_ports as list_ports
+from serial.tools import list_ports
 
-from labflash.core import BoardResolutionError, load_rig_config, resolve_board
+from labflash.core import load_rig_config, resolve_board
 
 DEFAULT_REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -42,9 +39,8 @@ def normalize_mac(mac: str) -> str:
 def get_port_serial_number(port: str) -> str | None:
     """Read USB serial number from pySerial list_ports."""
     for p in list_ports.comports():
-        if p.device == port or Path(p.device).resolve() == Path(port).resolve():
-            if p.serial_number:
-                return normalize_mac(p.serial_number)
+        if (p.device == port or Path(p.device).resolve() == Path(port).resolve()) and p.serial_number:
+            return normalize_mac(p.serial_number)
     return None
 
 
@@ -54,7 +50,7 @@ def read_mac_with_esptool(
     repo_root: Path | None = None,
 ) -> str | None:
     """Query MAC directly from chip using esptool read-mac."""
-    from labflash.build import find_idf_export_script, run_command
+    from labflash.build import run_command
 
     cmd = ["esptool", "--port", str(port), "read-mac"]
     res = run_command(cmd, cwd=Path.cwd(), use_idf_env=True, runner=runner)

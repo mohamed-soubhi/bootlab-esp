@@ -50,7 +50,7 @@ def build_frame(f_type: str, items: dict[str, str]) -> str:
             raise ValueError(f"invalid value for {k!r}: {v!r}")
         payload += "," + k + "=" + v
     c = crc16(payload.encode())
-    return "$" + payload + "*%04X\n" % c
+    return f"${payload}*{c:04X}\n"
 
 
 class Parser:
@@ -189,14 +189,16 @@ if __name__ == "__main__":
     for frame in vec["too_long"]:
         p = Parser()
         if p.feed(frame) != ERROR:
-            print("TOO-LONG not rejected (len %d)" % len(frame)); fails += 1
+            print(f"TOO-LONG not rejected (len {len(frame)})")
+            fails += 1
     # garbage -> ignored (non-frame) or error
     for frame in vec["garbage"]:
         p = Parser()
         p.feed(frame)
         # any result other than a valid FRAME is acceptable for non-frames
-    print("vectors: %d valid, %d bad_crc, %d unknown, %d too_long, %d garbage" % (
-        len(vec["valid"]), len(vec["bad_crc"]), len(vec["unknown_keys"]),
-        len(vec["too_long"]), len(vec["garbage"])))
-    print("RESULT: " + ("ALL PASS" if fails == 0 else "FAILURES=%d" % fails))
+    print(
+        f"vectors: {len(vec['valid'])} valid, {len(vec['bad_crc'])} bad_crc, "
+        f"{len(vec['unknown_keys'])} unknown, {len(vec['too_long'])} too_long, {len(vec['garbage'])} garbage"
+    )
+    print("RESULT: " + ("ALL PASS" if fails == 0 else f"FAILURES={fails}"))
     raise SystemExit(1 if fails else 0)

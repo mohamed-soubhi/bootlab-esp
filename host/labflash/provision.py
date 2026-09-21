@@ -14,7 +14,6 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Mapping
 
 NVS_PARTITION_OFFSET = 0x9000
 NVS_PARTITION_SIZE = 0x6000  # 24 KB = 24576 bytes
@@ -76,7 +75,7 @@ def generate_nvs_bin(ssid: str, psk: str, token: str, out_bin: Path) -> None:
             str(out_bin),
             hex(NVS_PARTITION_SIZE),
         ]
-        res = subprocess.run(cmd, capture_output=True, text=True)
+        res = subprocess.run(cmd, capture_output=True, text=True, check=False)
         if res.returncode == 0 and out_bin.exists():
             return
 
@@ -92,7 +91,7 @@ def generate_nvs_bin(ssid: str, psk: str, token: str, out_bin: Path) -> None:
                 str(out_bin),
                 hex(NVS_PARTITION_SIZE),
             ]
-            res2 = subprocess.run(cmd2, capture_output=True, text=True)
+            res2 = subprocess.run(cmd2, capture_output=True, text=True, check=False)
             if res2.returncode == 0 and out_bin.exists():
                 return
 
@@ -123,11 +122,11 @@ def provision_idf(port: str, ssid: str, psk: str, token: str) -> None:
             str(nvs_bin),
         ])
 
-        res = subprocess.run(cmd, capture_output=True, text=True)
+        res = subprocess.run(cmd, capture_output=True, text=True, check=False)
         if res.returncode != 0:
             # Check if write_flash (with underscore) is needed
             cmd[cmd.index("write-flash")] = "write_flash"
-            res = subprocess.run(cmd, capture_output=True, text=True)
+            res = subprocess.run(cmd, capture_output=True, text=True, check=False)
 
         if res.returncode != 0:
             raise RuntimeError(f"esptool failed to flash NVS partition: {res.stderr}")

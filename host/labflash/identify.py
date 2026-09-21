@@ -78,14 +78,16 @@ def _read_frame(transport: Transport, deadline: float) -> tuple[str, dict] | Non
     while time.monotonic() < deadline:
         try:
             b = transport.read1()
-        except Exception:
+        except Exception:  # noqa: BLE001
             return None
         if not b:
             time.sleep(0.005)
             continue
         rc = parser.feed(b[0])
         if rc == FRAME:
-            return parser.frame_type(), _parse_fields(parser)
+            ft = parser.frame_type()
+            if ft is not None:
+                return ft, _parse_fields(parser)
         if rc == ERROR:
             parser.reset()
     return None
@@ -201,7 +203,7 @@ def measure(
 
     passed = True
     if expect_hz is not None:
-        expected_toggles = int(round(expect_hz * elapsed * 2.0))
+        expected_toggles = round(expect_hz * elapsed * 2.0)
         passed = abs(delta - expected_toggles) <= tolerance_toggles
 
     return delta, hz, passed

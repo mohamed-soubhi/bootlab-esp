@@ -16,8 +16,11 @@ host/**/*.egg-info/
 *.pyo
 .pytest_cache/
 coverage/
+.coverage
+.coverage.*
 # Vendor test framework (fetched, not committed)
 common/labid/tests/unity/
+common/labid/tests/build_audit/
 
 # west-managed workspace (fetched deps, not project code)
 .west/
@@ -41,3 +44,8 @@ esp_idf/managed_components/
 
 # Downloaded/unpacked helper packages (e.g. user-space libbsd for the IDF linux-target test)
 .cache/
+
+# Local scratch / helper clones
+bootloader/
+tools/
+package.json
