@@ -80,7 +80,7 @@ jobs:
 
       - name: HIL live-backend unit tests (hardware-free)
         run: |
-          PYTHONPATH=host:. pytest tests_hil/test_live_backend_unit.py
+          PYTHONPATH=host:. pytest tests_hil/test_live_backend_unit.py tests_hil/test_soak_unit.py
 
   idf-build:
     name: ESP-IDF Build & Sign (All Variants)
