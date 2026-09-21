@@ -27,6 +27,7 @@
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "app_ble_ota.h"
 #include "app_wifi.h"
 #include "labid_port.h"
 #include "led_strip.h"
@@ -186,5 +187,8 @@ void app_main(void)
 #if !CONFIG_APP_VARIANT_HANG
     /* BL-024: initialize NVS & WiFi in station mode if provisioned (PLAN 5.2 / 7.2) */
     ESP_ERROR_CHECK(app_wifi_init());
+
+    /* BL-027: BLE OTA service (NimBLE, coexists with WiFi; PLAN 7.2). */
+    ESP_ERROR_CHECK(app_ble_ota_start());
 #endif
 }
