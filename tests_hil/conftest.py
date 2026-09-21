@@ -322,6 +322,18 @@ class HilRig:
         s = self.backend.snapshot()
         return {"app": s.app, "slot": s.slot, "confirmed": s.confirmed, "uid": s.uid}
 
+    def reset_board(self) -> None:
+        """Host-driven hardware reset into the app (live only)."""
+        assert self.backend is not None
+        self.backend.reset()
+
+    def wait_state(self, wanted: Callable[[dict[str, Any]], bool], timeout_s: float = 90.0) -> dict[str, Any] | None:
+        """Poll LABID until wanted(state) holds; None on timeout (live only)."""
+        assert self.backend is not None
+        snap = self.backend.wait_snapshot(
+            lambda s: wanted({"app": s.app, "slot": s.slot, "confirmed": s.confirmed}), timeout_s)
+        return None if snap is None else {"app": snap.app, "slot": snap.slot, "confirmed": snap.confirmed}
+
     def update_ota(self, variant: str, transport: str = "wifi", timeout_s: float | None = None) -> bool:
         """Perform an OTA update to a specified variant (e.g. 'v1' or 'v2')."""
         if self.is_mock:

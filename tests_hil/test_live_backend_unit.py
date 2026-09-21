@@ -83,3 +83,48 @@ def test_wsl_refused():
     with pytest.raises(LiveRigError):
         assert_native_host(proc_version="Linux ... microsoft-standard-WSL2")
     assert_native_host(proc_version="Linux 6.1 generic")
+
+
+class FakeSerial:
+    def __init__(self):
+        self.log, self.dtr, self.rts, self.port = [], None, None, None
+
+    def __setattr__(self, k, v):
+        if k in ("dtr", "rts"):
+            self.__dict__.setdefault("log", []).append((k, v))
+        object.__setattr__(self, k, v)
+
+    def open(self):
+        self.log.append(("open", None))
+
+    def close(self):
+        self.log.append(("close", None))
+
+
+def test_hard_reset_esptool_sequence_lines_inactive_before_open():
+    from tests_hil.live_backend import hard_reset
+    fs = FakeSerial()
+    sleeps = []
+    hard_reset("COM14", serial_factory=lambda: fs, sleep=sleeps.append)
+    log = fs.log
+    o = log.index(("open", None))
+    assert ("dtr", False) in log[:o] and ("rts", False) in log[:o]
+    after = [e for e in log[o + 1:] if e[0] in ("dtr", "rts")]
+    assert after == [("dtr", True), ("rts", False), ("dtr", False), ("rts", True), ("dtr", False), ("rts", False)]
+    assert log[-1] == ("close", None) and len(sleeps) == 3
+
+
+def test_wait_snapshot_tolerates_reboot_and_times_out(tmp_path):
+    be, _ = make(tmp_path, [])
+    seq = iter([RuntimeError("gone"), snap("2.0.0"), snap()])
+
+    def fn():
+        v = next(seq)
+        if isinstance(v, Exception):
+            raise v
+        return v
+    be.snapshot_fn = fn
+    got = be.wait_snapshot(lambda s: s.app == "1.0.0", timeout_s=10, poll_s=1, sleep_fn=lambda _: None)
+    assert got is not None and got.app == "1.0.0"
+    be.snapshot_fn = lambda: snap("2.0.0")
+    assert be.wait_snapshot(lambda s: s.app == "1.0.0", timeout_s=3, poll_s=1, sleep_fn=lambda _: None) is None

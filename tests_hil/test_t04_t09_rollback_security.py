@@ -23,7 +23,19 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 def test_t04_no_confirm_rollback_simulation(hil_rig: HilRig) -> None:
     """T04: no_confirm variant boots unconfirmed, reverts to v1 on next boot."""
     if not hil_rig.is_mock:
-        pytest.skip("live T04 not automated: needs a host-driven board reset (no power hub); NOT verified on hardware")
+        before = hil_rig.state()
+        assert before.get("confirmed") is True, f"precondition: board must be confirmed, got {before}"
+        # never confirms -> update CLI reports not-confirmed (False); the image must still have BOOTED
+        hil_rig.update_ota("no_confirm", "wifi", timeout_s=90.0)
+        pending = hil_rig.state()
+        assert pending["app"] != before["app"] and pending["slot"] != before["slot"], f"no_confirm did not boot: {pending}"
+        assert pending["confirmed"] is False, f"no_confirm must stay unconfirmed: {pending}"
+        hil_rig.reset_board()
+        after = hil_rig.wait_state(lambda s: s["app"] == before["app"] and s["confirmed"])
+        assert after is not None, "board did not roll back to the previous confirmed image after reset"
+        assert after["slot"] == before["slot"], f"rolled back to wrong slot: {before} -> {after}"
+        hil_rig.log_artifact("t04_no_confirm.txt", f"T04 LIVE: {before} -> pending {pending} -> reset -> {after}\n")
+        return
     # Verify starting state
     status = hil_rig.query_http_version()
     if status is not None:
@@ -49,7 +61,17 @@ def test_t04_no_confirm_rollback_simulation(hil_rig: HilRig) -> None:
 def test_t05_hang_watchdog_rollback_simulation(hil_rig: HilRig) -> None:
     """T05: hang variant triggers Task Watchdog panic and rolls back to v1."""
     if not hil_rig.is_mock:
-        pytest.skip("live T05 not automated: needs raw image send + reset handling; NOT verified on hardware")
+        before = hil_rig.state()
+        assert before.get("confirmed") is True, f"precondition: board must be confirmed, got {before}"
+        hil_rig.update_ota("hang", "wifi", timeout_s=30.0)
+        log = (hil_rig.artifacts_dir / "update.log").read_text()
+        assert "accepted the request" in log, "hang image was never transferred; rollback would be vacuous"
+        # WDT resets the hung image (<=10 s); bootloader rolls back without any host reset
+        after = hil_rig.wait_state(lambda s: s["app"] == before["app"] and s["confirmed"], timeout_s=120.0)
+        assert after is not None, "board did not recover to the previous confirmed image after the hang"
+        assert after["slot"] == before["slot"], f"rolled back to wrong slot: {before} -> {after}"
+        hil_rig.log_artifact("t05_hang_wdt.txt", f"T05 LIVE: {before} -> hang image sent -> WDT -> {after}\n")
+        return
     if hil_rig.is_mock:
         hil_rig.mock_version = "1.0.0-hang"
         # WDT triggers reboot

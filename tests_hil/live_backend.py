@@ -58,6 +58,31 @@ def _default_measure_fn(port: str) -> Callable[[float, float | None, int], tuple
     return measure
 
 
+def hard_reset(port: str, serial_factory=None, sleep=None, hold_s: float = 0.1) -> None:
+    """Restart the chip into the APPLICATION via the USB-Serial/JTAG DTR/RTS transitions (esptool-style):
+    (DTR=1,RTS=0) -> (DTR=0,RTS=1) resets with IO0 released -> (0,0). A plain RTS pulse does NOT reset this port
+    (proved on hardware: uptime kept counting). The port drops ~600 ms; the caller re-polls the board."""
+    import time as _time
+    sleep = sleep or _time.sleep
+    if serial_factory is None:
+        import serial
+        serial_factory = serial.Serial
+    ser = serial_factory()
+    ser.port = port
+    ser.dtr = False   # inactive before open so opening does not toggle the lines (R14)
+    ser.rts = False
+    ser.open()
+    try:
+        ser.dtr, ser.rts = True, False
+        sleep(hold_s)
+        ser.dtr, ser.rts = False, True
+        sleep(hold_s)
+        ser.dtr, ser.rts = False, False
+        sleep(hold_s / 2)
+    finally:
+        ser.close()
+
+
 @dataclass
 class LiveBackend:
     board: str
@@ -89,6 +114,26 @@ class LiveBackend:
         if not p.is_file():
             raise LiveRigError(f"image for {variant} not found: {p}")
         return p
+
+    def reset(self) -> None:
+        hard_reset(self.port)
+
+    def wait_snapshot(self, wanted: Callable[[Snapshot], bool], timeout_s: float = 60.0, poll_s: float = 2.0,
+                      sleep_fn: Callable[[float], None] | None = None) -> Snapshot | None:
+        """Poll LABID until `wanted`; a rebooting board (port gone, no answer) is not an error."""
+        import time as _time
+        sleep_fn = sleep_fn or _time.sleep
+        last = None
+        for _ in range(max(1, int(timeout_s / poll_s) + 1)):
+            try:
+                last = self.snapshot_fn()
+            except Exception:  # noqa: S110, BLE001 - mid-reboot
+                pass
+            else:
+                if wanted(last):
+                    return last
+            sleep_fn(poll_s)
+        return None
 
     def snapshot(self) -> Snapshot:
         return self.snapshot_fn()
