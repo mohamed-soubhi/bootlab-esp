@@ -1,39 +1,48 @@
-# RESUME — bootlab-esp (checkpoint before reboot, 2026-09-17 ~03:05)
+# RESUME — bootlab-esp (checkpoint 2026-09-21)
 
-## Committed state
-- HEAD: `2d4f948` Save: AUDIT_LOG.md + IDF host-test scaffolding (from killed job, reviewed)
-- Working tree: CLEAN.
-- Recently: BL-014 -> blocked (d438880); BL-014 ESP_PLATFORM fix (874acd0);
-  check_env.sh mcuboot path fix (aff41ee); BL-004 done (bc2a802).
+Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
+(`C:\MSA\embedded-OS\bootlab-esp`) is a scratch dir; never edit or push from it.
 
-## Ticket state (verified from tickets.json)
-- DONE: BL-001, BL-002, BL-004, BL-006, BL-010, BL-011, BL-012, BL-013
-- BLOCKED: BL-003 (needs 2 boards + brown-out AC), BL-005 (LED GPIO/PSRAM need flash),
-  BL-007 (needs 2 boards enumerated), BL-014 (AC needs Zephyr native_sim + IDF linux builds)
-- TODO: everything gated behind (a) Zephyr hold [item 4] or (b) hardware/power.
+## Ticket state (from tickets.json)
+- DONE: BL-001, 002, 003, 004, 006, 007, 010, 011, 012, 013, 040
+- BLOCKED:
+  - BL-020: all 4 ACs PASS with evidence (2026-09-21); blocked only on unfinished deps BL-005, BL-014.
+  - BL-005: idf led_gpio=48 confirmed; zephyr led_gpio unknown (Zephyr hold); `psram_mode` unverified
+    on both boards (the current IDF build does not enable PSRAM, so it cannot be detected yet).
+  - BL-014: AC needs Zephyr native_sim + IDF linux builds; Zephyr on hold.
+  - BL-041: host code done + mock-verified; needs real LABID firmware (BL-022) for IDF-only closure.
+- TODO, IDF chain: BL-022 (LABID on USB-Serial-JTAG) -> BL-021 (partitions/signing/rollback) -> BL-024.
+- Zephyr chain (BL-030 ...) stays on hold.
 
-## ON REBOOT — next steps (owner approved option 1: boards READ-ONLY, no flash)
-1. get_throttled expected 0x0 after fresh reboot (owner says don't re-verify; proceed).
-2. Boards SHOULD be attached read-only (owner connecting). Confirm via `lsusb`:
-   expect 303a:1001 (USB JTAG/serial) + 303a:4001 (Espressif Device).
-3. Re-verify BL-007 (labflash doctor): AC = "Reports 2 ESP USB devices, BT adapter,
-   WiFi" + "Non-zero exit on any missing item". Run: `cd host && PYTHONPATH=$PWD
-   python3 -m labflash doctor`.
-4. If BL-007 passes -> re-attempt BL-003 (udev symlinks /dev/lab-esp-zephyr +
-   /dev/lab-esp-idf exist; survive replug+swap; NO brown-out resets over 10 min).
-5. Then unlock host chain BL-040/041/042/045/046 (labflash core, host-only).
+## Hardware state (2026-09-21)
+- idf board: `/dev/lab-esp-idf`, USB serial `E0:72:A1:AA:23:90`, usbipd busid 7-4, Windows COM14.
+  Flashed with the **v1** build (blinks 1 Hz on GPIO48).
+- zephyr board: `/dev/lab-esp-zephyr`, USB serial `AC:A7:04:2C:3B:04`, busid 6-3. Untouched.
+
+## Settled findings (see PLAN Sec 9)
+- R14: opening the port over usbipd/WSL2 resets the board (`rst:0x15`). Native Windows serial with
+  DTR/RTS inactive does NOT. Flash from WSL; observe serial on Windows (`scripts/serial_watch.py COM14`).
+  Not a blocker on the RPi4 rig.
+- R15: per-variant `-B` build dirs share one `esp_idf/sdkconfig`. Always build with
+  `-DSDKCONFIG=<dir>/sdkconfig`, verify the variant AFTER building, then confirm on target via the
+  boot log (`App version`, `Compile time`, `ELF SHA256`).
+- Hang variant: task WDT panic at ~5.0 s (`rst:0xc`, PC in `task_wdt_timeout_handling`).
+- v2 / no_confirm / bad_sig builds predate R15: rebuild with per-dir sdkconfig before flashing them.
 
 ## HARD RULES STILL IN FORCE
-- Zephyr hold (item 4): do NOT touch ~/zephyr-ws, no Zephyr build, do not cite the
-  old contested "success".
-- NO flash/write/erase without explicit per-instance owner go-ahead.
+- Zephyr hold: do NOT touch ~/zephyr-ws, no Zephyr build.
+- NO flash/write/erase without explicit per-instance owner go-ahead. Verify board identity
+  (`ID_SERIAL_SHORT`) before every flash.
 - Every "done" needs fresh pasted evidence, not summaries.
 - Verify surprising results directly before reporting.
+- Never burn eFuses; never commit keys/, backups/, *.pem.
 
 ## Known environment traps
 - esptool: venv 5.4.0 = ~/bootlab-esp/.venv/bin/esptool (HAS elf2image);
   Debian /usr/bin/esptool 4.7.0 shadows it if .venv/bin not first on PATH.
   Export: `export PATH="$HOME/bootlab-esp/.venv/bin:$PATH"`.
-- west topdir = ~/zephyr-ws (NOT the git repo). check_env.sh resolves mcuboot at
-  $WESTROOT/bootloader/mcuboot.
-- Models migrated: default + all cron -> deepseek-v4.1-flash (deepseek-v4-flash retired).
+- ESP-IDF v6.0.3 lives at `~/tools/esp-idf` (`. ~/tools/esp-idf/export.sh`).
+- west topdir = ~/zephyr-ws (NOT the git repo); on hold.
+- `ls` in this shell is aliased to eza and breaks on some args; use `command ls`.
+- Untracked build artifacts (`bootloader/`, `tools/`, `common/labid/tests/build_audit/`) are not committed.
+- Many tracked files show as modified from file-mode changes only (NTFS/WSL); content is unchanged.
