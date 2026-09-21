@@ -367,13 +367,14 @@
       "deps": [
         "BL-021"
       ],
-      "desc": "5 s health check then esp_ota_mark_app_valid_cancel_rollback().",
+      "desc": "5 s health check then esp_ota_mark_app_valid_cancel_rollback(). [PROGRESS 2026-09-21 DONE: Added health_task in esp_idf/main/app_main.c (waits for >= 5 s uptime and >= 5 LED toggles, then calls esp_ota_mark_app_valid_cancel_rollback() and confirms app). Gated confirmed reporting in esp_idf/components/labid_port/labid_port.c on app self-test state and OTA partition state. Verified both variants per PLAN R15 (v1 and no_confirm built and RSA-3072 signed with per-dir sdkconfig). Flashed to lab-esp-idf (E0:72:A1:AA:23:90) after owner go-ahead. Live acceptance checker scripts/confirm_check.py COM14 verified both ACs: AC1 (VER? confirmed=1 after 5 s): PASS, confirmed=0 at 1037 ms -> confirmed=1 at 5566 ms (toggles=12). AC2 (no_confirm stays confirmed=0): PASS, confirmed=0 at 1002 ms -> confirmed=0 at 5529 ms (toggles=12). Status set to blocked pending dep BL-021.]",
       "ac": [
         "VER? confirmed=1 after 5 s",
         "no_confirm stays confirmed=0"
       ],
-      "status": "todo",
-      "pr": ""
+      "status": "blocked",
+      "pr": "",
+      "block_reason": "Both BL-023 ACs PASS with live on-target evidence on E0:72:A1:AA:23:90 (2026-09-21). Cannot be marked done only because dependency BL-021 is blocked on BL-020."
     },
     {
       "id": "BL-024",

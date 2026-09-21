@@ -9,8 +9,8 @@
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 30
-    "blocked" : 6
+    "todo" : 29
+    "blocked" : 7
     "done" : 11
 ```
 
@@ -61,6 +61,7 @@ flowchart LR
 - 🟥 **BL-020** IDF blink app + toggles + 5 variants + task WDT 
 - 🟥 **BL-021** IDF partitions + signing + rollback config 
 - 🟥 **BL-022** IDF LABID port on USB-Serial-JTAG 
+- 🟥 **BL-023** IDF self-test + mark valid 
 - 🟥 **BL-041** identify, info, status, measure 
 
 ## Tickets by epic
@@ -277,7 +278,7 @@ One source, two build integrations. [BLOCKED: AC requires Zephyr native_sim + ID
 | 🟥 | BL-020 | IDF blink app + toggles + 5 variants + task WDT | M | idf | BL-005, BL-014 |  |
 | 🟥 | BL-021 | IDF partitions + signing + rollback config | S | idf | BL-020, BL-006 |  |
 | 🟥 | BL-022 | IDF LABID port on USB-Serial-JTAG | S | idf | BL-020, BL-013 |  |
-| ⬜ | BL-023 | IDF self-test + mark valid | S | idf | BL-021 |  |
+| 🟥 | BL-023 | IDF self-test + mark valid | S | idf | BL-021 |  |
 | ⬜ | BL-024 | IDF WiFi + token provisioning via NVS | S | idf | BL-020 |  |
 | ⬜ | BL-025 | IDF HTTPS control server (/ota, /version) | M | idf | BL-024 |  |
 | ⬜ | BL-026 | IDF WiFi OTA (esp_https_ota pull) | M | idf | BL-025, BL-023 |  |
@@ -333,14 +334,14 @@ Driver read task, app/bootloader descriptions, OTA state. [NOTE 2026-09-21: R14 
 
 </details>
 
-<details><summary>⬜ <b>BL-023</b> — IDF self-test + mark valid</summary>
+<details><summary>🟥 <b>BL-023</b> — IDF self-test + mark valid</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** idf  
 - **Depends on:** BL-021  
 - **Plan:** §4.2, §5, §6, §7.2, §8 P1
 
-5 s health check then esp_ota_mark_app_valid_cancel_rollback().
+5 s health check then esp_ota_mark_app_valid_cancel_rollback(). [PROGRESS 2026-09-21 DONE: Added health_task in esp_idf/main/app_main.c (waits for >= 5 s uptime and >= 5 LED toggles, then calls esp_ota_mark_app_valid_cancel_rollback() and confirms app). Gated confirmed reporting in esp_idf/components/labid_port/labid_port.c on app self-test state and OTA partition state. Verified both variants per PLAN R15 (v1 and no_confirm built and RSA-3072 signed with per-dir sdkconfig). Flashed to lab-esp-idf (E0:72:A1:AA:23:90) after owner go-ahead. Live acceptance checker scripts/confirm_check.py COM14 verified both ACs: AC1 (VER? confirmed=1 after 5 s): PASS, confirmed=0 at 1037 ms -> confirmed=1 at 5566 ms (toggles=12). AC2 (no_confirm stays confirmed=0): PASS, confirmed=0 at 1002 ms -> confirmed=0 at 5529 ms (toggles=12). Status set to blocked pending dep BL-021.]
 
 **Acceptance criteria**
 - [ ] VER? confirmed=1 after 5 s
@@ -878,7 +879,7 @@ flowchart TB
         BL020["BL-020"]:::blocked
         BL021["BL-021"]:::blocked
         BL022["BL-022"]:::blocked
-        BL023["BL-023"]:::todo
+        BL023["BL-023"]:::blocked
         BL024["BL-024"]:::todo
         BL025["BL-025"]:::todo
         BL026["BL-026"]:::todo

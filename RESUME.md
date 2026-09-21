@@ -9,12 +9,28 @@ Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
   - BL-020: all 4 ACs PASS with evidence (2026-09-21); blocked only on unfinished deps BL-005, BL-014.
   - BL-021: all 3 ACs PASS with evidence (2026-09-21); blocked only on dep BL-020.
   - BL-022: all 3 ACs PASS with live on-target evidence (2026-09-21); blocked only on dep BL-020.
+  - BL-023: all 2 ACs PASS with live on-target evidence (2026-09-21); blocked only on dep BL-021.
   - BL-005: idf led_gpio=48 confirmed; zephyr led_gpio unknown (Zephyr hold); `psram_mode` unverified
     on both boards (the current IDF build does not enable PSRAM, so it cannot be detected yet).
   - BL-014: AC needs Zephyr native_sim + IDF linux builds; Zephyr on hold.
   - BL-041: host code done + mock-verified; live LABID firmware now running on IDF board.
-- TODO, IDF chain: BL-023 (self-test + esp_ota confirm after 5s) -> BL-024 (WiFi HTTPS OTA) -> BL-025 (BLE OTA).
+- TODO, IDF chain: BL-024 (WiFi HTTPS OTA) -> BL-025 (BLE OTA).
 - Zephyr chain (BL-030 ...) stays on hold.
+
+## BL-023 status (COMPLETE — all 2 ACs pass with live on-target evidence)
+- Self-test health check task implemented in `esp_idf/main/app_main.c`: waits for >= 5 s uptime and >= 5
+  LED toggles, then calls `esp_ota_mark_app_valid_cancel_rollback()` and sets `s_confirmed = true`.
+- Gated confirmed reporting in `esp_idf/components/labid_port/labid_port.c` on app self-test state and
+  OTA partition state. In `no_confirm` builds (`CONFIG_APP_VARIANT_NO_CONFIRM=y`), the health task is
+  omitted, so `s_confirmed` remains false indefinitely.
+- Both variants compiled cleanly and signed with RSA-3072 using per-dir sdkconfig (PLAN R15):
+  - `v1`: `esp_idf/build/`, ELF SHA `4089eadf96bc09b627c80d7bfa91c111f2ca1e427dfb3c0cd8976cbfaf7b6c48`.
+  - `no_confirm`: `esp_idf/build_no_confirm/`, ELF SHA `5ac89aa2f56966ac945e23d468d28e0205998ada5bb65422f1d2352b20cb3e45`.
+- Live acceptance test runner `scripts/confirm_check.py` run natively on Windows (`COM14`) after flashing
+  each variant to `/dev/lab-esp-idf` (`E0:72:A1:AA:23:90`) with owner go-ahead. ALL PASS:
+  - AC1 (VER? confirmed=1 after 5 s): PASS (v1: confirmed=0 at 1037 ms -> confirmed=1 at 5566 ms, toggles=12).
+  - AC2 (no_confirm stays confirmed=0): PASS (no_confirm: confirmed=0 at 1002 ms -> confirmed=0 at 5529 ms, toggles=12).
+- Status set to 'blocked' solely because dep BL-021 is blocked on BL-020; all requirements satisfied.
 
 ## BL-021 status (COMPLETE — all 3 ACs pass with evidence)
 - partitions.csv configured per PLAN Sec 4.2: 16 MB flash layout with dual 4MB slots (ota_0, ota_1),
@@ -52,12 +68,12 @@ Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
 - Ticket status set to 'blocked' solely because dep BL-020 is blocked; all requirements satisfied.
 
 NEXT:
-- BL-023 (IDF app self-test + esp_ota_mark_app_valid_cancel_rollback after 5s)
+- BL-024 (IDF WiFi + token provisioning via NVS)
 - BL-041 (host identify/measure verification against live LABID)
 
 ## Hardware state (2026-09-21)
 - idf board: `/dev/lab-esp-idf`, USB serial `E0:72:A1:AA:23:90`, usbipd busid 7-4, Windows COM14.
-  Flashed with BL-021 signed build (dual OTA partitions, rollback enabled, 1 Hz blink on GPIO48).
+  Flashed with BL-023 no_confirm build (dual OTA partitions, rollback enabled, 1 Hz blink on GPIO48).
 - zephyr board: `/dev/lab-esp-zephyr`, USB serial `AC:A7:04:2C:3B:04`, busid 6-3. Untouched.
 
 ## Settled findings (see PLAN Sec 9)

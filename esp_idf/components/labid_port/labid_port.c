@@ -125,12 +125,18 @@ static int prov_id(void *user, struct labid_fields *f)
          | labid_fields_add_u32(f, "flash_kb", flash_bytes / 1024u);
 }
 
-/* Factory images have no otadata, so they cannot roll back: report confirmed. */
 static bool running_image_confirmed(const esp_partition_t *run)
 {
     esp_ota_img_states_t st;
-    if (esp_ota_get_state_partition(run, &st) != ESP_OK) { return true; }
-    return !(st == ESP_OTA_IMG_NEW || st == ESP_OTA_IMG_PENDING_VERIFY);
+    if (esp_ota_get_state_partition(run, &st) == ESP_OK) {
+        if (st == ESP_OTA_IMG_NEW || st == ESP_OTA_IMG_PENDING_VERIFY) {
+            return false;
+        }
+    }
+    if (s_app.is_confirmed) {
+        return s_app.is_confirmed();
+    }
+    return true;
 }
 
 static int prov_ver(void *user, struct labid_fields *f)

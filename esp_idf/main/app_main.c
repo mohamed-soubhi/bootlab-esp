@@ -22,7 +22,9 @@
 
 #include "app_blink_timing.h"
 #include "esp_log.h"
+#include "esp_ota_ops.h"
 #include "esp_task_wdt.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "labid_port.h"
@@ -37,10 +39,16 @@
 #endif
 
 static atomic_uint_least32_t s_toggle_count = 0;
+static atomic_bool s_confirmed = false;
 
 uint32_t app_get_toggle_count(void)
 {
     return atomic_load(&s_toggle_count);
+}
+
+bool app_is_confirmed(void)
+{
+    return atomic_load(&s_confirmed);
 }
 
 const char *app_get_variant(void)
@@ -102,6 +110,29 @@ static void blink_task(void *arg)
     }
 }
 
+#if !CONFIG_APP_VARIANT_NO_CONFIRM && !CONFIG_APP_VARIANT_HANG
+static void health_task(void *arg)
+{
+    (void)arg;
+    /* Self-test per PLAN Sec 5.2:
+     * - RTOS ticking for >= 5 s
+     * - LED toggled >= 5 times */
+    const TickType_t check_interval = pdMS_TO_TICKS(500);
+    for (;;) {
+        vTaskDelay(check_interval);
+        uint32_t uptime_ms = (uint32_t)(esp_timer_get_time() / 1000);
+        uint32_t toggles = app_get_toggle_count();
+        if (uptime_ms >= 5000 && toggles >= 5) {
+            esp_err_t err = esp_ota_mark_app_valid_cancel_rollback();
+            (void)err;
+            atomic_store(&s_confirmed, true);
+            break;
+        }
+    }
+    vTaskDelete(NULL);
+}
+#endif
+
 void app_main(void)
 {
     led_strip_config_t strip_config = {
@@ -117,11 +148,16 @@ void app_main(void)
 
     xTaskCreate(blink_task, "blink", 4096, strip, 5, NULL);
 
-    /* BL-022: answer LABID requests over USB-Serial-JTAG (PLAN 7.3). */
+#if !CONFIG_APP_VARIANT_NO_CONFIRM && !CONFIG_APP_VARIANT_HANG
+    xTaskCreate(health_task, "health", 3072, NULL, 3, NULL);
+#endif
+
+    /* BL-022 / BL-023: answer LABID requests over USB-Serial-JTAG (PLAN 7.3). */
     const struct labid_port_app labid_app = {
         .variant = app_get_variant(),
         .blink_hz = APP_BLINK_HZ_STR,
         .toggle_count = app_get_toggle_count,
+        .is_confirmed = app_is_confirmed,
     };
     ESP_ERROR_CHECK(labid_port_start(&labid_app));
 }

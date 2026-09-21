@@ -18,6 +18,7 @@ struct labid_port_app {
     const char *variant;            /* "v1" "v2" "no_confirm" "hang" "bad_sig" */
     const char *blink_hz;           /* configured LED rate, e.g. "1" */
     uint32_t  (*toggle_count)(void);/* LED toggle counter */
+    bool      (*is_confirmed)(void);/* Health self-test confirm state */
 };
 
 /*
