@@ -6,17 +6,17 @@
 
 ## Overall
 
-`█████████████░░░░░░░░░░░░░░░░░` **23/52 done (44%)**
+`██████████████░░░░░░░░░░░░░░░░` **25/52 done (48%)**
 
 - **IDF track:** `████████████████░░░░` 33/42
-- **Zephyr track:** `██████░░░░░░░░░░░░░░` 11/37
+- **Zephyr track:** `███████░░░░░░░░░░░░░` 13/37
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 12
+    "todo" : 10
     "doing" : 10
     "blocked" : 7
-    "done" : 23
+    "done" : 25
 ```
 
 ## Epics
@@ -26,7 +26,7 @@ pie showData title Ticket status
 | E0 | P0 | Host & rig setup | `████████████` | 8/8 | ✅ done | §2, §3, §8 P0 |
 | EL | PL | LABID common library | `████████████` | 4/4 | ✅ done | §7.3, §8 PL |
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `████████████` | 9/9 | ✅ done | §4.2, §5, §6, §7.2, §8 P1 |
-| E2 | P2 | ESP32-S3 #1 — Zephyr | `░░░░░░░░░░░░` | 0/9 | ⬜ todo | §4.1, §5, §6, §7.1, §8 P2 |
+| E2 | P2 | ESP32-S3 #1 — Zephyr | `███░░░░░░░░░` | 2/9 | 🔵 doing | §4.1, §5, §6, §7.1, §8 P2 |
 | E3 | P3 | labflash CLI | `███░░░░░░░░░` | 2/7 | 🔵 doing | §8 P3 |
 | E4 | P4 | HIL tests + CI | `░░░░░░░░░░░░` | 0/9 | 🟥 blocked | §8 P4 |
 | E5 | P5 | Soak, docs, handover | `░░░░░░░░░░░░` | 0/6 | 🟥 blocked | §8 P5 |
@@ -38,7 +38,7 @@ flowchart LR
     E0["P0 Host & rig setup<br/>8/8"]:::done
     EL["PL LABID common library<br/>4/4"]:::done
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>9/9"]:::done
-    E2["P2 ESP32-S3 #1 — Zephyr<br/>0/9"]:::todo
+    E2["P2 ESP32-S3 #1 — Zephyr<br/>2/9"]:::doing
     E3["P3 labflash CLI<br/>2/7"]:::doing
     E4["P4 HIL tests + CI<br/>0/9"]:::blocked
     E5["P5 Soak, docs, handover<br/>0/6"]:::blocked
@@ -56,8 +56,6 @@ flowchart LR
 
 ## Ready to start now
 
-- **BL-005b** Detect board hardware → rig.yaml (Zephyr board) (S) — E2
-- **BL-014b** Packaging: Zephyr module (native_sim) (S) — E2
 - **BL-030** Zephyr west + sysbuild MCUboot + swap-with-revert check (M) — E2
 
 ## Blocked
@@ -445,8 +443,8 @@ Run all P1 acceptance checks. [RESULT 2026-09-21 -- ALL 6 PLAN P1 CHECKBOXES PAS
 
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
-| ⬜ | BL-005b | Detect board hardware → rig.yaml (Zephyr board) | S | zephyr | BL-003 |  |
-| ⬜ | BL-014b | Packaging: Zephyr module (native_sim) | S | common, zephyr | BL-010 |  |
+| ✅ | BL-005b | Detect board hardware → rig.yaml (Zephyr board) | S | zephyr | BL-003 |  |
+| ✅ | BL-014b | Packaging: Zephyr module (native_sim) | S | common, zephyr | BL-010 |  |
 | ⬜ | BL-030 | Zephyr west + sysbuild MCUboot + swap-with-revert check | M | zephyr | BL-002, BL-006 |  |
 | ⬜ | BL-031 | Zephyr blink app + toggles + 5 variants + watchdog | M | zephyr | BL-030, BL-005b |  |
 | ⬜ | BL-032 | Zephyr LABID port on console | S | zephyr | BL-031, BL-014b |  |
@@ -455,36 +453,34 @@ Run all P1 acceptance checks. [RESULT 2026-09-21 -- ALL 6 PLAN P1 CHECKBOXES PAS
 | ⬜ | BL-035 | Zephyr WiFi + SMP over UDP (single build with BT) | L | zephyr | BL-034 |  |
 | ⬜ | BL-036 | Zephyr phase acceptance run | S | zephyr | BL-032, BL-035 |  |
 
-<details><summary>⬜ <b>BL-005b</b> — Detect board hardware → rig.yaml (Zephyr board)</summary>
+<details><summary>✅ <b>BL-005b</b> — Detect board hardware → rig.yaml (Zephyr board)</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** zephyr  
-- **Tracks:** Zephyr ⬜ todo  
+- **Tracks:** Zephyr ✅ done  
 - **Depends on:** BL-003  
-- **Cross-track gate (Zephyr):** waits for BL-063b  
 - **Plan:** §4.1, §5, §6, §7.1, §8 P2
 
 Split from BL-005 on 2026-09-21. REMAINING: the zephyr board's led_gpio (needs a blink app on that board, i.e. writing its flash; backup backups/esp_ACA7042C3B04.bin + .sha256; identity AC:A7:04:2C:3B:04) and the run-test of its PSRAM mode (octal is INFERRED from eFuses identical to the idf board's). Gated behind the IDF track (BL-063b); an IDF blink build is enough, no Zephyr toolchain needed.
 
 **Acceptance criteria**
-- [ ] host/config/rig.yaml filled for the zephyr board
-- [ ] LED GPIO confirmed by a quick blink (zephyr board)
+- [x] host/config/rig.yaml filled for the zephyr board
+- [x] LED GPIO confirmed by a quick blink (zephyr board)
 
 </details>
 
-<details><summary>⬜ <b>BL-014b</b> — Packaging: Zephyr module (native_sim)</summary>
+<details><summary>✅ <b>BL-014b</b> — Packaging: Zephyr module (native_sim)</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** common, zephyr  
-- **Tracks:** Zephyr ⬜ todo  
+- **Tracks:** Zephyr ✅ done  
 - **Depends on:** BL-010  
-- **Cross-track gate (Zephyr):** waits for BL-063b  
 - **Plan:** §4.1, §5, §6, §7.1, §8 P2
 
 Split from BL-014 on 2026-09-21. REMAINING: build the labid Zephyr module for native_sim. Also verifies the Zephyr branch of common/labid/CMakeLists.txt, which gained labid_dispatch.c (BL-022) and has never been built. Zephyr hold applies; gated behind the IDF track (BL-063b).
 
 **Acceptance criteria**
-- [ ] Builds for Zephyr native_sim
+- [x] Builds for Zephyr native_sim
 
 </details>
 
@@ -494,7 +490,6 @@ Split from BL-014 on 2026-09-21. REMAINING: build the labid Zephyr module for na
 - **Boards:** zephyr  
 - **Tracks:** Zephyr ⬜ todo  
 - **Depends on:** BL-002, BL-006  
-- **Cross-track gate (Zephyr):** waits for BL-063b  
 - **Plan:** §4.1, §5, §6, §7.1, §8 P2
 
 FIRST ticket for Zephyr. Verify revert-capable swap mode on ESP32-S3.
@@ -1072,8 +1067,8 @@ flowchart TB
         BL028["BL-028"]:::done
     end
     subgraph E2_g["P2 ESP32-S3 #1 — Zephyr"]
-        BL005b["BL-005b"]:::todo
-        BL014b["BL-014b"]:::todo
+        BL005b["BL-005b"]:::done
+        BL014b["BL-014b"]:::done
         BL030["BL-030"]:::todo
         BL031["BL-031"]:::todo
         BL032["BL-032"]:::todo

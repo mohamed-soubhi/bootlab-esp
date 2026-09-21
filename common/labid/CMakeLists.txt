@@ -28,5 +28,6 @@ else()
     zephyr_library_sources(${CMAKE_CURRENT_SOURCE_DIR}/src/labid.c
                            ${CMAKE_CURRENT_SOURCE_DIR}/src/labid_dispatch.c)
     zephyr_library_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+    zephyr_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
   endif()
 endif()

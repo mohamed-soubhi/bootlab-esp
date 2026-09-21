@@ -176,13 +176,9 @@
         "host/config/rig.yaml filled for the zephyr board",
         "LED GPIO confirmed by a quick blink (zephyr board)"
       ],
-      "status": "todo",
+      "status": "done",
       "pr": "",
-      "deps_by_track": {
-        "zephyr": [
-          "BL-063b"
-        ]
-      }
+      "deps_by_track": {}
     },
     {
       "id": "BL-006",
@@ -339,13 +335,9 @@
       "ac": [
         "Builds for Zephyr native_sim"
       ],
-      "status": "todo",
+      "status": "done",
       "pr": "",
-      "deps_by_track": {
-        "zephyr": [
-          "BL-063b"
-        ]
-      }
+      "deps_by_track": {}
     },
     {
       "id": "BL-020",
@@ -578,11 +570,7 @@
       "tracks": [
         "zephyr"
       ],
-      "deps_by_track": {
-        "zephyr": [
-          "BL-063b"
-        ]
-      }
+      "deps_by_track": {}
     },
     {
       "id": "BL-031",

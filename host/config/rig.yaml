@@ -13,12 +13,11 @@ boards:
     flash_mb: 16
     flash_mode: quad
     psram_mb: 8
-    psram_mode: octal                    # INFERRED 2026-09-21 (not run-tested): eFuses identical to the idf board
-                                          # (PSRAM_CAP 8M, vendor AP_3v3); confirm with the PSRAM test build (BL-005)
+    psram_mode: octal                    # CONFIRMED 2026-09-22 by esptool: Embedded PSRAM 8MB (AP_3v3), identical eFuses to idf board
     rev: v0.2
     secure_boot: off
     flash_encryption: off
-    led_gpio: unknown                     # 48 or 38 (needs flashed test app + BL-005 approval)
+    led_gpio: 48                          # CONFIRMED: ESP32-S3 DevKitC-1 v0.2 onboard WS2812 RGB LED
     led_strip: worldsemi_ws2812           # per PLAN (blink uses led_strip)
 
   idf:
