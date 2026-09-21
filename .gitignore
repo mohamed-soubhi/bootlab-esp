@@ -38,3 +38,6 @@ esp_idf/**/sdkconfig.old
 # and fetched/generated component-manager artifacts (not source)
 esp_idf/build*/
 esp_idf/managed_components/
+
+# Downloaded/unpacked helper packages (e.g. user-space libbsd for the IDF linux-target test)
+.cache/

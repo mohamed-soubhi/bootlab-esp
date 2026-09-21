@@ -17,6 +17,7 @@
 - `rate_check.py` (Windows/any) — measures the LED blink rate from LABID's toggle counter: `python scripts\rate_check.py COM14 --expect-hz 4`. Self-contained (pyserial only); DTR/RTS held inactive before open.
 - `labid_query.py` (Windows/any) — sends one LABID request and prints the reply with its CRC verified: `python scripts\labid_query.py COM14 VER?` (also `ID?`, `STATE?`, `HELLO`). Self-contained (pyserial only).
 - `labid_check.py` now holds one connection and waits for the next boot `ANNOUNCE` (`--wait SECONDS`), so any reset works: RST, replug, OTA reboot or watchdog. A software reset does NOT drop the ESP32-S3 USB port, so waiting for the port to disappear never fires.
+- `idf_linux_test.sh` (WSL2/Linux/CI) — BL-014: builds the packaged LABID component for the ESP-IDF linux (host) target and runs its smoke test (parser, writer, dispatcher); exit status 0 = pass. Needs `libbsd-dev`, or falls back to a user-space copy in `.cache/` when there is no root.
 - `evidence/` — dated evidence files backing ticket "done" claims.
 
 ## USBIPD Switching between WSL2 and Windows (from WSL)
