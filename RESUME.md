@@ -11,12 +11,29 @@ Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
   - BL-022: all 3 ACs PASS with live on-target evidence (2026-09-21); blocked only on dep BL-020.
   - BL-023: all 2 ACs PASS with live on-target evidence (2026-09-21); blocked only on dep BL-021.
   - BL-024: all 2 ACs PASS with live on-target evidence (2026-09-21); blocked only on dep BL-020.
+  - BL-025: all 2 ACs PASS with live on-target evidence (2026-09-21); blocked only on dep BL-024.
   - BL-005: idf led_gpio=48 confirmed; zephyr led_gpio unknown (Zephyr hold); `psram_mode` unverified
     on both boards (the current IDF build does not enable PSRAM, so it cannot be detected yet).
   - BL-014: AC needs Zephyr native_sim + IDF linux builds; Zephyr on hold.
   - BL-041: host code done + mock-verified; live LABID firmware now running on IDF board.
-- TODO, IDF chain: BL-025 (IDF HTTPS control server (/ota, /version)) -> BL-026 (IDF WiFi OTA pull).
+- TODO, IDF chain: BL-026 (IDF WiFi OTA pull) -> BL-027 (IDF BLE OTA).
 - Zephyr chain (BL-030 ...) stays on hold.
+
+## BL-025 status (COMPLETE — all 2 ACs pass with live on-target evidence)
+- Generated Lab Root CA (`keys/ca.pem`) and ESP32 server certificate/key (`keys/server_cert.pem`,
+  `keys/server_key.pem`) with SANs via `scripts/gen_tls_certs.sh`. All keys/certs remain gitignored.
+- Enabled `CONFIG_ESP_HTTPS_SERVER_ENABLE=y` in `esp_idf/sdkconfig.defaults`.
+- Embedded certificates into the binary via CMake `EMBED_TXTFILES` in `esp_idf/main/CMakeLists.txt`.
+- Implemented `esp_idf/main/app_http_server.[ch]`: starts HTTPS server on port 443 on WiFi connect.
+  - `GET /version`: returns JSON `{app, git, slot, confirmed}` matching `esp_app_desc` and LABID.
+  - `POST /ota`: checks `Authorization: Bearer <token>` against NVS token; returns 202 Accepted
+    on match, 401 Unauthorized on missing/wrong token.
+- Built and signed `v1` firmware (size 987136 bytes, ELF SHA256 `a1532237f579fdeb72ba4e8510d943040478c554cd11743d1c1c7add02769680`).
+- Flashed signed v1 app to `lab-esp-idf` (`E0:72:A1:AA:23:90`) after owner go-ahead.
+- Live acceptance test runner `scripts/https_check.py` run on hardware (cross-checking with `COM14`):
+  - AC1 (GET /version matches LABID VER.app): PASS (`app='688b8a6-dirty'`, `git='688b8a6'`, `slot=0`, `confirmed=True`).
+  - AC2 (Wrong token -> 401): PASS (missing token -> 401, wrong token -> 401, valid token -> 202).
+- Status set to 'blocked' solely because dep BL-024 is blocked on BL-020; all requirements satisfied.
 
 ## BL-024 status (COMPLETE — all 2 ACs pass with live on-target evidence)
 - Host provisioning tool `host/labflash/provision.py` implemented: `labflash provision idf` writes
@@ -84,13 +101,13 @@ Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
 - Ticket status set to 'blocked' solely because dep BL-020 is blocked; all requirements satisfied.
 
 NEXT:
-- BL-025 (IDF HTTPS control server (/ota, /version))
+- BL-026 (IDF WiFi OTA pull via esp_https_ota)
 - BL-041 (host identify/measure verification against live LABID)
 
 ## Hardware state (2026-09-21)
 - idf board: `/dev/lab-esp-idf`, USB serial `E0:72:A1:AA:23:90`, usbipd busid 7-4, Windows COM14.
-  Flashed with BL-024 v1 signed build (WiFi STA support, NVS credentials provisioned at 0x9000,
-  dual OTA partitions, rollback enabled, 1 Hz blink on GPIO48, confirms after 5s). Connected to WiFi.
+  Flashed with BL-025 v1 signed build (HTTPS control server on port 443, WiFi STA connected to IP 192.168.1.152,
+  NVS credentials provisioned at 0x9000, dual OTA partitions, rollback enabled, 1 Hz blink on GPIO48, confirms after 5s).
 - zephyr board: `/dev/lab-esp-zephyr`, USB serial `AC:A7:04:2C:3B:04`, busid 6-3. Untouched.
 
 ## Settled findings (see PLAN Sec 9)

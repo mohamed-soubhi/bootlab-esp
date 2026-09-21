@@ -33,3 +33,7 @@ CONFIG_SECURE_FLASH_ENC_ENABLED=n
 # PLAN Sec 7.3.4's intent (LABID/console read directly from USB-Serial-JTAG,
 # not UART0/stdin).
 CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+
+# HTTPS Control Server (PLAN Sec 7.2, BL-025)
+CONFIG_ESP_HTTPS_SERVER_ENABLE=y
+

@@ -9,8 +9,8 @@
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 28
-    "blocked" : 8
+    "todo" : 27
+    "blocked" : 9
     "done" : 11
 ```
 
@@ -63,6 +63,7 @@ flowchart LR
 - 🟥 **BL-022** IDF LABID port on USB-Serial-JTAG 
 - 🟥 **BL-023** IDF self-test + mark valid 
 - 🟥 **BL-024** IDF WiFi + token provisioning via NVS 
+- 🟥 **BL-025** IDF HTTPS control server (/ota, /version) 
 - 🟥 **BL-041** identify, info, status, measure 
 
 ## Tickets by epic
@@ -281,7 +282,7 @@ One source, two build integrations. [BLOCKED: AC requires Zephyr native_sim + ID
 | 🟥 | BL-022 | IDF LABID port on USB-Serial-JTAG | S | idf | BL-020, BL-013 |  |
 | 🟥 | BL-023 | IDF self-test + mark valid | S | idf | BL-021 |  |
 | 🟥 | BL-024 | IDF WiFi + token provisioning via NVS | S | idf | BL-020 |  |
-| ⬜ | BL-025 | IDF HTTPS control server (/ota, /version) | M | idf | BL-024 |  |
+| 🟥 | BL-025 | IDF HTTPS control server (/ota, /version) | M | idf | BL-024 |  |
 | ⬜ | BL-026 | IDF WiFi OTA (esp_https_ota pull) | M | idf | BL-025, BL-023 |  |
 | ⬜ | BL-027 | IDF BLE OTA (ble_ota + NimBLE + coexistence) | L | idf | BL-023 |  |
 | ⬜ | BL-028 | IDF phase acceptance run | S | idf | BL-022, BL-026, BL-027 |  |
@@ -365,14 +366,14 @@ labflash provision idf writes SSID/PSK/token over USB. [PROGRESS 2026-09-21 DONE
 
 </details>
 
-<details><summary>⬜ <b>BL-025</b> — IDF HTTPS control server (/ota, /version)</summary>
+<details><summary>🟥 <b>BL-025</b> — IDF HTTPS control server (/ota, /version)</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** idf  
 - **Depends on:** BL-024  
 - **Plan:** §4.2, §5, §6, §7.2, §8 P1
 
-Bearer token, RPi4 self-signed CA pinned.
+Bearer token, RPi4 self-signed CA pinned. [PROGRESS 2026-09-21 DONE: Generated Lab Root CA (keys/ca.pem) and ESP32 server cert/key (keys/server_cert.pem, keys/server_key.pem) with SANs via scripts/gen_tls_certs.sh. Embedded certs into binary via CMake EMBED_TXTFILES. Enabled CONFIG_ESP_HTTPS_SERVER_ENABLE=y in sdkconfig.defaults. Implemented esp_idf/main/app_http_server.[ch] (GET /version returns JSON {app, git, slot, confirmed}; POST /ota validates Authorization: Bearer <token> against NVS token and returns 202 Accepted on match, 401 Unauthorized on missing/wrong token). Wired server start to IP_EVENT_STA_GOT_IP in app_wifi.c. Flashed signed v1 build to lab-esp-idf (E0:72:A1:AA:23:90) after owner go-ahead. Acceptance checker scripts/https_check.py verified all ACs live: AC1 (GET /version matches LABID VER.app): PASS, /version returned app='688b8a6-dirty' matching LABID VER.app ('688b8a6-dirty'), git='688b8a6', slot=0, confirmed=True. AC2 (Wrong token -> 401): PASS, missing token -> 401, wrong token -> 401, valid token -> 202. Status set to blocked pending dep BL-024.]
 
 **Acceptance criteria**
 - [ ] GET /version matches LABID VER.app
@@ -882,7 +883,7 @@ flowchart TB
         BL022["BL-022"]:::blocked
         BL023["BL-023"]:::blocked
         BL024["BL-024"]:::blocked
-        BL025["BL-025"]:::todo
+        BL025["BL-025"]:::blocked
         BL026["BL-026"]:::todo
         BL027["BL-027"]:::todo
         BL028["BL-028"]:::todo

@@ -407,13 +407,14 @@
       "deps": [
         "BL-024"
       ],
-      "desc": "Bearer token, RPi4 self-signed CA pinned.",
+      "desc": "Bearer token, RPi4 self-signed CA pinned. [PROGRESS 2026-09-21 DONE: Generated Lab Root CA (keys/ca.pem) and ESP32 server cert/key (keys/server_cert.pem, keys/server_key.pem) with SANs via scripts/gen_tls_certs.sh. Embedded certs into binary via CMake EMBED_TXTFILES. Enabled CONFIG_ESP_HTTPS_SERVER_ENABLE=y in sdkconfig.defaults. Implemented esp_idf/main/app_http_server.[ch] (GET /version returns JSON {app, git, slot, confirmed}; POST /ota validates Authorization: Bearer <token> against NVS token and returns 202 Accepted on match, 401 Unauthorized on missing/wrong token). Wired server start to IP_EVENT_STA_GOT_IP in app_wifi.c. Flashed signed v1 build to lab-esp-idf (E0:72:A1:AA:23:90) after owner go-ahead. Acceptance checker scripts/https_check.py verified all ACs live: AC1 (GET /version matches LABID VER.app): PASS, /version returned app='688b8a6-dirty' matching LABID VER.app ('688b8a6-dirty'), git='688b8a6', slot=0, confirmed=True. AC2 (Wrong token -> 401): PASS, missing token -> 401, wrong token -> 401, valid token -> 202. Status set to blocked pending dep BL-024.]",
       "ac": [
         "GET /version matches LABID VER.app",
         "Wrong token → 401"
       ],
-      "status": "todo",
-      "pr": ""
+      "status": "blocked",
+      "pr": "",
+      "block_reason": "Both BL-025 ACs PASS with live on-target evidence on E0:72:A1:AA:23:90 (2026-09-21). Cannot be marked done only because dependency BL-024 is blocked on BL-020."
     },
     {
       "id": "BL-026",

@@ -6,6 +6,7 @@
  *
  * NEVER logs or prints credentials (AC2).
  */
+#include "app_http_server.h"
 #include "app_wifi.h"
 
 #include <string.h>
@@ -32,6 +33,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t base, int32_t id, voi
     } else if (base == WIFI_EVENT && id == WIFI_EVENT_STA_DISCONNECTED) {
         s_connected = false;
         s_ip_str[0] = '\0';
+        app_http_server_stop();
         ESP_LOGW(TAG, "WiFi disconnected, reconnecting...");
         esp_wifi_connect();
     } else if (base == IP_EVENT && id == IP_EVENT_STA_GOT_IP) {
@@ -39,6 +41,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t base, int32_t id, voi
         esp_ip4addr_ntoa(&event->ip_info.ip, s_ip_str, sizeof(s_ip_str));
         s_connected = true;
         ESP_LOGI(TAG, "WiFi connected: IP=%s", s_ip_str);
+        app_http_server_start();
     }
 }
 
