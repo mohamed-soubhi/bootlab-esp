@@ -123,6 +123,7 @@ def check_upgrade(b: Board, base_url: str, want_app: str) -> None:
     if not record("AC1 POST /ota accepted", status == 202, f"HTTP {status}"):
         return
     post = b.wait_for(lambda v: v["app"] == want_app, OTA_TIMEOUT_S)
+    print(f"served to board: {dict(served)}", flush=True)
     record("AC1 board runs v2", post is not None, f"after: {post}")
     if not post:
         return
@@ -165,6 +166,7 @@ def main() -> int:
     ap.add_argument("--token", default=None)
     ap.add_argument("--want-app", default="2.0.0")
     ap.add_argument("--no-restore", action="store_true", help="leave the board on v2")
+    ap.add_argument("--only", choices=("all", "ac1", "ac2"), default="all", help="run one scenario")
     args = ap.parse_args()
     token = args.token or load_token()
     if not token:
@@ -173,10 +175,15 @@ def main() -> int:
     start_server(args.stage, args.port)
     base_url = f"https://{args.host_ip}:{args.port}"
     board = Board(args.ip, token, args.ca_cert)
-    check_upgrade(board, base_url, args.want_app)
-    for name in BAD_IMAGES:
-        check_refused(board, base_url, name, os.path.getsize(os.path.join(args.stage, name)))
-    if not args.no_restore:
+    if args.only in ("all", "ac1"):
+        check_upgrade(board, base_url, args.want_app)
+    if args.only in ("all", "ac2"):
+        for name in BAD_IMAGES:
+            check_refused(board, base_url, name, os.path.getsize(os.path.join(args.stage, name)))
+    cur = board.version()
+    if not args.no_restore and cur and cur["app"] == "1.0.0":
+        print("board already on v1 (1.0.0); nothing to restore", flush=True)
+    elif not args.no_restore:
         status = board.ota(f"{base_url}/v1.bin", "1.0.0")
         back = board.wait_for(lambda v: v["app"] == "1.0.0", OTA_TIMEOUT_S) if status == 202 else None
         record("restore v1", back is not None, f"HTTP {status}, now {back}")
