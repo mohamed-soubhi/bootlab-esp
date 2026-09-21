@@ -95,7 +95,7 @@ Blocked tickets with **nothing unfinished beneath them**. Finishing (or explicit
 
 | Ticket | Blocks | Why it is blocked |
 |---|---|---|
-| **BL-005** Detect board hardware → rig.yaml | 33 tickets | idf led_gpio confirmed (48); zephyr led_gpio still unknown (on hold) and psram_mode unverified for both boards |
+| **BL-005** Detect board hardware → rig.yaml | 33 tickets | PSRAM mode done (idf run-tested octal; zephyr inferred octal). Only the zephyr board's LED GPIO is left: needs a blink app flashed to that board (bac… |
 | **BL-014** Packaging Zephyr module + IDF component | 29 tickets | BLOCKED: AC requires Zephyr native_sim + IDF linux builds; Zephyr path on hold + throttle != 0x0 |
 
 ## Ready to start (todo, every dependency done)

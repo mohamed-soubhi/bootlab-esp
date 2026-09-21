@@ -147,14 +147,14 @@
       "deps": [
         "BL-003"
       ],
-      "desc": "Flash size, PSRAM, board revision, RGB LED GPIO (48 or 38), USB serial per board. [PARTIAL 2026-09-20: idf board's led_gpio confirmed 48 via a real physical power-cycle test during BL-020 (see PLAN Sec 9 R14) -- rig.yaml updated. This is only half the AC: zephyr's led_gpio remains unknown (Zephyr path on hold), and psram_mode (quad/octal) is still unverified for BOTH boards. Staying blocked.]",
+      "desc": "Flash size, PSRAM, board revision, RGB LED GPIO (48 or 38), USB serial per board. [PARTIAL 2026-09-20: idf board's led_gpio confirmed 48 via a real physical power-cycle test during BL-020 (see PLAN Sec 9 R14) -- rig.yaml updated. This is only half the AC: zephyr's led_gpio remains unknown (Zephyr path on hold), and psram_mode (quad/octal) is still unverified for BOTH boards. Staying blocked.] [PROGRESS 2026-09-21 -- ONE ITEM LEFT: the zephyr board's LED GPIO. DONE: (1) PSRAM mode. Both boards' pre-project eFuse dumps are identical in every PSRAM field (8M, vendor AP_3v3; 'AP_3v3' is the 3.3 V variant, not 'quad'; on the ESP32-S3 8 MB embedded PSRAM is the Octal part). idf board: CONFIRMED octal by booting an Octal-PSRAM detection build (esp_idf/sdkconfig.psram, not a product image): octal_psram vendor AP / 64 Mbit / 3V, 'Found 8MB PSRAM device', 'SPI SRAM memory test OK', 8192K added to the heap; board restored to v1. zephyr board: octal INFERRED from identical eFuses, not run-tested. host/config/rig.yaml now says octal for both, with the confidence in the comments. (2) idf led_gpio=48 (BL-020). Evidence: scripts/evidence/bl005_hardware_detection.md. REMAINING: zephyr led_gpio -- needs a blink app on that board, i.e. writing its flash (backup: backups/esp_ACA7042C3B04.bin + .sha256; identity AC:A7:04:2C:3B:04). Needs the owner's per-instance go-ahead; an IDF blink build would do it without touching the Zephyr toolchain, and the backup is restored afterwards.]",
       "ac": [
         "host/config/rig.yaml filled for both boards",
         "LED GPIO confirmed by a quick blink"
       ],
       "status": "blocked",
       "pr": "",
-      "block_reason": "idf led_gpio confirmed (48); zephyr led_gpio still unknown (on hold) and psram_mode unverified for both boards"
+      "block_reason": "PSRAM mode done (idf run-tested octal; zephyr inferred octal). Only the zephyr board's LED GPIO is left: needs a blink app flashed to that board (backup exists), owner go-ahead pending."
     },
     {
       "id": "BL-006",

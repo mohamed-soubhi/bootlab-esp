@@ -13,7 +13,8 @@ boards:
     flash_mb: 16
     flash_mode: quad
     psram_mb: 8
-    psram_mode: unknown                  # quad or octal (detect via test app)
+    psram_mode: octal                    # INFERRED 2026-09-21 (not run-tested): eFuses identical to the idf board
+                                          # (PSRAM_CAP 8M, vendor AP_3v3); confirm with the PSRAM test build (BL-005)
     rev: v0.2
     secure_boot: off
     flash_encryption: off
@@ -30,7 +31,8 @@ boards:
     flash_mb: 16
     flash_mode: quad
     psram_mb: 8
-    psram_mode: unknown
+    psram_mode: octal                    # CONFIRMED 2026-09-21 by booting an Octal-PSRAM build: octal_psram driver read
+                                          # vendor AP, 64 Mbit, 3V; "Found 8MB PSRAM device", memory test OK (BL-005)
     rev: v0.2
     secure_boot: off
     flash_encryption: off

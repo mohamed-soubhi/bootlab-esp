@@ -1,0 +1,5 @@
+# BL-005: PSRAM detection build ONLY -- not part of the product image.
+# Both boards' eFuses report 8 MB embedded PSRAM (AP_3v3), which on the ESP32-S3 is the Octal
+# part. Booting with Octal PSRAM enabled is the definitive test: the init fails if the mode is wrong.
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_MODE_OCT=y

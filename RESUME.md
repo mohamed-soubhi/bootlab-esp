@@ -12,8 +12,12 @@ Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
   - BL-023: all 2 ACs PASS with live on-target evidence (2026-09-21); blocked only on dep BL-021.
   - BL-024: all 2 ACs PASS with live on-target evidence (2026-09-21); blocked only on dep BL-020.
   - BL-025: all 2 ACs PASS with live on-target evidence (2026-09-21); blocked only on dep BL-024.
-  - BL-005: idf led_gpio=48 confirmed; zephyr led_gpio unknown (Zephyr hold); `psram_mode` unverified
-    on both boards (the current IDF build does not enable PSRAM, so it cannot be detected yet).
+  - BL-005: ONE item left. PSRAM mode DONE (idf board run-tested OCTAL: 8 MB, memory test OK; zephyr board octal INFERRED
+    from identical eFuses; `rig.yaml` updated, evidence `scripts/evidence/bl005_hardware_detection.md`). idf led_gpio=48.
+    LEFT: the zephyr board's led_gpio -- needs a blink app on it (writes its flash; backup `backups/esp_ACA7042C3B04.bin`
+    + `.sha256`; identity `AC:A7:04:2C:3B:04`); needs the owner's per-instance go-ahead. An IDF blink build suffices.
+  - BL-014: IDF half VERIFIED (`scripts/idf_linux_test.sh`: IDF linux-target build 0 warnings + smoke test exit 0, incl. the
+    dispatcher). NOT verified: Zephyr native_sim (Zephyr hold) and the Zephyr branch of `common/labid/CMakeLists.txt`.
   - BL-014: AC needs Zephyr native_sim + IDF linux builds; Zephyr on hold.
   - BL-041: host code done + mock-verified; live LABID firmware now running on IDF board.
   - BL-026: both ACs PASS with live on-target console evidence (2026-09-21); blocked only on deps BL-023/BL-025.
