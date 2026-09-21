@@ -7,4 +7,5 @@
 - `reattach-boards.ps1` (Windows) — reattaches both ESP32-S3 boards to WSL2 via `usbipd`; run as Administrator on the Windows host whenever the boards drop off the usbipd bridge.
 - `check-boards.sh` (WSL2/Linux) — read-only board visibility + identity check; run after `reattach-boards.ps1` to verify from the Linux side (lsusb, udev symlinks, USB-serial-vs-MAC per PLAN.md R13, `labflash resolve`).
 - `serial_watch.py` (Windows/any) — reconnecting serial monitor: `python serial_watch.py COM14`. Waits for the port, streams the console, survives unplug/replug; DTR/RTS forced inactive before open. Use natively on Windows (not over usbipd, see PLAN.md R14). Ctrl+C to exit.
+- `labid_check.py` (Windows/RPi4) — BL-022 live acceptance check: `python scripts\labid_check.py COM14`, then replug the board. Verifies ANNOUNCE <= 2 s, ID?/VER?/STATE? <= 100 ms, garbage -> ERR with no reset. Run natively, not over usbipd (PLAN R14).
 - `evidence/` — dated evidence files backing ticket "done" claims.
