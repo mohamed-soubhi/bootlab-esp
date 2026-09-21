@@ -428,7 +428,7 @@
         "BL-025",
         "BL-023"
       ],
-      "desc": "Pull from RPi4 HTTPS server, signature check on update.",
+      "desc": "Pull from RPi4 HTTPS server, signature check on update. [PROGRESS 2026-09-21 -- NOT PASSING YET. Firmware OTA pull task + variants compile (commit b440568); scripts/ota_check.py written (8c2132d). First live run on E0:72:A1:AA:23:90 FAILED: AC1 v2 never appeared in 150 s (board stayed 1.0.0 slot 0 confirmed). AC2: bad_sig_tamper.bin and bad_sig_key.bin were fully downloaded (1052672/1052672 B) and the running image was unchanged, but the board was unreachable ~20 s (39 polls) during each attempt -- cause unknown (reboot vs starved HTTPS task); 'restore v1' passed vacuously (already on v1). Hypothesis, UNVERIFIED: ota_task starves the idle task and trips the task WDT. Next: capture the console log (native Windows serial_watch on COM14) during one v2 OTA. Note: the earlier bad_sig artifact was still validly signed; real ones built (tamper, foreign key) and confirmed failing espsecure verify-signature. hang.bin needs a rebuild for revert scenarios.]",
       "ac": [
         "v1 → v2 over WiFi, 4 Hz, confirmed=1",
         "bad_sig rejected, v1 keeps running"
