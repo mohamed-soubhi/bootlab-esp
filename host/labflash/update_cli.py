@@ -56,10 +56,12 @@ def rig_mac(rig_path: str | None, board: str) -> str | None:
     return rig.get("boards", {}).get(board, {}).get("mac") or None
 
 
-def labid_snapshot_fn(port: str):
+def labid_snapshot_fn(port: str, transport_factory=None):
+    """`transport_factory`, when given, replaces the default one-shot `SerialLineTransport(port)`
+    (e.g. a `SharedConsolePort` kept open for the whole run so console.log captures continuously)."""
     def snap() -> Snapshot:
         from labflash.identify import SerialLineTransport, get_version, identify
-        tr = SerialLineTransport(port)
+        tr = transport_factory() if transport_factory else SerialLineTransport(port)
         try:
             ver, ident = get_version(tr), identify(tr)
         finally:

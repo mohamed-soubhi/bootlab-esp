@@ -152,12 +152,16 @@ def artifacts_dir(request: pytest.FixtureRequest) -> Path:
 @pytest.fixture
 def serial_capture(
     request: pytest.FixtureRequest,
-    board_cfg: dict[str, Any],
     artifacts_dir: Path,
+    live_backend: LiveBackend | None,
 ) -> Generator[Path, None, None]:
-    """Capture serial console output to console.log during test execution."""
+    """Capture serial console output to console.log during test execution.
+
+    Live: `live_backend` (when not --mock-rig) already opened a SharedConsolePort against
+    console.log at fixture setup (BL-060 follow-up) -- every LABID query AND the board's raw
+    ESP_LOG output share that one open connection, so this fixture just points at the same file
+    instead of opening a second, conflicting reader."""
     console_log = artifacts_dir / "console.log"
-    port_override = request.config.getoption("--port")
     mock_mode = request.config.getoption("--mock-rig")
 
     if mock_mode:
@@ -168,10 +172,6 @@ def serial_capture(
             f.write("[MOCK] Serial console capture stopped\n")
         return
 
-    # Live: the port is used exclusively by LABID queries (a second reader would corrupt frames and, under
-    # usbipd, reset the board). LABID verification output goes to update.log instead.
-    with open(console_log, "w", encoding="utf-8") as f:
-        f.write("[LIVE] raw console not captured; LABID queries and update output are in update.log\n")
     yield console_log
 
 
@@ -355,22 +355,30 @@ class HilRig:
 
 
 @pytest.fixture
-def live_backend(request: pytest.FixtureRequest, board_cfg: dict[str, Any], artifacts_dir: Path) -> LiveBackend | None:
-    """Real-board backend, or None with --mock-rig. Refuses (fails) rather than falling back to a mock."""
+def live_backend(
+    request: pytest.FixtureRequest, board_cfg: dict[str, Any], artifacts_dir: Path
+) -> Generator[LiveBackend | None, None, None]:
+    """Real-board backend, or None with --mock-rig. Refuses (fails) rather than falling back to a mock.
+
+    Opens console.log's SharedConsolePort here (BL-060 follow-up) so it stays open for the whole
+    test, not just brief per-query windows; `shutdown()` releases it at teardown."""
     if request.config.getoption("--mock-rig"):
-        return None
+        yield None
+        return
     port = request.config.getoption("--port") or get_board_port(board_cfg.get("board_name", ""))
     if not port:
         pytest.fail("live HIL: board serial port not found (pass --port COMx, or use --mock-rig for a simulation)")
     opt = request.config.getoption
     try:
-        return LiveBackend.create(
+        backend = LiveBackend.create(
             port=port, board_ip=opt("--board-ip"),
             images_dir=Path(opt("--images-dir")) if opt("--images-dir") else None,
             keys_dir=Path(opt("--keys-dir")) if opt("--keys-dir") else None,
-            env_file=opt("--env-file"), rig_path=opt("--rig-config"))
+            env_file=opt("--env-file"), rig_path=opt("--rig-config"), console_log=artifacts_dir / "console.log")
     except LiveRigError as err:
         pytest.fail(f"live HIL unavailable: {err}")
+    yield backend
+    backend.shutdown()
 
 
 @pytest.fixture

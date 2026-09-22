@@ -154,18 +154,27 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--max-consecutive-failures", type=int, default=3)
     ap.add_argument("--out", required=True, help="output dir (cycles.jsonl, status.json, report.json, update.log)")
     ap.add_argument("--resume", action="store_true")
+    ap.add_argument("--console-log", help="raw board console capture path (default: <out>/console.log); "
+                                          "pass --no-console-log to disable")
+    ap.add_argument("--no-console-log", action="store_true")
     a = ap.parse_args(argv)
+
+    out_dir = Path(a.out)
+    console_log = None if a.no_console_log else Path(a.console_log) if a.console_log else out_dir / "console.log"
 
     from tests_hil.live_backend import LiveBackend, LiveRigError
     try:
         backend = LiveBackend.create(port=a.port, board_ip=a.board_ip,
                                      images_dir=Path(a.images_dir) if a.images_dir else None,
                                      keys_dir=Path(a.keys_dir) if a.keys_dir else None,
-                                     env_file=a.env_file, rig_path=a.rig_config)
+                                     env_file=a.env_file, rig_path=a.rig_config, console_log=console_log)
     except LiveRigError as err:
         print(f"ERROR: {err}", file=sys.stderr)
         return 2
-    report = run_soak(backend, a.cycles, Path(a.out), a.pause, a.max_consecutive_failures, a.resume)
+    try:
+        report = run_soak(backend, a.cycles, out_dir, a.pause, a.max_consecutive_failures, a.resume)
+    finally:
+        backend.shutdown()
     print(json.dumps(report, indent=2))
     ok = report["pass_rate_pct"] >= PASS_TARGET_PCT and not report["aborted"] and report["final_state_v1"]
     return 0 if ok else 1

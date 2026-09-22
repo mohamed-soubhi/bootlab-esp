@@ -43,15 +43,17 @@ def assert_native_host(proc_version: str | None = None) -> None:
                            "serial open resets the board, no Bluetooth). Use --mock-rig only for simulation.")
 
 
-def _default_snapshot_fn(port: str) -> Callable[[], Snapshot]:
+def _default_snapshot_fn(port: str, transport_factory: Callable[[], object] | None = None) -> Callable[[], Snapshot]:
     from labflash.update_cli import labid_snapshot_fn
-    return labid_snapshot_fn(port)
+    return labid_snapshot_fn(port, transport_factory)
 
 
-def _default_measure_fn(port: str) -> Callable[[float, float | None, int], tuple[int, float, bool]]:
+def _default_measure_fn(
+    port: str, transport_factory: Callable[[], object] | None = None
+) -> Callable[[float, float | None, int], tuple[int, float, bool]]:
     def measure(duration_s: float, expect_hz: float | None, tol: int) -> tuple[int, float, bool]:
         from labflash.identify import SerialLineTransport, measure as _measure
-        tr = SerialLineTransport(port)
+        tr = transport_factory() if transport_factory else SerialLineTransport(port)
         try:
             return _measure(tr, duration_s, expect_hz, tol)
         finally:
@@ -98,15 +100,37 @@ class LiveBackend:
     measure_fn: Callable[[float, float | None, int], tuple[int, float, bool]]
     timeout_s: float = 240.0
     transport_factory: Callable[[], object] | None = None
+    console_port: object | None = None   # SharedConsolePort, when console_log was passed to create()
 
     @classmethod
     def create(cls, port: str, board_ip: str, images_dir: Path | None = None, keys_dir: Path | None = None,
-               env_file: str | None = None, rig_path: str | None = None, board: str = "idf") -> "LiveBackend":
+               env_file: str | None = None, rig_path: str | None = None, board: str = "idf",
+               console_log: Path | None = None) -> LiveBackend:
+        """`console_log`, when given, opens ONE persistent SharedConsolePort for the whole backend's
+        life (BL-060 follow-up): every LABID query and the board's raw ESP_LOG console output share
+        it, so console.log captures continuously instead of only during brief per-query opens. Call
+        `shutdown()` when done with the backend to release the port."""
         assert_native_host()
         from labflash.update_cli import run_update
+        console_port = None
+        transport_factory = None
+        if console_log is not None:
+            from labflash.serial_console import SharedConsolePort
+            console_port = SharedConsolePort(port, console_log=console_log)
+            def transport_factory() -> object:
+                return console_port
         return cls(board=board, port=port, board_ip=board_ip, images_dir=images_dir or REPO / "esp_idf",
                    keys_dir=keys_dir, env_file=env_file, rig_path=rig_path,
-                   snapshot_fn=_default_snapshot_fn(port), update_fn=run_update, measure_fn=_default_measure_fn(port))
+                   snapshot_fn=_default_snapshot_fn(port, transport_factory), update_fn=run_update,
+                   measure_fn=_default_measure_fn(port, transport_factory),
+                   transport_factory=transport_factory, console_port=console_port)
+
+    def shutdown(self) -> None:
+        """Release the shared console port, if `console_log` was passed to `create()`. Call once, at
+        the very end of a run -- not after each query (existing call sites already call `.close()`
+        per query, which is a no-op on the shared port; see SharedConsolePort)."""
+        if self.console_port is not None:
+            self.console_port.shutdown()
 
     def image_for(self, variant: str) -> Path:
         d = VARIANT_DIRS.get(variant)
