@@ -207,3 +207,230 @@ def test_run_update_update_error(tmp_path, capsys):
         assert rc == 1
         assert "simulated failure" in capsys.readouterr().err
 
+
+# ---------------------------------------------------------------- Zephyr CLI tests (BL-044)
+def test_rig_board_info():
+    rig = {
+        "boards": {
+            "zephyr": {
+                "mac": "AC:A7:04:2C:3B:04",
+                "ble_mac": "AC:A7:04:2C:3B:06",
+                "ip": "192.168.1.153",
+                "udp_port": 1337,
+            }
+        }
+    }
+    with patch("labflash.core.load_rig_config", return_value=rig):
+        assert update_cli.rig_mac(None, "zephyr") == "AC:A7:04:2C:3B:04"
+        assert update_cli.rig_ble_mac(None, "zephyr") == "AC:A7:04:2C:3B:06"
+        assert update_cli.rig_ip(None, "zephyr") == "192.168.1.153"
+        assert update_cli.rig_udp_port(None, "zephyr") == 1337
+
+    with patch("labflash.core.load_rig_config", side_effect=Exception("no rig")):
+        assert update_cli.rig_ble_mac(None, "zephyr") is None
+        assert update_cli.rig_ip(None, "zephyr") is None
+        assert update_cli.rig_udp_port(None, "zephyr") is None
+
+
+def test_make_zephyr_udp_send():
+    mock_client = MagicMock()
+
+    class FakeImg:
+        def __init__(self, slot, hash_bytes):
+            self.slot = slot
+            self.hash = hash_bytes
+
+    class FakeImgState:
+        def __init__(self):
+            self.images = [FakeImg(1, b"\xaa" * 32)]
+
+    async def fake_connect(*a, **kw):
+        pass
+
+    async def fake_disconnect():
+        pass
+
+    async def fake_request(req):
+        return FakeImgState()
+
+    async def fake_upload(image, slot=0, first_timeout_s=60.0):
+        yield len(image)
+
+    mock_client.connect = fake_connect
+    mock_client.disconnect = fake_disconnect
+    mock_client.request = fake_request
+    mock_client.upload = fake_upload
+
+    with patch("smpclient.SMPClient", return_value=mock_client), \
+         patch("smpclient.transport.udp.SMPUDPTransport"):
+        send = update_cli.make_zephyr_udp_send("192.168.1.153", 1337)
+        send(b"PAYLOAD", "2.0.0", "aa" * 32)
+
+
+def test_make_zephyr_ble_send_powershell_fallback(tmp_path):
+    mock_proc = MagicMock()
+    mock_proc.returncode = 0
+    mock_proc.stdout = "BLE OTA complete"
+
+    with patch("smpclient.transport.ble.SMPBLETransport", side_effect=Exception("bluez service unknown")), \
+         patch("shutil.which", return_value="powershell.exe"), \
+         patch("subprocess.run", return_value=mock_proc) as mock_sub:
+        send = update_cli.make_zephyr_ble_send("AC:A7:04:2C:3B:06")
+        send(b"PAYLOAD", "2.0.0", "aa" * 32)
+        assert mock_sub.called
+
+
+def test_make_zephyr_smp_snapshot():
+    class FakeImg:
+        def __init__(self, slot, confirmed, hash_bytes):
+            self.slot = slot
+            self.confirmed = confirmed
+            self.hash = hash_bytes
+            self.active = True
+            self.version = "2.0.0"
+
+    class FakeImgState:
+        def __init__(self):
+            self.images = [FakeImg(0, True, bytes.fromhex("ba6245db" * 8))]
+
+    mock_client = MagicMock()
+
+    async def fake_connect(*a, **kw):
+        pass
+
+    async def fake_disconnect():
+        pass
+
+    async def fake_request(req):
+        return FakeImgState()
+
+    mock_client.connect = fake_connect
+    mock_client.disconnect = fake_disconnect
+    mock_client.request = fake_request
+
+    with patch("smpclient.SMPClient", return_value=mock_client), \
+         patch("smpclient.transport.udp.SMPUDPTransport"):
+        snap_fn = update_cli.make_zephyr_smp_snapshot(
+            "udp", "192.168.1.153", 1337, expected_hash="ba6245db" * 8, expected_version="2.0.0"
+        )
+        snap = snap_fn()
+        assert snap.app == "2.0.0"
+        assert snap.slot == 0
+        assert snap.confirmed is True
+
+
+def test_run_update_zephyr_udp_success(tmp_path):
+    img = tmp_path / "zephyr_v2.bin"
+    img.write_bytes(b"dummy")
+
+    args = argparse.Namespace(
+        image=str(img),
+        board="zephyr",
+        board_mac="AC:A7:04:2C:3B:04",
+        rig=None,
+        transport="udp",
+        board_ip="192.168.1.153",
+        udp_port=1337,
+        address=None,
+        labid_port=None,
+        no_labid=True,
+        timeout=10.0,
+        confirm_timeout=30.0,
+    )
+
+    mock_res = UpdateResult(
+        ok=True,
+        checks=[
+            Check("running the new image", True, "2.0.0"),
+            Check("active in slot 0", True, "slot 0"),
+            Check("confirmed", True, "confirmed"),
+        ],
+        version="2.0.0",
+        pre=Snapshot("1.0.0", 0, True, None, "smp"),
+        post=Snapshot("2.0.0", 0, True, None, "smp"),
+    )
+
+    with patch("labflash.update_cli.check_zephyr_image", return_value=("2.0.0", "ba6245db" * 8)), \
+         patch("labflash.update_cli.make_zephyr_udp_send"), \
+         patch("labflash.update_cli.make_zephyr_smp_snapshot"), \
+         patch("labflash.update_cli.update_zephyr", return_value=mock_res):
+        rc = update_cli.run_update(args)
+        assert rc == 0
+
+
+def test_run_update_zephyr_ble_success(tmp_path):
+    img = tmp_path / "zephyr_v2.bin"
+    img.write_bytes(b"dummy")
+
+    args = argparse.Namespace(
+        image=str(img),
+        board="zephyr",
+        board_mac="AC:A7:04:2C:3B:04",
+        rig=None,
+        transport="ble",
+        board_ip=None,
+        udp_port=1337,
+        address="AC:A7:04:2C:3B:06",
+        labid_port=None,
+        no_labid=True,
+        timeout=10.0,
+        confirm_timeout=30.0,
+    )
+
+    mock_res = UpdateResult(
+        ok=True,
+        checks=[
+            Check("running the new image", True, "2.0.0"),
+            Check("active in slot 0", True, "slot 0"),
+            Check("confirmed", True, "confirmed"),
+        ],
+        version="2.0.0",
+        pre=Snapshot("1.0.0", 0, True, None, "smp"),
+        post=Snapshot("2.0.0", 0, True, None, "smp"),
+    )
+
+    with patch("labflash.update_cli.check_zephyr_image", return_value=("2.0.0", "ba6245db" * 8)), \
+         patch("labflash.update_cli.make_zephyr_ble_send"), \
+         patch("labflash.update_cli.make_zephyr_smp_snapshot"), \
+         patch("labflash.update_cli.update_zephyr", return_value=mock_res):
+        rc = update_cli.run_update(args)
+        assert rc == 0
+
+
+def test_run_update_zephyr_invalid_transport(tmp_path, capsys):
+    img = tmp_path / "zephyr_v2.bin"
+    img.write_bytes(b"dummy")
+
+    args = argparse.Namespace(
+        image=str(img),
+        board="zephyr",
+        board_mac="AC:A7:04:2C:3B:04",
+        rig=None,
+        transport="wifi",
+    )
+
+    rc = update_cli.run_update(args)
+    assert rc == 1
+    assert "unsupported transport 'wifi'" in capsys.readouterr().err
+
+
+def test_run_update_zephyr_missing_ip(tmp_path, capsys):
+    img = tmp_path / "zephyr_v2.bin"
+    img.write_bytes(b"dummy")
+
+    args = argparse.Namespace(
+        image=str(img),
+        board="zephyr",
+        board_mac="AC:A7:04:2C:3B:04",
+        rig=None,
+        transport="udp",
+        board_ip=None,
+    )
+
+    with patch("labflash.update_cli.rig_ip", return_value=None), \
+         patch("labflash.update_cli.check_zephyr_image", return_value=("2.0.0", "ba6245db" * 8)):
+        rc = update_cli.run_update(args)
+        assert rc == 1
+        assert "--board-ip or ip in rig.yaml is required" in capsys.readouterr().err
+
+

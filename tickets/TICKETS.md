@@ -6,17 +6,17 @@
 
 ## Overall
 
-`████████████████████░░░░░░░░░░` **36/53 done (67%)**
+`█████████████████████░░░░░░░░░` **37/53 done (69%)**
 
 - **IDF track:** `█████████████████░░░` 35/42
-- **Zephyr track:** `████████████░░░░░░░░` 23/37
+- **Zephyr track:** `█████████████░░░░░░░` 24/37
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 3
+    "todo" : 2
     "doing" : 8
     "blocked" : 6
-    "done" : 36
+    "done" : 37
 ```
 
 ## Epics
@@ -27,7 +27,7 @@ pie showData title Ticket status
 | EL | PL | LABID common library | `████████████` | 4/4 | ✅ done | §7.3, §8 PL |
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `████████████` | 9/9 | ✅ done | §4.2, §5, §6, §7.2, §8 P1 |
 | E2 | P2 | ESP32-S3 #1 — Zephyr | `████████████` | 9/9 | ✅ done | §4.1, §5, §6, §7.1, §8 P2 |
-| E3 | P3 | labflash CLI | `█████████░░░` | 5/7 | 🔵 doing | §8 P3 |
+| E3 | P3 | labflash CLI | `██████████░░` | 6/7 | 🔵 doing | §8 P3 |
 | E4 | P4 | HIL tests + CI | `█░░░░░░░░░░░` | 1/10 | 🟥 blocked | §8 P4 |
 | E5 | P5 | Soak, docs, handover | `░░░░░░░░░░░░` | 0/6 | 🟥 blocked | §8 P5 |
 
@@ -39,7 +39,7 @@ flowchart LR
     EL["PL LABID common library<br/>4/4"]:::done
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>9/9"]:::done
     E2["P2 ESP32-S3 #1 — Zephyr<br/>9/9"]:::done
-    E3["P3 labflash CLI<br/>5/7"]:::doing
+    E3["P3 labflash CLI<br/>6/7"]:::doing
     E4["P4 HIL tests + CI<br/>1/10"]:::blocked
     E5["P5 Soak, docs, handover<br/>0/6"]:::blocked
     E0 --> EL
@@ -56,7 +56,7 @@ flowchart LR
 
 ## Ready to start now
 
-- **BL-044** update zephyr --transport ble|udp (M) — E3
+- Nothing ready (check blocked tickets).
 
 ## Blocked
 
@@ -607,7 +607,7 @@ Run all P2 acceptance checks. [RESULT 2026-09-22 -- ALL 6 PLAN P2 CHECKBOXES PAS
 | ✅ | BL-041 | identify, info, status, measure | S | host | BL-040, BL-020, BL-022, BL-031, BL-032 |  |
 | ✅ | BL-042 | flash, recover, provision (USB) | S | host | BL-040, BL-020, BL-021, BL-030, BL-031 |  |
 | ✅ | BL-043 | update idf --transport ble|wifi | M | host, idf | BL-040, BL-028 |  |
-| ⬜ | BL-044 | update zephyr --transport ble|udp | M | host, zephyr | BL-040, BL-036 |  |
+| ✅ | BL-044 | update zephyr --transport ble|udp | M | host, zephyr | BL-040, BL-036 |  |
 | ✅ | BL-045 | build + sign orchestration | S | host | BL-040, BL-020, BL-021, BL-030, BL-031 |  |
 | 🔵 | BL-046 | labflash mocked unit tests | M | host | BL-041, BL-042, BL-043, BL-044, BL-045 |  |
 
@@ -681,18 +681,18 @@ Python ble_ota client + HTTPS trigger + local HTTPS server. [DONE 2026-09-21 -- 
 
 </details>
 
-<details><summary>⬜ <b>BL-044</b> — update zephyr --transport ble|udp</summary>
+<details><summary>✅ <b>BL-044</b> — update zephyr --transport ble|udp</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** host, zephyr  
-- **Tracks:** Zephyr ⬜ todo  
+- **Tracks:** Zephyr ✅ done  
 - **Depends on:** BL-040, BL-036  
 - **Plan:** §8 P3
 
 SMP client over BLE and UDP.
 
 **Acceptance criteria**
-- [ ] Both transports update, SMP version == LABID version
+- [x] Both transports update, SMP version == LABID version
 
 </details>
 
@@ -1094,7 +1094,7 @@ flowchart TB
         BL041["BL-041"]:::done
         BL042["BL-042"]:::done
         BL043["BL-043"]:::done
-        BL044["BL-044"]:::todo
+        BL044["BL-044"]:::done
         BL045["BL-045"]:::done
         BL046["BL-046"]:::doing
     end

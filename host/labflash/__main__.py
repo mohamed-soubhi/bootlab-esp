@@ -59,20 +59,20 @@ def main(argv=None):
     rec_p.add_argument("board", choices=["idf", "zephyr"], help="board to recover")
     rec_p.add_argument("--port", help="serial port (default: resolved from rig.yaml)")
     upd = sub.add_parser(
-        "update", help="OTA an ESP-IDF board over BLE or WiFi and verify it via LABID (BL-043)",
+        "update", help="OTA an ESP-IDF or Zephyr board over BLE, WiFi, or UDP and verify it via LABID (BL-043, BL-044)",
         description="Sends a signed app image to the board, then verifies: it runs the version the image carries, "
-                    "the slot flipped, it confirmed, the uid matches, and LABID agrees with HTTPS. The board's identity "
-                    "is checked BEFORE anything is sent. Run natively (Windows or the RPi4): over usbipd/WSL2 the "
-                    "serial port resets the board and there is no Bluetooth.")
-    upd.add_argument("board", choices=["idf"], help="board to update")
-    upd.add_argument("--image", required=True, help="signed application .bin (4096-aligned for BLE)")
-    upd.add_argument("--transport", choices=["ble", "wifi"], required=True)
+                    "the slot is confirmed, the uid matches, and LABID agrees with transport status (HTTPS or SMP). "
+                    "The board's identity is checked BEFORE anything is sent.")
+    upd.add_argument("board", choices=["idf", "zephyr"], help="board to update")
+    upd.add_argument("--image", required=True, help="signed application .bin (4096-aligned for BLE on IDF)")
+    upd.add_argument("--transport", choices=["ble", "wifi", "udp"], required=True)
     upd.add_argument("--labid-port", help="serial port for LABID verification (default: resolved from rig.yaml)")
-    upd.add_argument("--no-labid", action="store_true", help="verify over HTTPS only (identity is then NOT checked)")
+    upd.add_argument("--no-labid", action="store_true", help="verify over transport only (identity is then NOT checked)")
     upd.add_argument("--board-mac", help="board base MAC (default: from rig.yaml); BLE address must share its first 5 octets")
-    upd.add_argument("--address", help="BLE address (default: scan for the OTA service)")
+    upd.add_argument("--address", help="BLE address (default: ble_mac from rig.yaml or scan)")
     upd.add_argument("--scan-timeout", type=float, default=10.0)
-    upd.add_argument("--board-ip", help="board IP (required for wifi)")
+    upd.add_argument("--board-ip", help="board IP (required for wifi or zephyr udp if not in rig.yaml)")
+    upd.add_argument("--udp-port", type=int, default=1337, help="UDP SMP port for Zephyr (default 1337)")
     upd.add_argument("--host-ip", help="IP the board uses to reach this machine (default: auto)")
     upd.add_argument("--http-port", type=int, default=8443, help="local HTTPS image server port (default 8443)")
     upd.add_argument("--keys", help="dir with ca.pem, server_cert.pem, server_key.pem (default: <repo>/keys)")
@@ -83,6 +83,7 @@ def main(argv=None):
     upd.add_argument("--env-file", default="credentials.env")
     upd.add_argument("--rig", help="rig.yaml path (default: host/config/rig.yaml)")
     upd.add_argument("--timeout", type=float, default=240.0, help="seconds to wait for the new version (default 240)")
+    upd.add_argument("--confirm-timeout", type=float, default=30.0, help="seconds to wait for confirmation (default 30)")
 
     prov_p = sub.add_parser("provision", help="write WiFi credentials + token to NVS (BL-024)")
     prov_p.add_argument("board", choices=["idf"], help="board to provision")

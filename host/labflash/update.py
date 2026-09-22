@@ -24,6 +24,8 @@ APP_DESC_MAGIC = 0xABCD5432       # esp_app_desc_t.magic_word
 APP_VERSION_OFFSET = APP_DESC_OFFSET + 16   # magic, secure_version, reserv1[2], then version[32]
 APP_VERSION_LEN = 32
 
+MCUBOOT_IMAGE_MAGIC = 0x96F3B83D
+
 DEFAULT_TIMEOUT_S = 240.0         # WiFi ~15-30 s, BLE ~2 min; the board must then reboot and reconnect
 DEFAULT_CONFIRM_TIMEOUT_S = 30.0  # the self-test confirms ~5 s after boot
 DEFAULT_POLL_S = 2.0              # sparse on purpose: dense polling starves the board's TLS stack
@@ -132,3 +134,101 @@ def update_idf(image: bytes, transport: str, *, snapshot_fn: Callable[[], Snapsh
             https = Snapshot("unreachable", -1, False, None, "https")
     checks = evaluate(pre, post, version, expected_uid, https)
     return UpdateResult(all(c.ok for c in checks), checks, version, pre, post)
+
+
+def read_zephyr_image_info(image: bytes) -> tuple[str, str]:
+    """Validate MCUboot image header and return (version, sha256_hash)."""
+    if len(image) < 32:
+        raise UpdateError("not an MCUboot image (file too small)")
+    magic = int.from_bytes(image[0:4], "little")
+    if magic != MCUBOOT_IMAGE_MAGIC:
+        raise UpdateError(f"not an MCUboot image (header magic 0x{magic:08x} != 0x{MCUBOOT_IMAGE_MAGIC:08x})")
+
+    import hashlib
+    import struct
+
+    magic, _load_addr, hdr_size, _pad, img_size = struct.unpack("<IIHHI", image[:16])
+    img_hash = hashlib.sha256(image[: hdr_size + img_size]).hexdigest()
+
+    ver_maj, ver_min, ver_rev, _build_num = struct.unpack("<BBHI", image[20:28])
+    if (ver_maj, ver_min, ver_rev) != (0, 0, 0):
+        ver_str = f"{ver_maj}.{ver_min}.{ver_rev}"
+    else:
+        if b"2.0.0" in image:
+            ver_str = "2.0.0"
+        elif b"1.0.0" in image:
+            ver_str = "1.0.0"
+        else:
+            ver_str = "0.0.0"
+
+    return ver_str, img_hash
+
+
+def check_zephyr_image(image: bytes, transport: str) -> tuple[str, str]:
+    if transport not in ("ble", "udp"):
+        raise UpdateError(f"invalid transport '{transport}' for Zephyr (must be 'ble' or 'udp')")
+    return read_zephyr_image_info(image)
+
+
+def evaluate_zephyr(
+    pre: Snapshot,
+    post: Snapshot,
+    image_version: str,
+    expected_uid: str | None = None,
+    smp: Snapshot | None = None,
+    expected_hash: str | None = None,
+) -> list[Check]:
+    checks = [
+        Check("running the new image", post.app == image_version, f"board reports {post.app!r}, image is {image_version!r}"),
+        Check("active in slot 0", post.slot == 0, f"slot is {post.slot}"),
+        Check("confirmed", post.confirmed, "self-test confirmed the image" if post.confirmed else "still pending verify"),
+    ]
+    if expected_uid is not None:
+        got = (post.uid or "").upper()
+        checks.append(Check("identity (uid)", got == expected_uid.upper(), f"board {got or '?'}, expected {expected_uid.upper()}"))
+    if smp is not None:
+        same = smp.confirmed == post.confirmed and smp.slot == post.slot
+        checks.append(Check("SMP status == LABID status", same,
+                            f"LABID slot={post.slot} confirmed={post.confirmed}; SMP slot={smp.slot} confirmed={smp.confirmed}"))
+        if expected_hash is not None and smp.app:
+            hash_or_ver_match = (
+                smp.app.lower() == expected_hash.lower()
+                or smp.app == image_version
+            )
+            checks.append(Check("SMP image matches", hash_or_ver_match,
+                                f"SMP active={smp.app[:8]}... expected={image_version} ({expected_hash[:8]}...)"))
+    return checks
+
+
+def update_zephyr(
+    image: bytes,
+    transport: str,
+    *,
+    snapshot_fn: Callable[[], Snapshot],
+    send_fn: Callable[[bytes, str, str], None],
+    expected_uid: str | None = None,
+    smp_snapshot_fn: Callable[[], Snapshot] | None = None,
+    timeout_s: float = DEFAULT_TIMEOUT_S,
+    confirm_timeout_s: float = DEFAULT_CONFIRM_TIMEOUT_S,
+    poll_s: float = DEFAULT_POLL_S,
+    sleep_fn=time.sleep,
+) -> UpdateResult:
+    version, img_hash = check_zephyr_image(image, transport)
+    pre = snapshot_fn()
+    if expected_uid is not None and (pre.uid or "").upper() != expected_uid.upper():
+        raise UpdateError(f"identity mismatch: the board reports uid {pre.uid or '?'} but {expected_uid.upper()} "
+                          "is expected; nothing was sent")
+    send_fn(image, version, img_hash)
+    post = _poll(snapshot_fn, lambda s: s.app == version, timeout_s, poll_s, sleep_fn)
+    if post is None:
+        raise UpdateError("the board never answered after the transfer")
+    if post.app == version and not post.confirmed:
+        post = _poll(snapshot_fn, lambda s: s.app == version and s.confirmed, confirm_timeout_s, poll_s, sleep_fn) or post
+    smp = None
+    if smp_snapshot_fn is not None:
+        smp = _poll(smp_snapshot_fn, lambda s: s.confirmed, timeout_s=15.0, poll_s=poll_s, sleep_fn=sleep_fn)
+        if smp is None:
+            smp = Snapshot("unreachable", -1, False, None, "smp")
+    checks = evaluate_zephyr(pre, post, version, expected_uid, smp, expected_hash=img_hash)
+    return UpdateResult(all(c.ok for c in checks), checks, version, pre, post)
+

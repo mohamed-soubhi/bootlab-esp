@@ -853,7 +853,7 @@
       "ac": [
         "Both transports update, SMP version == LABID version"
       ],
-      "status": "todo",
+      "status": "done",
       "pr": "",
       "tracks": [
         "zephyr"

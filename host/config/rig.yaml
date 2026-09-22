@@ -19,6 +19,9 @@ boards:
     flash_encryption: off
     led_gpio: 48                          # CONFIRMED: ESP32-S3 DevKitC-1 v0.2 onboard WS2812 RGB LED
     led_strip: worldsemi_ws2812           # per PLAN (blink uses led_strip)
+    ble_mac: "AC:A7:04:2C:3B:06"
+    ip: "192.168.1.153"
+    udp_port: 1337
 
   idf:
     board_name: lab-esp-idf

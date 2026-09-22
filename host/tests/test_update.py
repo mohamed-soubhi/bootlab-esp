@@ -181,3 +181,217 @@ def test_wifi_board_version_and_trigger(tmp_path):
         with patch("urllib.request.urlopen", side_effect=http_err):
             assert wb.trigger("https://192.168.1.134:8443/fw.bin", "2.0.0") == 409
 
+
+# ---------------------------------------------------------------- Zephyr unit tests (BL-044)
+def make_zephyr_image(version="2.0.0", size=1024, embedded_string=False):
+    import struct
+    parts = [int(p) for p in version.split(".")[:3]]
+    hdr_size = 32
+    img_size = size - hdr_size
+    ver_maj, ver_min, ver_rev = (0, 0, 0) if embedded_string else (parts[0], parts[1], parts[2])
+    hdr = (
+        struct.pack("<IIHHI", up.MCUBOOT_IMAGE_MAGIC, 0, hdr_size, 0, img_size)
+        + bytes(4)
+        + struct.pack("<BBHI", ver_maj, ver_min, ver_rev, 0)
+        + bytes(4)
+    )
+    body = version.encode() if embedded_string else b""
+    return (hdr + body).ljust(size, b"\x00")
+
+
+def test_read_zephyr_image_info_valid():
+    img = make_zephyr_image("2.0.0")
+    ver, h = up.read_zephyr_image_info(img)
+    assert ver == "2.0.0"
+    assert len(h) == 64
+
+
+def test_read_zephyr_image_info_embedded_string():
+    img = make_zephyr_image("2.0.0", embedded_string=True)
+    ver, _ = up.read_zephyr_image_info(img)
+    assert ver == "2.0.0"
+
+    img_v1 = make_zephyr_image("1.0.0", embedded_string=True)
+    ver1, _ = up.read_zephyr_image_info(img_v1)
+    assert ver1 == "1.0.0"
+
+
+def test_read_zephyr_image_info_invalid():
+    with pytest.raises(up.UpdateError, match="too small"):
+        up.read_zephyr_image_info(b"short")
+
+    with pytest.raises(up.UpdateError, match="magic"):
+        up.read_zephyr_image_info(b"\x00" * 64)
+
+
+def test_check_zephyr_image_transports():
+    img = make_zephyr_image("2.0.0")
+    assert up.check_zephyr_image(img, "udp")[0] == "2.0.0"
+    assert up.check_zephyr_image(img, "ble")[0] == "2.0.0"
+
+    with pytest.raises(up.UpdateError, match="invalid transport"):
+        up.check_zephyr_image(img, "wifi")
+
+
+def test_evaluate_zephyr_all_pass():
+    pre = snap("1.0.0", 0, True, "ACA7042C3B04")
+    post = snap("2.0.0", 0, True, "ACA7042C3B04")
+    smp = up.Snapshot("2.0.0", 0, True, None, "smp")
+    checks = up.evaluate_zephyr(pre, post, "2.0.0", expected_uid="ACA7042C3B04", smp=smp, expected_hash="dummyhash")
+    assert all(c.ok for c in checks), [c for c in checks if not c.ok]
+
+
+def test_evaluate_zephyr_failures():
+    pre = snap("1.0.0", 0, True, "ACA7042C3B04")
+
+    # 1. Post version wrong
+    post_bad_ver = snap("1.0.0", 0, True, "ACA7042C3B04")
+    res = names(up.evaluate_zephyr(pre, post_bad_ver, "2.0.0"))
+    assert not res["running the new image"]
+
+    # 2. Unconfirmed
+    post_unconfirmed = snap("2.0.0", 0, False, "ACA7042C3B04")
+    res = names(up.evaluate_zephyr(pre, post_unconfirmed, "2.0.0"))
+    assert not res["confirmed"]
+
+    # 3. UID mismatch
+    post_bad_uid = snap("2.0.0", 0, True, "WRONGUID1234")
+    res = names(up.evaluate_zephyr(pre, post_bad_uid, "2.0.0", expected_uid="ACA7042C3B04"))
+    assert not res["identity (uid)"]
+
+    # 4. SMP mismatch (slot or confirmed)
+    post = snap("2.0.0", 0, True, "ACA7042C3B04")
+    smp_unconfirmed = up.Snapshot("2.0.0", 0, False, None, "smp")
+    res = names(up.evaluate_zephyr(pre, post, "2.0.0", smp=smp_unconfirmed))
+    assert not res["SMP status == LABID status"]
+
+    # 5. SMP hash mismatch
+    smp_wrong_hash = up.Snapshot("wronghash123", 0, True, None, "smp")
+    res = names(up.evaluate_zephyr(pre, post, "2.0.0", smp=smp_wrong_hash, expected_hash="expectedhash"))
+    assert not res["SMP image matches"]
+
+
+class ZephyrFake:
+    def __init__(self, pre, post, smp=None, fail_send=False):
+        self.state = pre
+        self.post = post
+        self.smp = smp
+        self.fail_send = fail_send
+        self.sent = []
+
+    def snapshot(self):
+        return self.state
+
+    def smp_snapshot(self):
+        return self.smp
+
+    def send(self, image, version, img_hash):
+        if self.fail_send:
+            raise up.UpdateError("zephyr transfer failed")
+        self.sent.append((len(image), version, img_hash))
+        self.state = self.post
+
+
+def test_update_zephyr_orchestration_success():
+    fake = ZephyrFake(
+        snap("1.0.0", 0, True, "ACA7042C3B04"),
+        snap("2.0.0", 0, True, "ACA7042C3B04"),
+        smp=up.Snapshot("2.0.0", 0, True, None, "smp"),
+    )
+    img = make_zephyr_image("2.0.0")
+    res = up.update_zephyr(
+        img,
+        "udp",
+        snapshot_fn=fake.snapshot,
+        send_fn=fake.send,
+        expected_uid="ACA7042C3B04",
+        smp_snapshot_fn=fake.smp_snapshot,
+        sleep_fn=lambda s: None,
+        timeout_s=5,
+        poll_s=0.01,
+    )
+    assert res.ok
+    assert len(fake.sent) == 1
+    assert fake.sent[0][1] == "2.0.0"
+
+
+def test_update_zephyr_refuses_wrong_uid_before_send():
+    fake = ZephyrFake(
+        snap("1.0.0", 0, True, "WRONGUID0000"),
+        snap("2.0.0", 0, True, "WRONGUID0000"),
+    )
+    img = make_zephyr_image("2.0.0")
+    with pytest.raises(up.UpdateError, match="identity mismatch"):
+        up.update_zephyr(
+            img,
+            "udp",
+            snapshot_fn=fake.snapshot,
+            send_fn=fake.send,
+            expected_uid="ACA7042C3B04",
+            sleep_fn=lambda s: None,
+        )
+    assert fake.sent == []
+
+
+def test_update_zephyr_reports_send_failure():
+    fake = ZephyrFake(
+        snap("1.0.0", 0, True, "ACA7042C3B04"),
+        snap("2.0.0", 0, True, "ACA7042C3B04"),
+        fail_send=True,
+    )
+    img = make_zephyr_image("2.0.0")
+    with pytest.raises(up.UpdateError, match="zephyr transfer failed"):
+        up.update_zephyr(
+            img,
+            "udp",
+            snapshot_fn=fake.snapshot,
+            send_fn=fake.send,
+            expected_uid="ACA7042C3B04",
+            sleep_fn=lambda s: None,
+        )
+
+
+def test_update_zephyr_a_board_that_never_switches_fails():
+    fake = ZephyrFake(
+        snap("1.0.0", 0, True, "ACA7042C3B04"),
+        snap("1.0.0", 0, True, "ACA7042C3B04"),
+    )
+    img = make_zephyr_image("2.0.0")
+    result = up.update_zephyr(
+        img,
+        "udp",
+        snapshot_fn=fake.snapshot,
+        send_fn=fake.send,
+        expected_uid="ACA7042C3B04",
+        sleep_fn=lambda s: None,
+        timeout_s=0.05,
+        poll_s=0.01,
+    )
+    assert not result.ok
+    assert any(c.name == "running the new image" and not c.ok for c in result.checks)
+
+
+def test_update_zephyr_board_never_answers_raises():
+    calls = 0
+
+    def snap_after_send():
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return snap("1.0.0", 0, True, "ACA7042C3B04")
+        raise up.UpdateError("board offline")
+
+    img = make_zephyr_image("2.0.0")
+    with pytest.raises(up.UpdateError, match="never answered"):
+        up.update_zephyr(
+            img,
+            "udp",
+            snapshot_fn=snap_after_send,
+            send_fn=lambda *a: None,
+            expected_uid="ACA7042C3B04",
+            sleep_fn=lambda s: None,
+            timeout_s=0.05,
+            poll_s=0.01,
+        )
+
+
