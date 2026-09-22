@@ -6,17 +6,17 @@
 
 ## Overall
 
-`█████████████████████░░░░░░░░░` **37/53 done (69%)**
+`██████████████████████░░░░░░░░` **38/53 done (71%)**
 
 - **IDF track:** `█████████████████░░░` 35/42
-- **Zephyr track:** `█████████████░░░░░░░` 24/37
+- **Zephyr track:** `██████████████░░░░░░` 25/37
 
 ```mermaid
 pie showData title Ticket status
     "todo" : 2
-    "doing" : 8
+    "doing" : 7
     "blocked" : 6
-    "done" : 37
+    "done" : 38
 ```
 
 ## Epics
@@ -27,7 +27,7 @@ pie showData title Ticket status
 | EL | PL | LABID common library | `████████████` | 4/4 | ✅ done | §7.3, §8 PL |
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `████████████` | 9/9 | ✅ done | §4.2, §5, §6, §7.2, §8 P1 |
 | E2 | P2 | ESP32-S3 #1 — Zephyr | `████████████` | 9/9 | ✅ done | §4.1, §5, §6, §7.1, §8 P2 |
-| E3 | P3 | labflash CLI | `██████████░░` | 6/7 | 🔵 doing | §8 P3 |
+| E3 | P3 | labflash CLI | `████████████` | 7/7 | ✅ done | §8 P3 |
 | E4 | P4 | HIL tests + CI | `█░░░░░░░░░░░` | 1/10 | 🟥 blocked | §8 P4 |
 | E5 | P5 | Soak, docs, handover | `░░░░░░░░░░░░` | 0/6 | 🟥 blocked | §8 P5 |
 
@@ -39,7 +39,7 @@ flowchart LR
     EL["PL LABID common library<br/>4/4"]:::done
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>9/9"]:::done
     E2["P2 ESP32-S3 #1 — Zephyr<br/>9/9"]:::done
-    E3["P3 labflash CLI<br/>6/7"]:::doing
+    E3["P3 labflash CLI<br/>7/7"]:::done
     E4["P4 HIL tests + CI<br/>1/10"]:::blocked
     E5["P5 Soak, docs, handover<br/>0/6"]:::blocked
     E0 --> EL
@@ -609,7 +609,7 @@ Run all P2 acceptance checks. [RESULT 2026-09-22 -- ALL 6 PLAN P2 CHECKBOXES PAS
 | ✅ | BL-043 | update idf --transport ble|wifi | M | host, idf | BL-040, BL-028 |  |
 | ✅ | BL-044 | update zephyr --transport ble|udp | M | host, zephyr | BL-040, BL-036 |  |
 | ✅ | BL-045 | build + sign orchestration | S | host | BL-040, BL-020, BL-021, BL-030, BL-031 |  |
-| 🔵 | BL-046 | labflash mocked unit tests | M | host | BL-041, BL-042, BL-043, BL-044, BL-045 |  |
+| ✅ | BL-046 | labflash mocked unit tests | M | host | BL-041, BL-042, BL-043, BL-044, BL-045 |  |
 
 <details><summary>✅ <b>BL-040</b> — labflash core: config, UID resolution, re-enumeration wait</summary>
 
@@ -714,23 +714,23 @@ labflash build <board|all> --variant. Deps corrected 2026-09-20: AC ("Builds all
 
 </details>
 
-<details><summary>🔵 <b>BL-046</b> — labflash mocked unit tests</summary>
+<details><summary>✅ <b>BL-046</b> — labflash mocked unit tests</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** host  
-- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
+- **Tracks:** IDF ✅ done · Zephyr ✅ done  
 - **Depends on:** BL-041, BL-042, BL-043, BL-044, BL-045  
 - **Plan:** §8 P3
 
-pytest with mocked BLE / serial / HTTP.
+pytest with mocked BLE / serial / HTTP. [DONE 2026-09-22 -- 180 unit tests passing, total host/labflash line coverage 91% (all modules >= 80%: update.py 100%, update_cli.py 99%, identify.py 96%, __main__.py 94%, doctor.py 91%, flash.py 83%, build.py 81%). ruff and mypy clean (0 errors).]
 
 **Acceptance criteria**
 *IDF scope*
 - [x] Line coverage ≥ 80 % on the IDF-path modules
 - [x] ruff + mypy clean
 *Zephyr scope*
-- [ ] Line coverage ≥ 80 % on the Zephyr-path modules
-- [ ] ruff + mypy clean
+- [x] Line coverage ≥ 80 % on the Zephyr-path modules
+- [x] ruff + mypy clean
 
 </details>
 
@@ -1096,7 +1096,7 @@ flowchart TB
         BL043["BL-043"]:::done
         BL044["BL-044"]:::done
         BL045["BL-045"]:::done
-        BL046["BL-046"]:::doing
+        BL046["BL-046"]:::done
     end
     subgraph E4_g["P4 HIL tests + CI"]
         BL050["BL-050"]:::doing

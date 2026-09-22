@@ -1,5 +1,6 @@
 """Unit tests for host/labflash/update_cli.py (BL-043 / BL-046)."""
 import argparse
+import types
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -432,5 +433,446 @@ def test_run_update_zephyr_missing_ip(tmp_path, capsys):
         rc = update_cli.run_update(args)
         assert rc == 1
         assert "--board-ip or ip in rig.yaml is required" in capsys.readouterr().err
+
+
+def test_make_wifi_send_timeout(tmp_path):
+    board = MagicMock()
+    board.trigger.return_value = -1
+    server = MagicMock(port=8443)
+    send = update_cli.make_wifi_send(board, server, "192.168.1.134", tmp_path)
+    with pytest.raises(UpdateError, match="the board never answered POST /ota"):
+        send(b"IMAGE", "2.0.0")
+
+
+def test_make_ble_send_error():
+    from labflash.idf_ble_ota import BleOtaError
+    with patch("labflash.idf_ble_ota.find_device", side_effect=BleOtaError("ble device lost")):
+        send = update_cli.make_ble_send("AA:BB:CC:DD:EE:FF", None, 5.0)
+        with pytest.raises(UpdateError, match="BLE transfer failed"):
+            send(b"IMAGE", "2.0.0")
+
+
+def test_make_zephyr_udp_send_uploaded_not_in_slot1():
+    mock_client = MagicMock()
+
+    async def fake_connect(*a, **kw):
+        pass
+
+    async def fake_disconnect():
+        pass
+
+    async def fake_upload(*a, **kw):
+        yield 100
+
+    async def fake_request(req):
+        return types.SimpleNamespace(images=[])
+
+    mock_client.connect = fake_connect
+    mock_client.disconnect = fake_disconnect
+    mock_client.upload = fake_upload
+    mock_client.request = fake_request
+
+    with patch("smpclient.SMPClient", return_value=mock_client), \
+         patch("smpclient.transport.udp.SMPUDPTransport"):
+        send = update_cli.make_zephyr_udp_send("192.168.1.153", 1337)
+        with pytest.raises(UpdateError, match="uploaded image not found in slot 1"):
+            send(b"X" * 100, "2.0.0", "ab" * 32)
+
+
+def test_make_zephyr_udp_send_generic_exception():
+    mock_client = MagicMock()
+
+    async def fake_connect(*a, **kw):
+        raise RuntimeError("socket error")
+
+    async def fake_disconnect():
+        pass
+
+    mock_client.connect = fake_connect
+    mock_client.disconnect = fake_disconnect
+
+    with patch("smpclient.SMPClient", return_value=mock_client), \
+         patch("smpclient.transport.udp.SMPUDPTransport"):
+        send = update_cli.make_zephyr_udp_send("192.168.1.153", 1337)
+        with pytest.raises(UpdateError, match="UDP transfer failed: socket error"):
+            send(b"X" * 100, "2.0.0", "ab" * 32)
+
+
+def test_make_zephyr_ble_send_native_success():
+    mock_client = MagicMock()
+
+    async def fake_connect(*a, **kw):
+        pass
+
+    async def fake_disconnect():
+        pass
+
+    async def fake_upload(*a, **kw):
+        yield 100
+
+    img = types.SimpleNamespace(slot=1, hash=b"\xba" * 32)
+
+    async def fake_request(req):
+        return types.SimpleNamespace(images=[img])
+
+    mock_client.connect = fake_connect
+    mock_client.disconnect = fake_disconnect
+    mock_client.upload = fake_upload
+    mock_client.request = fake_request
+
+    with patch("smpclient.SMPClient", return_value=mock_client), \
+         patch("smpclient.transport.ble.SMPBLETransport"):
+        send = update_cli.make_zephyr_ble_send("AC:A7:04:2C:3B:06")
+        send(b"X" * 100, "2.0.0", "ba" * 32)
+
+
+def test_make_zephyr_ble_send_native_slot1_occupied_retry():
+    mock_client = MagicMock()
+    connect_calls = 0
+
+    async def fake_connect(*a, **kw):
+        nonlocal connect_calls
+        connect_calls += 1
+
+    async def fake_disconnect():
+        pass
+
+    async def fake_upload(*a, **kw):
+        yield 100
+
+    img = types.SimpleNamespace(slot=1, hash=b"\xba" * 32)
+    erase_called = False
+
+    async def fake_request(req):
+        nonlocal erase_called
+        from smpclient.requests.image_management import ImageErase
+        if isinstance(req, ImageErase) and not erase_called:
+            erase_called = True
+            raise RuntimeError("erase timeout")
+        return types.SimpleNamespace(images=[img])
+
+    mock_client.connect = fake_connect
+    mock_client.disconnect = fake_disconnect
+    mock_client.upload = fake_upload
+    mock_client.request = fake_request
+
+    with patch("smpclient.SMPClient", return_value=mock_client), \
+         patch("smpclient.transport.ble.SMPBLETransport"), \
+         patch("asyncio.sleep"):
+        send = update_cli.make_zephyr_ble_send("AC:A7:04:2C:3B:06")
+        send(b"X" * 100, "2.0.0", "ba" * 32)
+        assert connect_calls == 2
+
+
+def test_make_zephyr_ble_send_native_uploaded_missing():
+    mock_client = MagicMock()
+
+    async def fake_connect(*a, **kw):
+        pass
+
+    async def fake_disconnect():
+        pass
+
+    async def fake_upload(*a, **kw):
+        yield 100
+
+    async def fake_request(req):
+        return types.SimpleNamespace(images=[])
+
+    mock_client.connect = fake_connect
+    mock_client.disconnect = fake_disconnect
+    mock_client.upload = fake_upload
+    mock_client.request = fake_request
+
+    with patch("smpclient.SMPClient", return_value=mock_client), \
+         patch("smpclient.transport.ble.SMPBLETransport"):
+        send = update_cli.make_zephyr_ble_send("AC:A7:04:2C:3B:06")
+        with pytest.raises(UpdateError, match="uploaded image not found in slot 1"):
+            send(b"X" * 100, "2.0.0", "ba" * 32)
+
+
+def test_make_zephyr_ble_send_windows_fallback():
+    mock_proc = MagicMock(returncode=0, stdout="OK BLE uploaded", stderr="")
+    with patch("smpclient.SMPClient", side_effect=Exception("bluez not found")), \
+         patch("shutil.which", return_value="/mnt/c/Windows/powershell.exe"), \
+         patch("pathlib.Path.exists", return_value=True), \
+         patch("pathlib.Path.write_bytes"), \
+         patch("pathlib.Path.unlink"), \
+         patch("subprocess.run", return_value=mock_proc):
+        send = update_cli.make_zephyr_ble_send("AC:A7:04:2C:3B:06")
+        send(b"IMAGE", "2.0.0", "ba" * 32)
+
+    # Windows fallback failure
+    mock_proc_fail = MagicMock(returncode=1, stdout="", stderr="connection timed out")
+    with patch("smpclient.SMPClient", side_effect=Exception("dbus error")), \
+         patch("shutil.which", return_value="/mnt/c/Windows/powershell.exe"), \
+         patch("pathlib.Path.exists", return_value=False), \
+         patch("pathlib.Path.write_bytes"), \
+         patch("pathlib.Path.unlink"), \
+         patch("subprocess.run", return_value=mock_proc_fail):
+        send = update_cli.make_zephyr_ble_send("AC:A7:04:2C:3B:06")
+        with pytest.raises(UpdateError, match="BLE transfer via Windows failed"):
+            send(b"IMAGE", "2.0.0", "ba" * 32)
+
+    # Powershell not available
+    with patch("smpclient.SMPClient", side_effect=Exception("dbus error")), \
+         patch("shutil.which", return_value=None):
+        send = update_cli.make_zephyr_ble_send("AC:A7:04:2C:3B:06")
+        with pytest.raises(UpdateError, match="BLE transfer failed: dbus error"):
+            send(b"IMAGE", "2.0.0", "ba" * 32)
+
+
+def test_make_zephyr_smp_snapshot_native_ble_success():
+    mock_client = MagicMock()
+
+    async def fake_connect(*a, **kw):
+        pass
+
+    async def fake_disconnect():
+        pass
+
+    img = types.SimpleNamespace(slot=0, version="1.0.0", hash=b"\x11" * 32, confirmed=True, active=True)
+
+    async def fake_request(req):
+        return types.SimpleNamespace(images=[img])
+
+    mock_client.connect = fake_connect
+    mock_client.disconnect = fake_disconnect
+    mock_client.request = fake_request
+
+    with patch("smpclient.SMPClient", return_value=mock_client), \
+         patch("smpclient.transport.ble.SMPBLETransport"):
+        snap_fn = update_cli.make_zephyr_smp_snapshot("ble", "AC:A7:04:2C:3B:06")
+        snap = snap_fn()
+        assert snap.app == "1.0.0"
+        assert snap.slot == 0
+        assert snap.confirmed is True
+
+
+def test_make_zephyr_smp_snapshot_udp_failure():
+    mock_client = MagicMock()
+
+    async def fake_connect(*a, **kw):
+        raise RuntimeError("udp conn timeout")
+
+    async def fake_disconnect():
+        pass
+
+    mock_client.connect = fake_connect
+    mock_client.disconnect = fake_disconnect
+
+    with patch("smpclient.SMPClient", return_value=mock_client), \
+         patch("smpclient.transport.udp.SMPUDPTransport"):
+        snap_fn = update_cli.make_zephyr_smp_snapshot("udp", "192.168.1.153")
+        with pytest.raises(UpdateError, match="SMP UDP query failed"):
+            snap_fn()
+
+
+def test_make_zephyr_smp_snapshot_windows_fallback():
+    # 1. Success with hash & expected_version matching
+    json_out = '[{"slot": 0, "ver": "2.0.0", "hash": "aabbcc", "confirmed": true, "active": true}]'
+    mock_proc = MagicMock(returncode=0, stdout=json_out, stderr="")
+    with patch("smpclient.SMPClient", side_effect=Exception("bluez not found")), \
+         patch("shutil.which", return_value="powershell.exe"), \
+         patch("subprocess.run", return_value=mock_proc):
+        snap_fn = update_cli.make_zephyr_smp_snapshot("ble", "AC:A7:04:2C:3B:06", expected_hash="aabbcc", expected_version="2.0.0")
+        snap = snap_fn()
+        assert snap.app == "2.0.0"
+        assert snap.confirmed is True
+
+    # 2. Windows fallback proc non-zero
+    mock_proc_err = MagicMock(returncode=1, stdout="", stderr="ble fail")
+    with patch("smpclient.SMPClient", side_effect=Exception("dbus error")), \
+         patch("shutil.which", return_value="powershell.exe"), \
+         patch("subprocess.run", return_value=mock_proc_err):
+        snap_fn = update_cli.make_zephyr_smp_snapshot("ble", "AC:A7:04:2C:3B:06")
+        with pytest.raises(UpdateError, match="SMP BLE query via Windows failed"):
+            snap_fn()
+
+    # 3. Windows fallback invalid json
+    mock_proc_bad = MagicMock(returncode=0, stdout="not-json", stderr="")
+    with patch("smpclient.SMPClient", side_effect=Exception("dbus error")), \
+         patch("shutil.which", return_value="powershell.exe"), \
+         patch("subprocess.run", return_value=mock_proc_bad):
+        snap_fn = update_cli.make_zephyr_smp_snapshot("ble", "AC:A7:04:2C:3B:06")
+        with pytest.raises(UpdateError, match="failed to parse SMP query from Windows"):
+            snap_fn()
+
+    # 4. Windows fallback no active image in json
+    mock_proc_empty = MagicMock(returncode=0, stdout='[{"slot": 1}]', stderr="")
+    with patch("smpclient.SMPClient", side_effect=Exception("dbus error")), \
+         patch("shutil.which", return_value="powershell.exe"), \
+         patch("subprocess.run", return_value=mock_proc_empty):
+        snap_fn = update_cli.make_zephyr_smp_snapshot("ble", "AC:A7:04:2C:3B:06")
+        with pytest.raises(UpdateError, match="no active image in SMP list"):
+            snap_fn()
+
+
+def test_make_zephyr_smp_snapshot_native_no_active_image():
+    mock_client = MagicMock()
+
+    async def fake_connect(*a, **kw):
+        pass
+
+    async def fake_disconnect():
+        pass
+
+    async def fake_request(req):
+        return types.SimpleNamespace(images=[])
+
+    mock_client.connect = fake_connect
+    mock_client.disconnect = fake_disconnect
+    mock_client.request = fake_request
+
+    with patch("smpclient.SMPClient", return_value=mock_client), \
+         patch("smpclient.transport.udp.SMPUDPTransport"):
+        snap_fn = update_cli.make_zephyr_smp_snapshot("udp", "192.168.1.153")
+        with pytest.raises(UpdateError, match="no active image found in SMP image list"):
+            snap_fn()
+
+
+def test_run_update_zephyr_check_image_error(tmp_path, capsys):
+    img = tmp_path / "bad.bin"
+    img.write_bytes(b"bad")
+    args = argparse.Namespace(image=str(img), board="zephyr", transport="udp", board_mac=None, rig=None)
+    with patch("labflash.update_cli.check_zephyr_image", side_effect=UpdateError("bad header")):
+        rc = update_cli.run_update(args)
+        assert rc == 1
+        assert "ERROR: bad header" in capsys.readouterr().err
+
+
+def test_run_update_zephyr_ble_missing_mac(tmp_path, capsys):
+    img = tmp_path / "zephyr.bin"
+    img.write_bytes(b"dummy")
+    args = argparse.Namespace(
+        image=str(img), board="zephyr", transport="ble", board_mac=None,
+        address=None, rig=None
+    )
+    with patch("labflash.update_cli.check_zephyr_image", return_value=("2.0.0", "aabb" * 16)), \
+         patch("labflash.update_cli.rig_ble_mac", return_value=None):
+        rc = update_cli.run_update(args)
+        assert rc == 1
+        assert "--address or ble_mac in rig.yaml is required" in capsys.readouterr().err
+
+
+def test_run_update_zephyr_with_labid_resolution(tmp_path):
+    from labflash.core import BoardResolutionError
+    img = tmp_path / "zephyr.bin"
+    img.write_bytes(b"dummy")
+    args = argparse.Namespace(
+        image=str(img), board="zephyr", transport="udp", board_mac="AC:A7:04:2C:3B:04",
+        board_ip="192.168.1.153", udp_port=1337, labid_port=None, no_labid=False,
+        rig=None, timeout=10.0, confirm_timeout=30.0
+    )
+
+    # Resolution error
+    with patch("labflash.update_cli.check_zephyr_image", return_value=("2.0.0", "aabb" * 16)), \
+         patch("labflash.core.resolve_board", side_effect=BoardResolutionError("no zephyr port")):
+        rc = update_cli.run_update(args)
+        assert rc == 1
+
+    # Resolution success
+    mock_res = UpdateResult(
+        ok=True,
+        checks=[],
+        version="2.0.0",
+        pre=Snapshot("1.0.0", 0, True, None, "smp"),
+        post=Snapshot("2.0.0", 0, True, None, "smp"),
+    )
+    with patch("labflash.update_cli.check_zephyr_image", return_value=("2.0.0", "aabb" * 16)), \
+         patch("labflash.core.resolve_board", return_value="/dev/ttyACM0"), \
+         patch("labflash.update_cli.labid_snapshot_fn"), \
+         patch("labflash.update_cli.update_zephyr", return_value=mock_res):
+        rc = update_cli.run_update(args)
+        assert rc == 0
+
+
+def test_run_update_zephyr_update_failed_and_exception(tmp_path, capsys):
+    img = tmp_path / "zephyr.bin"
+    img.write_bytes(b"dummy")
+    args = argparse.Namespace(
+        image=str(img), board="zephyr", transport="udp", board_mac="AC:A7:04:2C:3B:04",
+        board_ip="192.168.1.153", udp_port=1337, labid_port=None, no_labid=True,
+        rig=None, timeout=10.0, confirm_timeout=30.0
+    )
+
+    # update_zephyr raises UpdateError
+    with patch("labflash.update_cli.check_zephyr_image", return_value=("2.0.0", "aabb" * 16)), \
+         patch("labflash.update_cli.make_zephyr_udp_send"), \
+         patch("labflash.update_cli.make_zephyr_smp_snapshot"), \
+         patch("labflash.update_cli.update_zephyr", side_effect=UpdateError("transfer timed out")):
+        rc = update_cli.run_update(args)
+        assert rc == 1
+        assert "ERROR: transfer timed out" in capsys.readouterr().err
+
+    # update_zephyr returns ok=False
+    mock_res_fail = UpdateResult(
+        ok=False,
+        checks=[],
+        version="2.0.0",
+        pre=Snapshot("1.0.0", 0, True, None, "smp"),
+        post=Snapshot("1.0.0", 0, True, None, "smp"),
+    )
+    with patch("labflash.update_cli.check_zephyr_image", return_value=("2.0.0", "aabb" * 16)), \
+         patch("labflash.update_cli.make_zephyr_udp_send"), \
+         patch("labflash.update_cli.make_zephyr_smp_snapshot"), \
+         patch("labflash.update_cli.update_zephyr", return_value=mock_res_fail):
+        rc = update_cli.run_update(args)
+        assert rc == 1
+
+
+def test_run_update_idf_branches(tmp_path, capsys):
+    from labflash.core import BoardResolutionError
+    img = tmp_path / "idf.bin"
+    img.write_bytes(b"dummy")
+
+    # 1. no-labid without https_fn (e.g. transport=ble, no board_ip)
+    args_no_ip = argparse.Namespace(
+        image=str(img), board="idf", transport="ble", board_ip=None,
+        board_mac="E0:72:A1:AA:23:90", address="E0:72:A1:AA:23:90",
+        no_labid=True, keys=None, env_file=None, token=None, ca_cert=None, rig=None
+    )
+    rc = update_cli.run_update(args_no_ip)
+    assert rc == 1
+    assert "--no-labid needs --board-ip" in capsys.readouterr().err
+
+    # 2. not no-labid: resolve_board failure
+    args_resolve_fail = argparse.Namespace(
+        image=str(img), board="idf", transport="ble", board_ip=None,
+        board_mac="E0:72:A1:AA:23:90", address="E0:72:A1:AA:23:90",
+        no_labid=False, labid_port=None, keys=None, env_file=None, token=None, ca_cert=None, rig=None
+    )
+    with patch("labflash.core.resolve_board", side_effect=BoardResolutionError("no idf port")):
+        rc = update_cli.run_update(args_resolve_fail)
+        assert rc == 1
+
+    # 3. update_idf raises UpdateError
+    args_ok = argparse.Namespace(
+        image=str(img), board="idf", transport="ble", board_ip=None,
+        board_mac="E0:72:A1:AA:23:90", address="E0:72:A1:AA:23:90",
+        no_labid=False, labid_port="/dev/ttyACM0", keys=None, env_file=None, token=None, ca_cert=None, rig=None,
+        timeout=10.0, confirm_timeout=30.0
+    )
+    with patch("labflash.update_cli.make_ble_send"), \
+         patch("labflash.update_cli.labid_snapshot_fn"), \
+         patch("labflash.update_cli.update_idf", side_effect=UpdateError("idf fail")):
+        rc = update_cli.run_update(args_ok)
+        assert rc == 1
+        assert "ERROR: idf fail" in capsys.readouterr().err
+
+    # 4. update returns ok=False
+    mock_res_fail = UpdateResult(
+        ok=False,
+        checks=[],
+        version="2.0.0",
+        pre=Snapshot("1.0.0", 0, True, None, "labid"),
+        post=Snapshot("1.0.0", 0, True, None, "labid"),
+    )
+    with patch("labflash.update_cli.make_ble_send"), \
+         patch("labflash.update_cli.labid_snapshot_fn"), \
+         patch("labflash.update_cli.update_idf", return_value=mock_res_fail):
+        rc = update_cli.run_update(args_ok)
+        assert rc == 1
+
 
 

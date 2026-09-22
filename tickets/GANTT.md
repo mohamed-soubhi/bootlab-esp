@@ -8,7 +8,7 @@
 ## Progress
 
 - **IDF track:** `█████████████████████████░░░░░` **35/42 done**
-- **Zephyr track:** `███████████████████░░░░░░░░░░░` **24/37 done**
+- **Zephyr track:** `████████████████████░░░░░░░░░░` **25/37 done**
 
 | Epic | Phase | IDF | Zephyr |
 |---|---|---|---|
@@ -16,7 +16,7 @@
 | EL LABID common library | PL | `██████████` 4/4 | `██████████` 4/4 |
 | E1 ESP32-S3 #2 — ESP-IDF | P1 | `██████████` 9/9 | — |
 | E2 ESP32-S3 #1 — Zephyr | P2 | — | `██████████` 9/9 |
-| E3 labflash CLI | P3 | `██████████` 6/6 | `████████░░` 5/6 |
+| E3 labflash CLI | P3 | `██████████` 6/6 | `██████████` 6/6 |
 | E4 HIL tests + CI | P4 | `█████████░` 8/9 | `░░░░░░░░░░` 0/8 |
 | E5 Soak, docs, handover | P5 | `░░░░░░░░░░` 0/6 | `░░░░░░░░░░` 0/4 |
 
@@ -140,7 +140,7 @@ gantt
     BL-042 flash recover provision (USB) :done, bl042, 2026-09-24, 1d
     BL-044 update zephyr --transport ble|udp :done, bl044, 2026-10-02, 2d
     BL-045 build + sign orchestration :done, bl045, 2026-09-24, 1d
-    BL-046 labflash mocked unit tests :bl046, 2026-10-04, 2d
+    BL-046 labflash mocked unit tests :done, bl046, 2026-10-04, 2d
     section P4 HIL tests + CI
     BL-050 HIL framework fixtures markers artifacts :bl050, 2026-10-06, 2d
     BL-051 HIL T01–T03 boot + update :bl051, 2026-10-08, 1d
@@ -165,15 +165,14 @@ None: nothing on this board is blocked.
 
 ### Ready to start — Zephyr track (todo, every dependency of this board done)
 
-- **BL-046** [M] labflash mocked unit tests
+- **BL-050** [M] HIL framework: fixtures, markers, artifacts
 - **BL-055** [M] build.yml cloud CI
 
 ### Waiting-on — Zephyr track
 
 | Ticket | Status | Waiting on (unfinished dependencies) |
 |---|---|---|
-| BL-046 labflash mocked unit tests | ⬜ todo | — |
-| BL-050 HIL framework fixtures markers artifacts | ⬜ todo | BL-046[zephyr] ⬜ |
+| BL-050 HIL framework fixtures markers artifacts | ⬜ todo | — |
 | BL-051 HIL T01–T03 boot + update | ⬜ todo | BL-050[zephyr] ⬜ |
 | BL-052 HIL T04–T09 rollback security robustness | ⬜ todo | BL-050[zephyr] ⬜ |
 | BL-053 HIL T10–T15 LABID + identity + USB | ⬜ todo | BL-050[zephyr] ⬜ |

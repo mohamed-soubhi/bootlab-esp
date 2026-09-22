@@ -419,7 +419,7 @@ def run_update_zephyr(args, image: bytes) -> int:
         print(f"ERROR: {err}", file=sys.stderr)
         return 1
 
-    print(f"image version {result.version}; before: app={result.pre.app} slot={result.pre.slot}; "
+    print(f"image version {result.version}; before: app={result.pre.app if result.pre else '?'} slot={result.pre.slot if result.pre else '?'}; "
           f"after: app={result.post.app if result.post else '?'} slot={result.post.slot if result.post else '?'}")
     for c in result.checks:
         print(f"[{'PASS' if c.ok else 'FAIL'}] {c.name}: {c.detail}")
@@ -468,7 +468,7 @@ def run_update_idf(args, image: bytes) -> int:
             host_ip = args.host_ip or guess_host_ip(args.board_ip)
             send_fn = make_wifi_send(board, server, host_ip, Path(workdir_cm.name))
         else:
-            send_fn = make_ble_send(mac, args.address, args.scan_timeout)
+            send_fn = make_ble_send(mac, args.address, getattr(args, "scan_timeout", 5.0))
 
         print(f"Updating {args.board} over {args.transport}: {args.image} ({len(image)} bytes)", flush=True)
         try:

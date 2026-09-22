@@ -912,12 +912,12 @@
         "BL-044",
         "BL-045"
       ],
-      "desc": "pytest with mocked BLE / serial / HTTP.",
+      "desc": "pytest with mocked BLE / serial / HTTP. [DONE 2026-09-22 -- 180 unit tests passing, total host/labflash line coverage 91% (all modules >= 80%: update.py 100%, update_cli.py 99%, identify.py 96%, __main__.py 94%, doctor.py 91%, flash.py 83%, build.py 81%). ruff and mypy clean (0 errors).]",
       "ac": [
         "Line coverage \u2265 80 %",
         "ruff + mypy clean"
       ],
-      "status": "doing",
+      "status": "done",
       "pr": "",
       "tracks": [
         "idf",
@@ -935,7 +935,7 @@
       },
       "track_status": {
         "idf": "done",
-        "zephyr": "todo"
+        "zephyr": "done"
       }
     },
     {

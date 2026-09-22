@@ -90,3 +90,110 @@ def test_main_update():
         rc = main(["update", "idf", "--image", "/tmp/app.bin", "--transport", "wifi", "--board-ip", "192.168.1.152"])
         assert rc == 0
         mock_upd.assert_called_once()
+
+
+def test_main_no_args():
+    import pytest
+    with pytest.raises(SystemExit) as exc_info:
+        main([])
+    assert exc_info.value.code == 2
+
+
+def test_main_resolve_errors():
+    from labflash.core import BoardResolutionError
+    with patch("labflash.core.resolve_all_boards", side_effect=BoardResolutionError("no boards")):
+        rc = main(["resolve"])
+        assert rc == 1
+        rc_json = main(["resolve", "--json"])
+        assert rc_json == 1
+
+
+def test_main_provision_branches(tmp_path, monkeypatch):
+    from labflash.core import BoardResolutionError
+    monkeypatch.delenv("WIFI_SSID", raising=False)
+    # Missing SSID
+    rc = main(["provision", "idf", "--port", "/dev/ttyACM0", "--env-file", str(tmp_path / "empty.env")])
+    assert rc == 1
+
+    # PSK from psk_file
+    psk_f = tmp_path / "psk.txt"
+    psk_f.write_text("file_password\n")
+    with patch("labflash.provision.provision_idf") as mock_prov:
+        rc = main(["provision", "idf", "--ssid", "TestSSID", "--psk-file", str(psk_f), "--port", "/dev/ttyACM0"])
+        assert rc == 0
+        assert mock_prov.call_args.kwargs["psk"] == "file_password"
+
+    # Resolve board failure
+    with patch("labflash.core.resolve_board", side_effect=BoardResolutionError("no port")):
+        rc = main(["provision", "idf", "--ssid", "TestSSID", "--psk", "secret"])
+        assert rc == 1
+
+    # Provision exception
+    with patch("labflash.provision.provision_idf", side_effect=RuntimeError("nvs error")):
+        rc = main(["provision", "idf", "--ssid", "TestSSID", "--psk", "secret", "--port", "/dev/ttyACM0"])
+        assert rc == 1
+
+
+def test_main_build_errors():
+    from labflash.build import BuildError, ZephyrGatedError
+    with patch("labflash.build.build_board", side_effect=ZephyrGatedError("zephyr gate blocked")):
+        rc = main(["build", "zephyr"])
+        assert rc == 2
+
+    with patch("labflash.build.build_board", side_effect=BuildError("compiler error")):
+        rc = main(["build", "idf"])
+        assert rc == 1
+
+
+def test_main_flash_errors():
+    from labflash.flash import FlashError, ZephyrGatedError
+    with patch("labflash.flash.flash_board", side_effect=ZephyrGatedError("gate blocked")):
+        rc = main(["flash", "zephyr"])
+        assert rc == 2
+
+    with patch("labflash.flash.flash_board", side_effect=FlashError("write failed")):
+        rc = main(["flash", "idf", "--port", "/dev/ttyACM0"])
+        assert rc == 1
+
+
+def test_main_identify_errors():
+    from labflash.core import BoardResolutionError
+    # 1. Resolve board error
+    with patch("labflash.core.resolve_board", side_effect=BoardResolutionError("not found")):
+        rc = main(["identify", "--board", "idf"])
+        assert rc == 1
+
+    # 2. No boards resolved from rig
+    with patch("labflash.core.load_rig_config", return_value={"boards": {}}):
+        rc = main(["identify"])
+        assert rc == 1
+
+    # 3. Transport exception on specified port
+    with patch("labflash.identify.SerialLineTransport", side_effect=RuntimeError("open error")):
+        rc = main(["identify", "--port", "/dev/ttyACM0"])
+        assert rc == 1
+
+
+def test_main_info_errors():
+    from labflash.core import BoardResolutionError
+    with patch("labflash.core.resolve_board", side_effect=BoardResolutionError("no board")):
+        rc = main(["info", "idf"])
+        assert rc == 1
+
+    with patch("labflash.core.resolve_board", return_value="/dev/ttyACM0"), \
+         patch("labflash.identify.SerialLineTransport", side_effect=RuntimeError("serial error")):
+        rc = main(["info", "idf"])
+        assert rc == 1
+
+
+def test_main_measure_errors():
+    from labflash.core import BoardResolutionError
+    with patch("labflash.core.resolve_board", side_effect=BoardResolutionError("no board")):
+        rc = main(["measure", "idf"])
+        assert rc == 1
+
+    with patch("labflash.core.resolve_board", return_value="/dev/ttyACM0"), \
+         patch("labflash.identify.SerialLineTransport", side_effect=RuntimeError("measure error")):
+        rc = main(["measure", "idf"])
+        assert rc == 1
+

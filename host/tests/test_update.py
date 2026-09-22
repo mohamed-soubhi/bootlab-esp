@@ -395,3 +395,122 @@ def test_update_zephyr_board_never_answers_raises():
         )
 
 
+def test_read_zephyr_image_info_fallback_zero():
+    # Header has 0.0.0 and binary does not contain "1.0.0" or "2.0.0"
+    hdr = bytearray(b"\x3d\xb8\xf3\x96" + b"\x00" * 28)
+    # Put some dummy bytes without 1.0.0 or 2.0.0
+    body = b"hello world raw bytes without any version tag"
+    img = bytes(hdr) + body
+    ver, h = up.read_zephyr_image_info(img)
+    assert ver == "0.0.0"
+    assert len(h) == 64
+
+
+def test_update_zephyr_post_unconfirmed_then_confirmed():
+    state = 0
+
+    def snap_seq():
+        nonlocal state
+        state += 1
+        if state == 1:
+            return snap("1.0.0", 0, True, "ACA7042C3B04")
+        if state == 2:
+            return snap("2.0.0", 0, False, "ACA7042C3B04")
+        return snap("2.0.0", 0, True, "ACA7042C3B04")
+
+    img = make_zephyr_image("2.0.0")
+    res = up.update_zephyr(
+        img,
+        "udp",
+        snapshot_fn=snap_seq,
+        send_fn=lambda *a: None,
+        expected_uid="ACA7042C3B04",
+        sleep_fn=lambda s: None,
+        timeout_s=0.1,
+        confirm_timeout_s=0.1,
+        poll_s=0.01,
+    )
+    assert res.ok
+    assert res.post.confirmed
+
+
+def test_update_zephyr_smp_unreachable():
+    fake = ZephyrFake(
+        snap("1.0.0", 0, True, "ACA7042C3B04"),
+        snap("2.0.0", 0, True, "ACA7042C3B04"),
+    )
+
+    def smp_snap():
+        raise up.UpdateError("smp unreachable")
+
+    img = make_zephyr_image("2.0.0")
+    res = up.update_zephyr(
+        img,
+        "udp",
+        snapshot_fn=fake.snapshot,
+        send_fn=fake.send,
+        smp_snapshot_fn=smp_snap,
+        expected_uid="ACA7042C3B04",
+        sleep_fn=lambda s: None,
+        timeout_s=0.05,
+        poll_s=0.01,
+    )
+    assert not res.ok
+    assert any(c.name == "SMP status == LABID status" and not c.ok for c in res.checks)
+
+
+def test_update_idf_never_answers_raises():
+    calls = 0
+
+    def snap_after_send():
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return snap("1.0.0", 0, True, "E072A1AA2390")
+        raise up.UpdateError("offline")
+
+    with pytest.raises(up.UpdateError, match="never answered"):
+        up.update_idf(
+            make_image("2.0.0"),
+            "wifi",
+            snapshot_fn=snap_after_send,
+            send_fn=lambda *a: None,
+            expected_uid="E072A1AA2390",
+            sleep_fn=lambda s: None,
+            timeout_s=0.05,
+            poll_s=0.01,
+        )
+
+
+def test_update_idf_post_unconfirmed_then_confirmed_and_https_unreachable():
+    state = 0
+
+    def snap_seq():
+        nonlocal state
+        state += 1
+        if state == 1:
+            return snap("1.0.0", 0, True, "E072A1AA2390")
+        if state == 2:
+            return snap("2.0.0", 1, False, "E072A1AA2390")
+        return snap("2.0.0", 1, True, "E072A1AA2390")
+
+    def https_fail():
+        raise up.UpdateError("https down")
+
+    res = up.update_idf(
+        make_image("2.0.0"),
+        "wifi",
+        snapshot_fn=snap_seq,
+        send_fn=lambda *a: None,
+        expected_uid="E072A1AA2390",
+        https_snapshot_fn=https_fail,
+        sleep_fn=lambda s: None,
+        timeout_s=0.1,
+        confirm_timeout_s=0.1,
+        poll_s=0.01,
+    )
+    assert not res.ok
+    assert any(c.name == "LABID == HTTPS version" and not c.ok for c in res.checks)
+
+
+
