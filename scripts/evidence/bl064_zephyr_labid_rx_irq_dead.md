@@ -168,22 +168,72 @@ the blink loop (`main.c`) -- 4x more often at 4Hz (every 125 ms) than at 1Hz (ev
 explicit `irq_lock()`/`k_busy_wait()` in the app's own blink loop, so if interrupts are being blocked,
 it's inside the I2S/WS2812 driver itself (Zephyr's `ws2812_i2s` driver internals, not inspected yet).
 
-## Not yet tried
+## ROOT CAUSE CONFIRMED: `ws2812_i2s` driver's DMA buffer pool (mem_slab) exhaustion
 
-- Read Zephyr's `ws2812_i2s` driver source (not in this repo -- in `~/zephyrproject/zephyr` modules)
-  for anything that disables interrupts or blocks during an I2S transaction; check if it shares a DMA
-  channel or interrupt priority level with the USB-Serial-JTAG UART driver.
-- Try `CONFIG_WS2812_STRIP_SPI` or an RMT-backed driver instead of I2S, if available for this SoC, to
-  see if the bug is I2S-driver-specific.
-- Rate-limit the actual `led_strip_update_rgb()` calls (e.g. skip every other half-period at 4Hz) while
-  keeping the visible 4Hz *toggle* rate, to see if call frequency alone (not the 4Hz label) is what
-  matters -- would further confirm/refute the I2S-driver-load hypothesis.
-- Instrument `uart_irq_rx_enable()`'s return value and re-check it periodically (not just at boot) --
-  if something disables RX IRQ later, a later re-enable call's return value might reveal a driver-level
-  rejection.
+Quantitative check first ruled out simple blocking-time overhead: `ws2812_strip_update()`'s
+`k_usleep(flush_time_us + extra_wait_time_us)` is only ~550us per call (10us lrck_period x ~25-word
+buffer + 300us extra_wait_time default) -- at 4Hz that's ~0.4% duty cycle, far too small to explain a
+**total, permanent** failure (irq=0 for 5+ continuous minutes, not intermittent starvation).
+
+Reading `~/zephyrproject/zephyr/drivers/led_strip/ws2812_i2s.c` (Zephyr's own driver, not vendored in
+this repo) found the real candidate: `ws2812_strip_update_rgb()` allocates a DMA TX buffer from a
+`k_mem_slab` (`k_mem_slab_alloc(cfg->mem_slab, &mem_block, K_SECONDS(10))`) but **there is no explicit
+`k_mem_slab_free()` call anywhere on the success path** in this file -- freeing is expected to happen
+inside the ESP32 I2S driver's own DMA-completion handling, not in this file. The pool size is
+hardcoded at device-definition time: `K_MEM_SLAB_DEFINE_STATIC(ws2812_i2s_##idx##_slab,
+WS2812_I2S_BUFSIZE(idx), 2, 4)` -- **only 2 blocks**, not exposed via devicetree.
+
+### Confirmed by patching the driver
+
+Backed up `ws2812_i2s.c`, changed `2` to `8` blocks, rebuilt `build_v2` fresh (pristine, since a driver
+source change needs a full CMake reconfigure), flashed directly (no OTA), tested against the real 4Hz
+blink rate:
+
+```
+t~0s:  app=2.0.0, confirmed=1   <- immediately, where the unpatched build failed within ~3s
+t~10s: app=2.0.0, confirmed=1
+t~20s: app=2.0.0, confirmed=1
+t~30s: app=2.0.0, confirmed=1
+t~45s: app=2.0.0, confirmed=1
+t~60s: app=2.0.0, confirmed=1
+```
+
+**Fixed, and stayed fixed for 60+ continuous seconds of 4Hz blinking.** This is conclusive: the mem_slab
+pool (2 blocks) exhausts fast enough under 4Hz calls (roughly every ~250-500ms of blinking, well before
+even the earliest ~3s LABID check in prior tests) that `k_mem_slab_alloc` starts blocking/failing, and
+something about that failure state (not yet traced further -- possibly a fault path, possibly resource
+contention shared with the UART DMA/interrupt subsystem) also kills the LABID console's UART RX
+interrupt. The Zephyr driver patch was reverted after confirming (`~/zephyrproject` is a shared SDK
+checkout outside this repo's git history, not something to leave modified).
+
+### This is a workaround, not necessarily the deepest fix
+
+Growing the pool from 2 to 8 blocks masks the symptom (gives 4x more headroom before exhaustion) but
+doesn't explain *why* blocks aren't being freed promptly, or whether they're leaking permanently (which
+would eventually exhaust even 8 blocks at high enough uptime/call rate) vs. just cycling slowly. Real
+fix candidates, not yet attempted:
+
+- Find why blocks aren't freed on the success path -- check the ESP32 I2S driver
+  (`~/zephyrproject/zephyr/drivers/i2s/i2s_esp32.c`) for its DMA-completion callback and whether it
+  correctly returns blocks to `cfg->mem_slab` after each transfer.
+- **Project-level fix that doesn't touch the SDK** (more practical, this repo can actually ship it):
+  rate-limit `led_strip_update_rgb()` calls in `main.c`'s blink loop -- e.g. only call it once per full
+  cycle (on state change) instead of on every half-period toggle, or skip calls when the color hasn't
+  changed. Cuts the call rate without touching Zephyr's driver at all.
+- If the pool size needs to persist as a real fix, it needs a proper west module patch (tracked in this
+  project's `west.yml`/manifest patch mechanism) so it survives `west update` -- a one-off local SDK
+  edit like this session's diagnostic doesn't.
 
 ## Board state
 
-Left on the known-good confirmed `build_v1` (esptool, identity verified) after this round of testing.
-Session stopped here given the cost of each rebuild+flash+live-BLE-test cycle (~10 minutes, real board
-time); the bug is real, reproducible, and now well-characterized, but root cause is still open.
+Left on the known-good confirmed `build_v1` (esptool, identity verified). The `ws2812_i2s.c` driver
+patch used to confirm the fix was reverted (shared SDK checkout, not this repo's to modify permanently
+without a proper patch mechanism).
+
+## Status: root cause CONFIRMED, real fix not yet applied
+
+Root cause: `ws2812_i2s` driver's 2-block DMA buffer pool exhausts under the 4Hz call rate, and that
+exhaustion state also kills the LABID console's UART RX interrupt (mechanism linking the two not fully
+traced, but the causal chain -- pool size -> exhaustion -> LABID freeze -- is empirically confirmed).
+A shippable fix (project-level call-rate reduction, or a proper tracked SDK patch) has not yet been
+applied to `build_v2`; `build_v2` on disk still has the original, broken behavior.
