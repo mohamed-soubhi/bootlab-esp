@@ -1,4 +1,4 @@
-# RESUME — bootlab-esp (checkpoint 2026-09-22 15:10)
+# RESUME — bootlab-esp (checkpoint 2026-09-22, post-restart)
 
 Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
 (`C:\MSA\embedded-OS\bootlab-esp`) is a scratch dir; never edit or push from it.
@@ -8,6 +8,42 @@ Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
 (`esp_zephyr/`, `scripts/*ble_smp*`, `scripts/evidence/bl03*/bl04*`, `docs/rpi4_limitations.md`) — its uncommitted
 work-in-progress files were left untouched by this session; do not assume they are lost or that this instance should
 finish them. The owner is restarting the machine; this section is this instance's checkpoint, written on request.
+
+## POST-RESTART WORK (this instance, 2026-09-22, after the machine restart above)
+
+- **BL-057 split into per-track tickets** (`1676d89`): idf half (`BL-057a`) marked `done` -- real
+  live 3x-green evidence already existed (`scripts/evidence/bl057_live_suite_2026-09-22/`); its only
+  blocker was a ticket dependency on BL-056 (RPi4 self-hosted runner), which was never actually
+  needed for these workstation-run tests. Owner decision (asked, answered): split rather than drop
+  the dep outright. `BL-057b` (zephyr) stays `todo`, still depends on BL-056. `BL-060`/`BL-061`/`BL-062`
+  now depend on both halves instead of the retired `BL-057`. `tickets_tool.py check` clean (53 tickets,
+  no dep errors).
+- **Built the real board console reader BL-060 was blocked on** (`75377b8`). Root cause: every LABID
+  query opened and closed the serial port per call, so nothing was listening -- and console bytes were
+  dropped -- during the gaps between queries, including exactly the OTA-apply moments (esp_ota_end,
+  bootloader slot switch) needed to explain the BL-060 soak failure. Windows opens a COM port
+  exclusively, so a second standalone reader (like `scripts/serial_watch.py`) run alongside a live test
+  would fail to open ("Access is denied") -- the fix has to SHARE the one connection, not add a second.
+  - New `host/labflash/serial_console.py`: `SharedConsolePort` opens the port ONCE and keeps it open;
+    a background thread tees every raw line to a timestamped `console.log` while still feeding the
+    same bytes through `read1()`/`write()` so existing LABID query code (labflash.identify) works
+    unmodified against the same handle. `close()` is a no-op (existing call sites `tr.close()` after
+    every query); `shutdown()` actually releases the port -- call once, at the end of a run.
+  - Wired through `host/labflash/update_cli.labid_snapshot_fn` and `tests_hil/live_backend.py`
+    (`LiveBackend.create(..., console_log=path)` opens the shared port for the backend's whole life;
+    `backend.shutdown()` releases it), `tests_hil/soak.py` (new `--console-log`, default
+    `<out>/console.log`; `--no-console-log` to disable), and `tests_hil/conftest.py` (`live_backend`
+    fixture opens it against `artifacts_dir/console.log`; `serial_capture` now points at that real
+    file instead of writing the old "[LIVE] raw console not captured" stub).
+  - 4 new unit tests (`host/tests/test_serial_console.py`, mocked `serial.Serial`, no hardware) +
+    full `host/tests` + `tests_hil --mock-rig` regression: 173 passed, 7 skipped, ruff/mypy clean.
+  - **NOT yet validated against real hardware** (needs native Windows + the board, not WSL2 per R14).
+    Next step for whoever continues BL-060: run ONE watched WiFi OTA cycle with `tests_hil/soak.py`
+    (console capture now on by default) and read the resulting `console.log` for the board's own
+    ESP_LOG lines during the failure -- the WiFi-cycle symptom was "host served: {}" (board never even
+    connects to the image server) and the BLE-cycle symptom was "all 305 sectors ACKed, board never
+    switches slot" (see `scripts/evidence/bl060_soak_2026-09-22c/README.md` for the pre-existing
+    finding this is meant to root-cause).
 
 ## CURRENT WORK — IDF/HIL live path (this instance, 2026-09-22, machine restart checkpoint)
 
