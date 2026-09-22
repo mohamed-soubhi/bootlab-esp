@@ -1,0 +1,6 @@
+[23:08:44.847] $LAB,VER,bl=mcuboot,app=1.0.0,git=db7cfc2,build=20260922T1921Z,variant=v1,slot=0,confirmed=1*37A0
+[23:08:44.852] $LAB,ID,board=zephyr,hw=esp32s3_devkitc,mcu=esp32s3,uid=ACA7042C3B04,os=zephyr-4.4.99,flash_kb=16384*3A52
+[23:08:44.859] $LAB,VER,bl=mcuboot,app=1.0.0,git=db7cfc2,build=20260922T1921Z,variant=v1,slot=0,confirmed=1*37A0
+[23:08:44.865] $LAB,ID,board=zephyr,hw=esp32s3_devkitc,mcu=esp32s3,uid=ACA7042C3B04,os=zephyr-4.4.99,flash_kb=16384*3A52
+[23:08:44.871] $LAB,VER,bl=mcuboot,app=1.0.0,git=db7cfc2,build=20260922T1921Z,variant=v1,slot=0,confirmed=1*37A0
+[23:08:44.878] $LAB,ID,board=zephyr,hw=esp32s3_devkitc,mcu=esp32s3,uid=ACA7042C3B04,os=zephyr-4.4.99,flash_kb=16384*3A52

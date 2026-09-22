@@ -6,17 +6,17 @@
 
 ## Overall
 
-`██████████████████████░░░░░░░░` **38/53 done (71%)**
+`██████████████████████░░░░░░░░` **39/53 done (73%)**
 
 - **IDF track:** `█████████████████░░░` 35/42
-- **Zephyr track:** `██████████████░░░░░░` 25/37
+- **Zephyr track:** `██████████████░░░░░░` 26/37
 
 ```mermaid
 pie showData title Ticket status
     "todo" : 2
-    "doing" : 7
+    "doing" : 6
     "blocked" : 6
-    "done" : 38
+    "done" : 39
 ```
 
 ## Epics
@@ -28,7 +28,7 @@ pie showData title Ticket status
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `████████████` | 9/9 | ✅ done | §4.2, §5, §6, §7.2, §8 P1 |
 | E2 | P2 | ESP32-S3 #1 — Zephyr | `████████████` | 9/9 | ✅ done | §4.1, §5, §6, §7.1, §8 P2 |
 | E3 | P3 | labflash CLI | `████████████` | 7/7 | ✅ done | §8 P3 |
-| E4 | P4 | HIL tests + CI | `█░░░░░░░░░░░` | 1/10 | 🟥 blocked | §8 P4 |
+| E4 | P4 | HIL tests + CI | `██░░░░░░░░░░` | 2/10 | 🟥 blocked | §8 P4 |
 | E5 | P5 | Soak, docs, handover | `░░░░░░░░░░░░` | 0/6 | 🟥 blocked | §8 P5 |
 
 ## Epic dependency graph
@@ -40,7 +40,7 @@ flowchart LR
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>9/9"]:::done
     E2["P2 ESP32-S3 #1 — Zephyr<br/>9/9"]:::done
     E3["P3 labflash CLI<br/>7/7"]:::done
-    E4["P4 HIL tests + CI<br/>1/10"]:::blocked
+    E4["P4 HIL tests + CI<br/>2/10"]:::blocked
     E5["P5 Soak, docs, handover<br/>0/6"]:::blocked
     E0 --> EL
     E1 --> E3
@@ -738,7 +738,7 @@ pytest with mocked BLE / serial / HTTP. [DONE 2026-09-22 -- 180 unit tests passi
 
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
-| 🔵 | BL-050 | HIL framework: fixtures, markers, artifacts | M | host | BL-046 |  |
+| ✅ | BL-050 | HIL framework: fixtures, markers, artifacts | M | host | BL-046 |  |
 | 🔵 | BL-051 | HIL T01–T03 boot + update | S | zephyr, idf | BL-050 |  |
 | 🔵 | BL-052 | HIL T04–T09 rollback, security, robustness | M | zephyr, idf | BL-050 |  |
 | 🔵 | BL-053 | HIL T10–T15 LABID + identity + USB | S | zephyr, idf | BL-050 |  |
@@ -749,11 +749,11 @@ pytest with mocked BLE / serial / HTTP. [DONE 2026-09-22 -- 180 unit tests passi
 | ✅ | BL-057a | Full HIL suite green 3× in a row (IDF board) | S | idf | BL-051, BL-052, BL-053 |  |
 | ⬜ | BL-057b | Full HIL suite green 3× in a row (Zephyr board) | S | zephyr | BL-051, BL-052, BL-053, BL-056 |  |
 
-<details><summary>🔵 <b>BL-050</b> — HIL framework: fixtures, markers, artifacts</summary>
+<details><summary>✅ <b>BL-050</b> — HIL framework: fixtures, markers, artifacts</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** host  
-- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
+- **Tracks:** IDF ✅ done · Zephyr ✅ done  
 - **Depends on:** BL-046  
 - **Plan:** §8 P4
 
@@ -763,7 +763,7 @@ rig fixture, factory_reset, btmon capture, JUnit.
 *IDF scope*
 - [x] Dummy HIL test runs on the idf board and restores v1
 *Zephyr scope*
-- [ ] Dummy HIL test runs on the zephyr board and restores v1
+- [x] Dummy HIL test runs on the zephyr board and restores v1
 
 </details>
 
@@ -1099,7 +1099,7 @@ flowchart TB
         BL046["BL-046"]:::done
     end
     subgraph E4_g["P4 HIL tests + CI"]
-        BL050["BL-050"]:::doing
+        BL050["BL-050"]:::done
         BL051["BL-051"]:::doing
         BL052["BL-052"]:::doing
         BL053["BL-053"]:::doing

@@ -1,0 +1,2 @@
+mode: live
+Dummy HIL Zephyr test passed successfully
