@@ -792,7 +792,7 @@
         "Factory flash both boards",
         "Refuses to flash if board= mismatches"
       ],
-      "status": "doing",
+      "status": "done",
       "pr": "",
       "tracks": [
         "idf",
@@ -810,7 +810,7 @@
       },
       "track_status": {
         "idf": "done",
-        "zephyr": "todo"
+        "zephyr": "done"
       }
     },
     {

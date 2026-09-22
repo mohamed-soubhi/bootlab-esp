@@ -8,7 +8,10 @@ Strict Guardrail:
 """
 from __future__ import annotations
 
+import os
 import re
+import shutil
+import sys
 from collections.abc import Callable
 from pathlib import Path
 
@@ -29,6 +32,22 @@ class FlashIdentityError(FlashError):
 
 class ZephyrGatedError(FlashError):
     """Raised when attempting to flash Zephyr while gated."""
+
+
+def find_esptool_cmd(repo_root: Path | None = None) -> list[str]:
+    """Find esptool executable, prioritizing repo virtual environment."""
+    root = (repo_root or DEFAULT_REPO_ROOT).resolve()
+    venv_esptool = root / ".venv" / "bin" / "esptool"
+    sys_esptool = Path(sys.executable).parent / "esptool"
+    if venv_esptool.is_file() and os.access(venv_esptool, os.X_OK):
+        return [str(venv_esptool)]
+    if sys_esptool.is_file() and os.access(sys_esptool, os.X_OK):
+        return [str(sys_esptool)]
+    if shutil.which("esptool"):
+        return ["esptool"]
+    if shutil.which("esptool.py"):
+        return ["esptool.py"]
+    return [sys.executable, "-m", "esptool"]
 
 
 def normalize_mac(mac: str) -> str:
@@ -52,11 +71,12 @@ def read_mac_with_esptool(
     """Query MAC directly from chip using esptool read-mac."""
     from labflash.build import run_command
 
-    cmd = ["esptool", "--port", str(port), "read-mac"]
+    esptool_cmd = find_esptool_cmd(repo_root)
+    cmd = [*esptool_cmd, "--port", str(port), "read-mac"]
     res = run_command(cmd, cwd=Path.cwd(), use_idf_env=True, runner=runner)
     if res.returncode != 0:
         # Try read_mac (legacy syntax)
-        cmd_legacy = ["esptool.py", "--port", str(port), "read_mac"]
+        cmd_legacy = [*esptool_cmd, "--port", str(port), "read_mac"]
         res = run_command(cmd_legacy, cwd=Path.cwd(), use_idf_env=True, runner=runner)
 
     if res.returncode == 0:
@@ -132,8 +152,9 @@ def factory_flash_idf(
         if not p.is_file():
             raise FlashError(f"Missing required factory flash binary at {offset}: {p}")
 
+    esptool_cmd = find_esptool_cmd(root)
     cmd = [
-        "esptool",
+        *esptool_cmd,
         "--chip",
         "esp32s3",
         "-p",
@@ -160,14 +181,70 @@ def factory_flash_idf(
         raise FlashError(f"Factory flash failed on {port}:\n{res.stderr or res.stdout}")
 
 
+def factory_flash_zephyr(
+    port: str,
+    repo_root: Path | None = None,
+    runner: Callable | None = None,
+) -> None:
+    """Perform full factory flash of Zephyr board (MCUboot at 0x0, signed app at 0x20000)."""
+    from labflash.build import run_command
+
+    root = (repo_root or DEFAULT_REPO_ROOT).resolve()
+    build_dir = root / "esp_zephyr" / "app" / "build_v1"
+    if not (build_dir / "mcuboot" / "zephyr" / "zephyr.bin").is_file():
+        build_dir = root / "esp_zephyr" / "app" / "build"
+
+    mcuboot_bin = build_dir / "mcuboot" / "zephyr" / "zephyr.bin"
+    app_bin = build_dir / "app" / "zephyr" / "zephyr.signed.bin"
+
+    files = {
+        "0x0": mcuboot_bin,
+        "0x20000": app_bin,
+    }
+
+    for offset, p in files.items():
+        if not p.is_file():
+            raise FlashError(f"Missing required Zephyr factory binary at {offset}: {p}")
+
+    esptool_cmd = find_esptool_cmd(root)
+    cmd = [
+        *esptool_cmd,
+        "--chip",
+        "esp32s3",
+        "-p",
+        str(port),
+        "-b",
+        "460800",
+        "--before",
+        "default-reset",
+        "--after",
+        "hard-reset",
+        "write-flash",
+        "--flash-mode",
+        "dio",
+        "--flash-size",
+        "16MB",
+        "--flash-freq",
+        "80m",
+    ]
+    for offset, p in files.items():
+        cmd.extend([offset, str(p)])
+
+    res = run_command(cmd, cwd=build_dir, use_idf_env=True, runner=runner)
+    if res.returncode != 0:
+        raise FlashError(f"Zephyr factory flash failed on {port}:\n{res.stderr or res.stdout}")
+
+
 def erase_flash(
     port: str,
+    repo_root: Path | None = None,
     runner: Callable | None = None,
 ) -> None:
     """Erase entire chip flash."""
     from labflash.build import run_command
 
-    cmd = ["esptool", "--chip", "esp32s3", "-p", str(port), "erase-flash"]
+    esptool_cmd = find_esptool_cmd(repo_root)
+    cmd = [*esptool_cmd, "--chip", "esp32s3", "-p", str(port), "erase-flash"]
     res = run_command(cmd, cwd=Path.cwd(), use_idf_env=True, runner=runner)
     if res.returncode != 0:
         raise FlashError(f"Erase flash failed on {port}:\n{res.stderr or res.stdout}")
@@ -181,13 +258,8 @@ def flash_board(
     runner: Callable | None = None,
 ) -> None:
     """Top-level flash dispatcher enforcing pre-write identity verification."""
-    if board == "zephyr":
-        raise ZephyrGatedError(
-            "Zephyr track is on hold pending BL-063b per replan (2026-09-21)."
-        )
-
-    if board != "idf":
-        raise FlashError(f"Unknown board '{board}'. Choices: idf")
+    if board not in ("idf", "zephyr"):
+        raise FlashError(f"Unknown board '{board}'. Choices: idf, zephyr")
 
     rig = load_rig_config()
     target_port = port or resolve_board(board, rig=rig)
@@ -199,9 +271,13 @@ def flash_board(
     # 2. Recovery erase if requested
     if recover:
         print(f"Erasing flash on {target_port} for recovery...")
-        erase_flash(target_port, runner=runner)
+        erase_flash(target_port, repo_root=repo_root, runner=runner)
 
     # 3. Write factory binaries
     print(f"Writing factory binaries to {board} on {target_port}...")
-    factory_flash_idf(target_port, repo_root=repo_root, runner=runner)
+    if board == "idf":
+        factory_flash_idf(target_port, repo_root=repo_root, runner=runner)
+    elif board == "zephyr":
+        factory_flash_zephyr(target_port, repo_root=repo_root, runner=runner)
+
     print(f"[SUCCESS] {board} factory flashed successfully on {target_port}.")

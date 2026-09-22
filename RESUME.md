@@ -12,10 +12,11 @@ Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
   - `BL-032` (Zephyr LABID UART console with interrupt RX) — DONE
   - `BL-033` (Zephyr self-test, auto-confirm, twister tests) — DONE
   - `BL-041` (identify, info, status, measure on real Zephyr board) — DONE
-  - `BL-045` (build + sign orchestration for all 5 Zephyr variants) — DONE (121 host unit tests pass, ruff & mypy clean)
+  - `BL-045` (build + sign orchestration for all 5 Zephyr variants) — DONE
+  - `BL-042` (flash, recover, provision USB for Zephyr with MAC guardrails, verified on real hardware) — DONE (123 host unit tests pass, ruff & mypy clean)
 - **Next Zephyr Work**:
-  1. `BL-042`: `labflash flash, recover, provision` (USB flashing for Zephyr with MAC identity guardrails)
-  2. `BL-034`: Zephyr mcumgr SMP over BLE
+  1. `BL-034`: Zephyr mcumgr SMP over BLE
+  2. `BL-035`: Zephyr UDP OTA (net / sockets)
   3. `BL-044`: `labflash update zephyr --transport ble|udp`
 
 ## REVIEW 2026-09-21 — THE SECTION BELOW OVERSTATES; THIS ONE IS TRUE (details: `scripts/evidence/REVIEW_2026-09-21.md`)
