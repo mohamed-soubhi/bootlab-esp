@@ -13,42 +13,45 @@ directory on this machine AND the Windows mirror -- a commit made here can catch
 from the other session (happened at least once, see commit `d308248`'s history); check `git status`
 and `git log -3` before assuming a clean starting point.
 
-## BL-064 FIX ATTEMPT (this instance, 2026-09-23) — DISPROVEN, root cause still open
+## BL-064 — RESOLVED (fix implemented, verified via direct flash) (this instance, 2026-09-23)
 
-- **Fix attempt 1: reordered `esp_zephyr/app/src/main.c`** (`a9a0fdc`, later reverted in `655ee77`):
-  BLE/WiFi radio init before `labid_port_init()`, hypothesis being a BLE connection event reprograms
-  ESP32's interrupt matrix and steals an earlier-claimed UART RX vector. Tested against the REAL
-  trigger (a live v1->v2 BLE OTA, not just UDP) and **disproven** -- same exact failure recurred
-  (`ERROR: the board never answered after the transfer`, then `Write timeout`). Reverted; no benefit.
-- **Real new data point**: `console.log` from that run shows the RX IRQ working perfectly on **v1**
-  mid-test with BLE actively advertising (`irq=130, rx=1260`). It's specifically booting
-  `APP_VARIANT_V2` that kills it -- reproduced identically via a live OTA swap AND a fresh direct
-  esptool flash of build_v2 (no OTA involved at all). So the trigger is NOT a BLE connection event and
-  NOT init order.
-- **Isolation test — root cause narrowed to the 4Hz blink rate, not the version label.** Built a
-  diagnostic image (`app=2.0.0` label, `led_strip` timing forced to the 1Hz path): LABID worked fine
-  (`irq=1, rx=10` after one query). Combined with v1@1Hz working and v2@4Hz not, this isolates it
-  cleanly: the 4Hz blink rate is the trigger, not `APP_VARIANT_V2` itself. Candidate mechanism: WS2812
-  is driven over I2S (`CONFIG_WS2812_STRIP_I2S`), called once per half-period in the blink loop -- 4x
-  more often at 4Hz than 1Hz; the `ws2812_i2s` Zephyr driver may block/disable interrupts during a
-  transaction, or share a DMA channel/interrupt priority with USB-Serial-JTAG. Not yet confirmed at the
-  driver-source level (`~/zephyrproject/zephyr` modules, not inspected). Diagnostic source change was
-  reverted, not committed; `build_v2` rebuilt clean.
-- **Also fixed a real, unrelated, KEPT bug**: `LiveBackend.image_for()` looked up zephyr's v1 image
-  under `VARIANT_DIRS["v1"]="build"` (IDF's convention), which pointed at a stale pre-BLE/WiFi build
-  from initial bring-up (137 KB vs the real ~736 KB). Now prefers `build_v1` first, matching zephyr's
-  real `build_<variant>` convention.
-- **BL-065 opened** (separate bug, found along the way): a UDP SMP OTA reports 100% uploaded +
-  confirmed, but MCUboot never actually swaps slots. Blocks `BL-051[zephyr]` alongside BL-064.
-- **Board left on the known-good confirmed `build_v1`** (esptool from WSL2, identity verified).
-- Full evidence, all rounds: `scripts/evidence/bl064_zephyr_labid_rx_irq_dead.md`. Next-step ideas
-  (read `ws2812_i2s` driver source, try an RMT-backed LED driver instead, rate-limit
-  `led_strip_update_rgb()` calls while keeping the visible 4Hz toggle) are listed there.
+Went from "unknown firmware bug" (LABID dies after a v2 BLE OTA) to a fully root-caused, fixed,
+committed bug across ~5 rounds of live hardware testing:
 
-**Session note**: each rebuild+flash+live-test cycle costs ~10 minutes of real board/session time. Went
-from "unknown firmware bug" to a clean, reproducible, narrowed-to-one-mechanism repro (4Hz LED-over-I2S
-update rate) across three rounds of live testing. A source-level fix in the LED driver or blink loop is
-the likely next step, not yet attempted.
+1. Fix attempt 1 (reorder BLE/WiFi init before `labid_port_init`) -- tested against a real v1->v2 BLE
+   OTA, **disproven**, reverted (`a9a0fdc` -> `655ee77`).
+2. New data: irq works fine on v1 with BLE advertising; only booting `APP_VARIANT_V2` breaks it,
+   reproduced via both OTA swap and direct flash -- not a BLE-connection-event or init-order issue.
+3. Isolation test (diagnostic build: `app=2.0.0` label, blink forced to 1Hz) -- worked fine. Narrowed
+   to the **4Hz blink rate** itself, not the version label.
+4. Root cause confirmed by patching Zephyr's shared `ws2812_i2s.c` driver (DMA buffer pool 2->8
+   blocks, `~/zephyrproject` checkout, reverted after confirming): **the driver's 2-block mem_slab
+   pool exhausts under sustained 4Hz calls, and that exhaustion state also kills the LABID UART RX
+   interrupt.**
+5. **Shippable fix implemented and committed** (`2705d53`): rate-limit the actual
+   `led_strip_update_rgb()` hardware call to ~2 Hz in `main.c`'s blink loop, independent of the
+   logical 4Hz toggle rate (LABID's measured toggle Hz is read from a counter, unaffected). Verified
+   via direct esptool flash + 60+s of sustained LABID polling at real 4Hz: stable, no freeze.
+
+**Not yet verified end-to-end via a live OTA** -- hit a separate, pre-existing bug (BL-065) that
+prevented the board from ever reaching the fixed v2 code path through an actual transfer. See BL-065
+below.
+
+Also fixed along the way (kept, unrelated): `LiveBackend.image_for()` was looking up zephyr's v1 image
+under `VARIANT_DIRS["v1"]="build"` (IDF's convention), pointing at a stale pre-BLE build. Now prefers
+`build_v1` first, matching zephyr's real `build_<variant>` convention.
+
+Board left on the known-good confirmed `build_v1`. Full evidence, all 5 rounds:
+`scripts/evidence/bl064_zephyr_labid_rx_irq_dead.md`.
+
+## BL-065 — OPEN: MCUboot never swaps slots (UDP AND BLE)
+
+Found while testing BL-064: a Zephyr SMP OTA (confirmed over both UDP and BLE) reports the transfer
+100% complete and "marked permanent/confirmed", resets the device -- but LABID reports the board still
+running the OLD image afterward, while the SMP layer itself reports the new image active (a real
+contradiction, not a verification-timing issue). Not yet root-caused. Blocks full `BL-051[zephyr]`
+live-OTA acceptance regardless of BL-064 being fixed. See `scripts/evidence/bl064_zephyr_labid_rx_irq_dead.md`'s
+final sections for the exact `update.log` evidence.
 
 ## ZEPHYR TAKEOVER (this instance, 2026-09-22, after the peer ran out of tokens)
 
