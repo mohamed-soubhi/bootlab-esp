@@ -1,0 +1,3 @@
+{"cycle": 1, "variant": "v2", "transport": "wifi", "ok": false, "cause": "update raised URLError: <urlopen error timed out>", "duration_s": 5.4}
+{"cycle": 2, "variant": "v1", "transport": "wifi", "ok": false, "cause": "update raised URLError: <urlopen error timed out>", "duration_s": 5.2}
+{"cycle": 3, "variant": "v2", "transport": "ble", "ok": false, "cause": "update v2 via ble failed (see update.log)", "duration_s": 166.2}

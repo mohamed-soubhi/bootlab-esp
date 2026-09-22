@@ -1,0 +1,10 @@
+--- cycle 1 recovery reset raised URLError: <urlopen error timed out>
+--- cycle 2 recovery reset raised URLError: <urlopen error timed out>
+--- update v2 via ble rc=1
+Updating idf over ble: C:\MSA\embedded-OS\bootlab-esp\esp_idf\build_v2\bootlab_idf_blink.bin (1249280 bytes)
+  BLE: found nimble-ble-ota at E0:72:A1:AA:23:92
+  BLE: sector 1/305
+  BLE: sector 17/305
+  BLE: sector 33/305
+  BLE: sector 49/305
+
