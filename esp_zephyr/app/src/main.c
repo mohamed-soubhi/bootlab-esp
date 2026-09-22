@@ -12,6 +12,7 @@
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/sys/atomic.h>
 #include "app_blink_timing.h"
+#include "app_self_test.h"
 #include "labid_port_zephyr.h"
 
 LOG_MODULE_REGISTER(bootlab_app, LOG_LEVEL_INF);
@@ -24,7 +25,7 @@ static const struct device *const wdt = DEVICE_DT_GET(WDT_NODE);
 static int wdt_channel_id = -1;
 
 static atomic_t s_toggle_count = ATOMIC_INIT(0);
-static atomic_t s_confirmed = ATOMIC_INIT(0);
+static struct app_self_test s_self_test;
 
 const char *app_variant_str(void)
 {
@@ -70,7 +71,7 @@ uint32_t app_get_toggle_count(void)
 
 bool app_is_confirmed(void)
 {
-    return (bool)atomic_get(&s_confirmed);
+    return app_self_test_is_confirmed(&s_self_test);
 }
 
 static void set_led(uint8_t r, uint8_t g, uint8_t b)
@@ -136,12 +137,10 @@ int main(void)
         LOG_WRN("WS2812 LED strip not ready");
     }
 
-    if (boot_is_img_confirmed()) {
-        atomic_set(&s_confirmed, 1);
-        LOG_INF("[APP] Primary slot image already confirmed");
-    } else {
-        LOG_INF("[APP] Primary slot image unconfirmed (pending self-test)");
-    }
+    bool can_confirm = (app_variant_id() != APP_VARIANT_NO_CONFIRM && app_variant_id() != APP_VARIANT_HANG);
+    app_self_test_init(&s_self_test, can_confirm, boot_write_img_confirmed);
+    LOG_INF("[APP] Self-test state machine initialized (can_confirm=%d, target_uptime=%u ms, target_toggles=%u)",
+            (int)can_confirm, APP_SELF_TEST_MIN_UPTIME_MS, APP_SELF_TEST_MIN_TOGGLES);
 
     int wdt_rc = init_watchdog();
     if (wdt_rc != 0) {
@@ -195,21 +194,21 @@ int main(void)
         atomic_add(&s_toggle_count, 1);
         feed_watchdog();
 
-#if !defined(CONFIG_APP_VARIANT_NO_CONFIRM) && !defined(CONFIG_APP_VARIANT_HANG)
-        if (!app_is_confirmed()) {
-            int64_t uptime = k_uptime_get();
-            uint32_t toggles = app_get_toggle_count();
-            if (uptime >= 5000 && toggles >= 5) {
-                int ret = boot_write_img_confirmed();
-                if (ret == 0) {
-                    LOG_INF("[APP] Image successfully confirmed in primary slot!");
-                    atomic_set(&s_confirmed, 1);
-                } else {
-                    LOG_ERR("[APP] Image confirmation failed: %d", ret);
-                }
+        bool newly_confirmed = app_self_test_update(&s_self_test, (uint32_t)k_uptime_get(), app_get_toggle_count());
+        if (newly_confirmed) {
+            static bool s_logged_confirm = false;
+            if (!s_logged_confirm) {
+                s_logged_confirm = true;
+                LOG_INF("[APP] Self-test PASSED: Image successfully confirmed via MCUboot! (uptime=%lld ms, toggles=%u)",
+                        k_uptime_get(), app_get_toggle_count());
+            }
+        } else if (app_self_test_get_status(&s_self_test) == APP_SELF_TEST_FAILED) {
+            static bool s_logged_fail = false;
+            if (!s_logged_fail) {
+                s_logged_fail = true;
+                LOG_ERR("[APP] Self-test FAILED: boot_write_img_confirmed returned %d", s_self_test.last_error);
             }
         }
-#endif
 
         log_tick++;
         if (log_tick % (1000 / half_period) == 0) {

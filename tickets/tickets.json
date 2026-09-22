@@ -637,7 +637,7 @@
         "twister passes",
         "confirmed=1 on board after 5 s"
       ],
-      "status": "todo",
+      "status": "done",
       "pr": "",
       "tracks": [
         "zephyr"

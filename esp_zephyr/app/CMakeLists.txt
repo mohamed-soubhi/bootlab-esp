@@ -12,4 +12,5 @@ target_sources(app PRIVATE
     src/main.c
     src/app_blink_timing.c
     src/labid_port_zephyr.c
+    src/app_self_test.c
 )

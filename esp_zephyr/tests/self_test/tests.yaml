@@ -1,0 +1,8 @@
+common:
+  tags:
+    - bootlab
+    - self_test
+tests:
+  bootlab.self_test:
+    platform_allow:
+      - native_sim
