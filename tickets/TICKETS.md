@@ -6,17 +6,17 @@
 
 ## Overall
 
-`██████████████████░░░░░░░░░░░░` **32/52 done (61%)**
+`███████████████████░░░░░░░░░░░` **33/52 done (63%)**
 
 - **IDF track:** `████████████████░░░░` 33/42
-- **Zephyr track:** `███████████░░░░░░░░░` 20/37
+- **Zephyr track:** `███████████░░░░░░░░░` 21/37
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 6
+    "todo" : 5
     "doing" : 7
     "blocked" : 7
-    "done" : 32
+    "done" : 33
 ```
 
 ## Epics
@@ -26,7 +26,7 @@ pie showData title Ticket status
 | E0 | P0 | Host & rig setup | `████████████` | 8/8 | ✅ done | §2, §3, §8 P0 |
 | EL | PL | LABID common library | `████████████` | 4/4 | ✅ done | §7.3, §8 PL |
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `████████████` | 9/9 | ✅ done | §4.2, §5, §6, §7.2, §8 P1 |
-| E2 | P2 | ESP32-S3 #1 — Zephyr | `████████░░░░` | 6/9 | 🔵 doing | §4.1, §5, §6, §7.1, §8 P2 |
+| E2 | P2 | ESP32-S3 #1 — Zephyr | `█████████░░░` | 7/9 | 🔵 doing | §4.1, §5, §6, §7.1, §8 P2 |
 | E3 | P3 | labflash CLI | `█████████░░░` | 5/7 | 🔵 doing | §8 P3 |
 | E4 | P4 | HIL tests + CI | `░░░░░░░░░░░░` | 0/9 | 🟥 blocked | §8 P4 |
 | E5 | P5 | Soak, docs, handover | `░░░░░░░░░░░░` | 0/6 | 🟥 blocked | §8 P5 |
@@ -38,7 +38,7 @@ flowchart LR
     E0["P0 Host & rig setup<br/>8/8"]:::done
     EL["PL LABID common library<br/>4/4"]:::done
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>9/9"]:::done
-    E2["P2 ESP32-S3 #1 — Zephyr<br/>6/9"]:::doing
+    E2["P2 ESP32-S3 #1 — Zephyr<br/>7/9"]:::doing
     E3["P3 labflash CLI<br/>5/7"]:::doing
     E4["P4 HIL tests + CI<br/>0/9"]:::blocked
     E5["P5 Soak, docs, handover<br/>0/6"]:::blocked
@@ -56,7 +56,7 @@ flowchart LR
 
 ## Ready to start now
 
-- **BL-034** Zephyr mcumgr SMP over BLE (M) — E2
+- **BL-035** Zephyr WiFi + SMP over UDP (single build with BT) (L) — E2
 
 ## Blocked
 
@@ -449,7 +449,7 @@ Run all P1 acceptance checks. [RESULT 2026-09-21 -- ALL 6 PLAN P1 CHECKBOXES PAS
 | ✅ | BL-031 | Zephyr blink app + toggles + 5 variants + watchdog | M | zephyr | BL-030, BL-005b |  |
 | ✅ | BL-032 | Zephyr LABID port on console | S | zephyr | BL-031, BL-014b |  |
 | ✅ | BL-033 | Zephyr self-test + confirm + twister tests | S | zephyr | BL-031 |  |
-| ⬜ | BL-034 | Zephyr mcumgr SMP over BLE | M | zephyr | BL-033 |  |
+| ✅ | BL-034 | Zephyr mcumgr SMP over BLE | M | zephyr | BL-033 |  |
 | ⬜ | BL-035 | Zephyr WiFi + SMP over UDP (single build with BT) | L | zephyr | BL-034 |  |
 | ⬜ | BL-036 | Zephyr phase acceptance run | S | zephyr | BL-032, BL-035 |  |
 
@@ -552,20 +552,20 @@ boot_write_img_confirmed() after 5 s; native_sim tests with mocked boot API.
 
 </details>
 
-<details><summary>⬜ <b>BL-034</b> — Zephyr mcumgr SMP over BLE</summary>
+<details><summary>✅ <b>BL-034</b> — Zephyr mcumgr SMP over BLE</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** zephyr  
-- **Tracks:** Zephyr ⬜ todo  
+- **Tracks:** Zephyr ✅ done  
 - **Depends on:** BL-033  
 - **Plan:** §4.1, §5, §6, §7.1, §8 P2
 
 MCUMGR image + os groups over BT.
 
 **Acceptance criteria**
-- [ ] v1 → v2 over BLE, confirmed
-- [ ] no_confirm and hang revert
-- [ ] bad_sig refused by MCUboot
+- [x] v1 → v2 over BLE, confirmed
+- [x] no_confirm and hang revert
+- [x] bad_sig refused by MCUboot
 
 </details>
 
@@ -1073,7 +1073,7 @@ flowchart TB
         BL031["BL-031"]:::done
         BL032["BL-032"]:::done
         BL033["BL-033"]:::done
-        BL034["BL-034"]:::todo
+        BL034["BL-034"]:::done
         BL035["BL-035"]:::todo
         BL036["BL-036"]:::todo
     end

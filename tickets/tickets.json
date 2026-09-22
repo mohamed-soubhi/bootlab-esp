@@ -660,7 +660,7 @@
         "no_confirm and hang revert",
         "bad_sig refused by MCUboot"
       ],
-      "status": "todo",
+      "status": "done",
       "pr": "",
       "tracks": [
         "zephyr"

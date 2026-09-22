@@ -61,18 +61,21 @@ finish them. The owner is restarting the machine; this section is this instance'
 - **Zephyr Progress Summary**:
   - `BL-045` (build + sign orchestration for all 5 Zephyr variants) — DONE & PUSHED (`8b10e02`).
   - `BL-042` (flash, recover, provision USB for Zephyr with identity protection) — DONE & PUSHED (`2e2b782`).
-  - `BL-034` (Zephyr mcumgr SMP over BLE) — **IN PROGRESS / 80% VERIFIED**:
+  - `BL-034` (Zephyr mcumgr SMP over BLE) — **DONE & VERIFIED ON TARGET**:
     - Zephyr firmware updated with Bluetooth LE & MCUmgr SMP (`esp_zephyr/app/src/app_ble_smp.c`).
     - Hal Espressif blobs fetched into `/home/msoubhi/zephyrproject/modules/hal/espressif/zephyr/blobs/lib/esp32s3/`.
     - Windows BLE GATT Caching Quirk solved: WinRT caches GATT services across reboots for a known MAC address. `winrt={"use_cached_services": False}` in BleakClient / `SMPBLETransport` forces fresh service resolution.
     - Verified SMP Echo (`EchoWrite`) and image list (`ImageStatesRead`) over BLE.
     - Verified live BLE OTA upload of `v2` (427,482 bytes) in 81.5s. Device rebooted into `v2`, auto-confirmed, and toggled GPIO 13 at 4.0 Hz (measured by LABID).
     - Verified `no_confirm` variant test-boot: booted into `variant=no_confirm` without confirming, and MCUboot cleanly reverted to `v2` on subsequent reset.
-    - Remaining for BL-034: Run `hang` (watchdog revert) and `bad_sig` (refused by MCUboot) tests, write evidence `scripts/evidence/bl034_zephyr_ble_smp.md`, mark ticket done, and push.
+    - Verified `hang` variant test-boot: uploaded `zephyr_hang.bin` (361,738 bytes in 10.9s), armed watchdog, watchdog reset after 5.0s, and MCUboot rolled back to `v2` in slot 0.
+    - Verified `bad_sig` variant refusal: uploaded `zephyr_bad_sig.bin` (427,467 bytes in 10.9s) signed with foreign key, MCUboot rejected signature, refused to boot slot 1, and booted safe `v2` in slot 0.
+    - Full evidence written to `scripts/evidence/bl034_zephyr_ble_smp.md`.
+    - Next: `BL-035` (Zephyr WiFi + SMP over UDP).
   - Helper tools created & verified:
     - `scripts/ble_smp_query.py`: inspect GATT database with uncached discovery.
     - `scripts/test_smp_ops.py`: smoke test SMP Echo and ImageStatesRead over BLE.
-    - `scripts/zephyr_ble_ota.py`: full BLE OTA pipeline (upload, test/confirm, reset, verify) using `smpclient`.
+    - `scripts/zephyr_ble_ota.py`: full BLE OTA pipeline (upload, test/confirm, reset, verify) using `smpclient` with flash erase auto-reconnect.
 
 ## REVIEW 2026-09-21 — THE SECTION BELOW OVERSTATES; THIS ONE IS TRUE (details: `scripts/evidence/REVIEW_2026-09-21.md`)
 The IDF track is **NOT complete** and the **Zephyr gate is CLOSED** (`tickets_tool.py` reports IDF 33/42, and `next` lists no Zephyr work).

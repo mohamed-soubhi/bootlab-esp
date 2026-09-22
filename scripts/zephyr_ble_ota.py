@@ -1,4 +1,5 @@
 """Orchestrate Zephyr OTA over BLE using smpclient."""
+
 import argparse
 import asyncio
 import sys
@@ -6,7 +7,11 @@ import time
 from pathlib import Path
 from smpclient import SMPClient
 from smpclient.transport.ble import SMPBLETransport
-from smpclient.requests.image_management import ImageStatesRead, ImageStatesWrite, ImageErase
+from smpclient.requests.image_management import (
+    ImageStatesRead,
+    ImageStatesWrite,
+    ImageErase,
+)
 from smpclient.requests.os_management import ResetWrite
 
 DEFAULT_BLE_MAC = "AC:A7:04:2C:3B:06"
@@ -37,14 +42,25 @@ async def async_main(args):
         # If slot 1 has an image, erase it upfront with a dedicated timeout
         if any(getattr(img, "slot", None) == 1 for img in img_state.images):
             print("Slot 1 is occupied. Erasing slot 1...")
-            erase_res = await client.request(ImageErase(slot=1), timeout_s=40.0)
-            print(f"Erase result: {erase_res}")
+            try:
+                erase_res = await client.request(ImageErase(slot=1), timeout_s=40.0)
+                print(f"Erase result: {erase_res}")
+            except Exception as e:
+                print(
+                    f"Note: BLE dropped during flash erase ({e}). Waiting 5s for erase completion..."
+                )
+                await asyncio.sleep(5.0)
+                print("Reconnecting after flash erase...")
+                await client.connect(connect_timeout_s=args.timeout)
+                print("Reconnected!")
 
         # 2. Upload image
         print(f"Uploading {len(image_bytes)} bytes (slot {args.slot})...")
         t0 = time.time()
         last_pct = -1
-        async for off in client.upload(image_bytes, slot=args.slot, first_timeout_s=60.0):
+        async for off in client.upload(
+            image_bytes, slot=args.slot, first_timeout_s=60.0
+        ):
             pct = int((off / len(image_bytes)) * 100)
             if pct != last_pct and pct % 10 == 0:
                 print(f"  Upload progress: {off}/{len(image_bytes)} bytes ({pct}%)")
@@ -73,11 +89,15 @@ async def async_main(args):
         # 4. Mark image state
         if args.confirm:
             print("Marking image as permanently confirmed...")
-            res = await client.request(ImageStatesWrite(hash=uploaded.hash, confirm=True))
+            res = await client.request(
+                ImageStatesWrite(hash=uploaded.hash, confirm=True)
+            )
             print(f"ImageStatesWrite response: {res}")
         else:
             print("Marking image for test boot (confirm=False)...")
-            res = await client.request(ImageStatesWrite(hash=uploaded.hash, confirm=False))
+            res = await client.request(
+                ImageStatesWrite(hash=uploaded.hash, confirm=False)
+            )
             print(f"ImageStatesWrite response: {res}")
 
         # 5. Reset device
@@ -96,6 +116,7 @@ async def async_main(args):
     except Exception as e:
         print(f"ERROR during BLE OTA: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
     finally:
@@ -108,11 +129,23 @@ async def async_main(args):
 def main():
     parser = argparse.ArgumentParser(description="Zephyr BLE OTA Update")
     parser.add_argument("binary", help="Path to signed binary (e.g. zephyr.signed.bin)")
-    parser.add_argument("--mac", default=DEFAULT_BLE_MAC, help=f"BLE MAC address (default: {DEFAULT_BLE_MAC})")
+    parser.add_argument(
+        "--mac",
+        default=DEFAULT_BLE_MAC,
+        help=f"BLE MAC address (default: {DEFAULT_BLE_MAC})",
+    )
     parser.add_argument("--slot", type=int, default=0, help="Image index (default: 0)")
-    parser.add_argument("--confirm", action="store_true", help="Permanently confirm image instead of test boot")
-    parser.add_argument("--reset", action="store_true", default=True, help="Reset device after upload")
-    parser.add_argument("--timeout", type=float, default=15.0, help="Connection timeout in seconds")
+    parser.add_argument(
+        "--confirm",
+        action="store_true",
+        help="Permanently confirm image instead of test boot",
+    )
+    parser.add_argument(
+        "--reset", action="store_true", default=True, help="Reset device after upload"
+    )
+    parser.add_argument(
+        "--timeout", type=float, default=15.0, help="Connection timeout in seconds"
+    )
     args = parser.parse_args()
     return asyncio.run(async_main(args))
 
