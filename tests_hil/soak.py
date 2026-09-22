@@ -28,9 +28,11 @@ def plan_cycle(cycle: int) -> tuple[str, str]:
 
 
 def _read_done(jsonl: Path) -> list[dict]:
+    """Cycle records only: `ok` must be present, or a malformed/foreign line would silently miscount --resume."""
     if not jsonl.is_file():
         return []
-    return [json.loads(line) for line in jsonl.read_text().splitlines() if line.strip()]
+    return [r for line in jsonl.read_text().splitlines() if line.strip()
+            for r in [json.loads(line)] if "ok" in r]
 
 
 def _one_cycle(backend, cycle: int, log_path: Path, timeout_s: float | None) -> tuple[bool, str]:

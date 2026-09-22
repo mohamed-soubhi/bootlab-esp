@@ -62,6 +62,16 @@ def test_aborts_after_consecutive_failures(tmp_path):
     assert rep["aborted"] is True and rep["total_cycles"] == 3
 
 
+def test_resume_ignores_a_malformed_line_instead_of_miscounting(tmp_path):
+    run(tmp_path, FakeBackend(), cycles=4)
+    with (tmp_path / "cycles.jsonl").open("a") as f:
+        f.write(json.dumps({"cycle": 4, "note": "not a cycle record"}) + "\n")
+    b2 = FakeBackend()
+    rep = run(tmp_path, b2, cycles=8, resume=True)
+    assert rep["resumed_from"] == 4 and rep["total_cycles"] == 8
+    assert len(b2.calls) == 4 and b2.calls[0] == plan_cycle(5)  # cycle 5 actually attempted, not skipped to 6
+
+
 def test_resume_skips_completed_cycles(tmp_path):
     run(tmp_path, FakeBackend(), cycles=4)
     b2 = FakeBackend()
