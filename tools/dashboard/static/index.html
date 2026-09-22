@@ -1,5 +1,107 @@
 <!DOCTYPE html>
-<html>
-<head><title>bootlab-esp Operations Console</title></head>
-<body><h1>bootlab-esp</h1></body>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>bootlab-esp — Operations Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-brand">
+      <span class="brand-badge">HIL LAB</span>
+      <h1 class="brand-title">bootlab-esp <span>// OPERATIONS CONSOLE</span></h1>
+    </div>
+    <div class="header-actions">
+      <div id="connection-status" class="status-pill offline">
+        <span class="status-dot"></span> <span id="status-text">Connecting...</span>
+      </div>
+      <button class="btn-theme" onclick="toggleTheme()" title="Toggle Dark/Light Mode">🌓</button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="dashboard-grid">
+    <!-- TOP: Target Discovery Bar -->
+    <section class="targets-bar card">
+      <div class="targets-header">
+        <div class="section-title">
+          <span>📡 Target Hardware &amp; Network Interfaces</span>
+        </div>
+        <button class="btn-pill" onclick="refreshBoards()">↻ Scan Targets</button>
+      </div>
+      <div id="targets-list" class="targets-chips">
+        <span class="text-muted">Scanning for USB and network devices...</span>
+      </div>
+    </section>
+
+    <!-- MIDDLE: Workspaces & Parameters -->
+    <section class="workspaces card">
+      <!-- Category Tabs -->
+      <div class="tab-pills" id="category-tabs">
+        <!-- Rendered by app.js -->
+      </div>
+
+      <!-- Tool Selector & Action Grid -->
+      <div class="workspace-body">
+        <div class="tools-list" id="tools-container">
+          <!-- Rendered by app.js -->
+        </div>
+
+        <div class="tool-params-panel" id="params-panel">
+          <div class="params-header">
+            <h3 id="selected-tool-name">Select a Tool</h3>
+            <span id="selected-tool-badge" class="badge-tag"></span>
+          </div>
+          <p id="selected-tool-desc" class="text-secondary">Choose a diagnostic, build, update, or test tool from the left.</p>
+          
+          <form id="tool-form" onsubmit="event.preventDefault(); runSelectedTool();">
+            <div id="dynamic-params" class="params-grid">
+              <!-- Dynamically populated parameters -->
+            </div>
+            
+            <div class="form-actions">
+              <button type="submit" id="btn-run" class="btn-primary" disabled>
+                <span>▶ Run Tool</span>
+              </button>
+              <button type="button" id="btn-abort" class="btn-danger hidden" onclick="abortJob()">
+                <span>⏹ Stop / Abort</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- BOTTOM: Live Terminal Console & History -->
+    <section class="console-section card">
+      <div class="console-header">
+        <div class="console-title">
+          <span>⚡ Live Terminal Log Stream</span>
+          <span id="job-timer" class="mono text-muted">0.00s</span>
+        </div>
+        <div class="console-controls">
+          <label class="toggle-label">
+            <input type="checkbox" id="autoscroll-toggle" checked> Autoscroll
+          </label>
+          <button class="btn-pill" onclick="copyConsoleLog()">Copy Log</button>
+          <button class="btn-pill" onclick="clearConsoleLog()">Clear</button>
+        </div>
+      </div>
+      
+      <div id="terminal-window" class="terminal-body mono">
+        <div class="terminal-welcome">
+          bootlab-esp Operations Console ready.<br>
+          Select a tool and click "Run Tool" to stream live execution logs.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
 </html>
