@@ -68,7 +68,52 @@ IDF_VARIANTS: dict[str, dict] = {
     },
 }
 
+ZEPHYR_VARIANTS: dict[str, dict] = {
+    "v1": {
+        "build_dir": "esp_zephyr/app/build_v1",
+        "overlay": "esp_zephyr/app/overlay_v1.conf",
+        "project_ver": "1.0.0",
+        "kconfig_sym": "CONFIG_APP_VARIANT_V1=y",
+        "signing_key": "keys/zephyr_p256.pem",
+        "expected_sig_valid": True,
+    },
+    "v2": {
+        "build_dir": "esp_zephyr/app/build_v2",
+        "overlay": "esp_zephyr/app/overlay_v2.conf",
+        "project_ver": "2.0.0",
+        "kconfig_sym": "CONFIG_APP_VARIANT_V2=y",
+        "signing_key": "keys/zephyr_p256.pem",
+        "expected_sig_valid": True,
+    },
+    "no_confirm": {
+        "build_dir": "esp_zephyr/app/build_no_confirm",
+        "overlay": "esp_zephyr/app/overlay_no_confirm.conf",
+        "project_ver": "1.0.0-noconfirm",
+        "kconfig_sym": "CONFIG_APP_VARIANT_NO_CONFIRM=y",
+        "signing_key": "keys/zephyr_p256.pem",
+        "expected_sig_valid": True,
+    },
+    "hang": {
+        "build_dir": "esp_zephyr/app/build_hang",
+        "overlay": "esp_zephyr/app/overlay_hang.conf",
+        "project_ver": "1.0.0-hang",
+        "kconfig_sym": "CONFIG_APP_VARIANT_HANG=y",
+        "signing_key": "keys/zephyr_p256.pem",
+        "expected_sig_valid": True,
+    },
+    "bad_sig": {
+        "build_dir": "esp_zephyr/app/build_bad_sig",
+        "overlay": "esp_zephyr/app/overlay_bad_sig.conf",
+        "sysbuild_conf": "esp_zephyr/app/sysbuild_bad_sig.conf",
+        "project_ver": "1.0.0-badsig",
+        "kconfig_sym": "CONFIG_APP_VARIANT_BAD_SIG=y",
+        "signing_key": "keys/zephyr_foreign.pem",
+        "expected_sig_valid": False,
+    },
+}
+
 BINARY_NAME = "bootlab_idf_blink.bin"
+ZEPHYR_BINARY_NAME = "zephyr.signed.bin"
 
 
 class BuildError(RuntimeError):
@@ -110,10 +155,18 @@ def run_command(
     cwd: Path,
     use_idf_env: bool = False,
     runner: Callable | None = None,
+    env: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess:
     """Run a shell/exec command, optionally wrapping in export.sh if idf not in PATH."""
     if runner is not None:
         return runner(cmd, cwd=cwd)
+
+    run_env = os.environ.copy()
+    if env:
+        run_env.update(env)
+    # Sanitize PATH in WSL2 to prevent 9P filesystem crawl hangs
+    if "/mnt/c" in run_env.get("PATH", ""):
+        run_env["PATH"] = ":".join(p for p in run_env["PATH"].split(":") if not p.startswith("/mnt/c"))
 
     if use_idf_env and not shutil.which("idf.py"):
         export_sh = find_idf_export_script()
@@ -121,11 +174,11 @@ def run_command(
             raise BuildError("ESP-IDF not in PATH and export.sh could not be found")
         cmd_str = " ".join(f"'{a}'" for a in cmd) if isinstance(cmd, (list, tuple)) else cmd
         full_cmd = ["bash", "-c", f". '{export_sh}' >/dev/null 2>&1 && {cmd_str}"]
-        return subprocess.run(full_cmd, cwd=cwd, capture_output=True, text=True, check=False)
+        return subprocess.run(full_cmd, cwd=cwd, env=run_env, capture_output=True, text=True, check=False)
 
     if isinstance(cmd, str):
-        return subprocess.run(cmd, cwd=cwd, shell=True, capture_output=True, text=True, check=False)
-    return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, check=False)
+        return subprocess.run(cmd, cwd=cwd, env=run_env, shell=True, capture_output=True, text=True, check=False)
+    return subprocess.run(cmd, cwd=cwd, env=run_env, capture_output=True, text=True, check=False)
 
 
 def ensure_keys(repo_root: Path, need_foreign: bool = False, runner: Callable | None = None) -> None:
@@ -192,6 +245,43 @@ def verify_signature(
         res_legacy = run_command(cmd_legacy, cwd=binary_path.parent, use_idf_env=True, runner=runner)
         return res_legacy.returncode == 0
     return False
+
+
+def find_imgtool_bin(repo_root: Path | None = None) -> str:
+    """Find the imgtool executable, preferring the repository virtualenv."""
+    root = (repo_root or DEFAULT_REPO_ROOT).resolve()
+    venv_imgtool = root / ".venv" / "bin" / "imgtool"
+    sys_imgtool = Path(sys.executable).parent / "imgtool"
+    if venv_imgtool.is_file() and os.access(venv_imgtool, os.X_OK):
+        return str(venv_imgtool)
+    if sys_imgtool.is_file() and os.access(sys_imgtool, os.X_OK):
+        return str(sys_imgtool)
+    return shutil.which("imgtool") or "imgtool"
+
+
+def find_west_bin(repo_root: Path | None = None) -> str:
+    """Find the west executable, preferring the repository virtualenv."""
+    root = (repo_root or DEFAULT_REPO_ROOT).resolve()
+    venv_west = root / ".venv" / "bin" / "west"
+    sys_west = Path(sys.executable).parent / "west"
+    if venv_west.is_file() and os.access(venv_west, os.X_OK):
+        return str(venv_west)
+    if sys_west.is_file() and os.access(sys_west, os.X_OK):
+        return str(sys_west)
+    return shutil.which("west") or "west"
+
+
+def verify_zephyr_signature(
+    binary_path: Path,
+    key_path: Path,
+    repo_root: Path | None = None,
+    runner: Callable | None = None,
+) -> bool:
+    """Check if signed Zephyr MCUboot binary validates against key using imgtool."""
+    imgtool_bin = find_imgtool_bin(repo_root)
+    cmd = [imgtool_bin, "verify", "-k", str(key_path), str(binary_path)]
+    res = run_command(cmd, cwd=binary_path.parent, runner=runner)
+    return res.returncode == 0
 
 
 def verify_sdkconfig_variant(sdkconfig_path: Path, expected_symbol: str) -> bool:
@@ -316,6 +406,119 @@ def build_idf_all(
     return results
 
 
+def build_zephyr_variant(
+    variant: str,
+    repo_root: Path | None = None,
+    clean: bool = False,
+    runner: Callable | None = None,
+) -> BuildResult:
+    """Build a single Zephyr variant using west sysbuild."""
+    root = (repo_root or DEFAULT_REPO_ROOT).resolve()
+    if variant not in ZEPHYR_VARIANTS:
+        raise BuildError(f"Unknown Zephyr variant '{variant}'. Valid: {list(ZEPHYR_VARIANTS.keys())}")
+
+    var_cfg = ZEPHYR_VARIANTS[variant]
+    build_dir = root / var_cfg["build_dir"]
+    app_dir = root / "esp_zephyr" / "app"
+    overlay_path = root / var_cfg["overlay"]
+
+    # Clean if requested
+    if clean and build_dir.exists():
+        shutil.rmtree(build_dir, ignore_errors=True)
+
+    build_dir.mkdir(parents=True, exist_ok=True)
+
+    west_bin = find_west_bin(root)
+    cmd = [
+        west_bin,
+        "build",
+        "-b",
+        "esp32s3_devkitc/esp32s3/procpu",
+        "--sysbuild",
+        str(app_dir),
+        "-d",
+        str(build_dir),
+    ]
+    extra_cmake = [f"-Dapp_EXTRA_CONF_FILE={overlay_path}"]
+    if "sysbuild_conf" in var_cfg:
+        sb_conf = root / var_cfg["sysbuild_conf"]
+        extra_cmake.append(f"-DSB_EXTRA_CONF_FILE={sb_conf}")
+    cmd.extend(["--", *extra_cmake])
+
+    zephyr_env = {
+        "ZEPHYR_BASE": os.environ.get("ZEPHYR_BASE", "/home/msoubhi/zephyrproject/zephyr"),
+        "ZEPHYR_TOOLCHAIN_VARIANT": "cross-compile",
+        "CROSS_COMPILE": os.environ.get(
+            "CROSS_COMPILE",
+            "/home/msoubhi/.espressif/tools/xtensa-esp-elf/esp-15.2.0_20251204/xtensa-esp-elf/bin/xtensa-esp32s3-elf-",
+        ),
+    }
+
+    res = run_command(cmd, cwd=app_dir, runner=runner, env=zephyr_env)
+    if res.returncode != 0:
+        raise BuildError(f"Zephyr build failed for variant '{variant}':\n{res.stderr or res.stdout}")
+
+    # 1. Variant symbol verification in .config
+    target_config = build_dir / "app" / "zephyr" / ".config"
+    if not verify_sdkconfig_variant(target_config, var_cfg["kconfig_sym"]):
+        raise BuildError(
+            f"Variant verification failed: {target_config} does not contain {var_cfg['kconfig_sym']}"
+        )
+
+    # 2. Binary existence & non-zero size
+    binary_path = build_dir / "app" / "zephyr" / ZEPHYR_BINARY_NAME
+    if not binary_path.is_file():
+        raise BuildError(f"Build completed but binary not found at {binary_path}")
+    size = binary_path.stat().st_size
+    if size == 0:
+        raise BuildError(f"Binary at {binary_path} is empty")
+
+    # 3. Signature verification
+    primary_key = root / "keys" / "zephyr_p256.pem"
+    primary_verified = verify_zephyr_signature(binary_path, primary_key, repo_root=root, runner=runner)
+
+    if var_cfg["expected_sig_valid"]:
+        if not primary_verified:
+            raise BuildError(f"Signature verification FAILED against {primary_key} for variant {variant}")
+        sig_ok = True
+        sig_detail = "verified with primary key (keys/zephyr_p256.pem)"
+    else:
+        if primary_verified:
+            raise BuildError(
+                f"Security check failed: bad_sig was unexpectedly accepted by primary key {primary_key}"
+            )
+        foreign_key = root / "keys" / "zephyr_foreign.pem"
+        foreign_verified = verify_zephyr_signature(binary_path, foreign_key, repo_root=root, runner=runner)
+        if not foreign_verified:
+            raise BuildError(f"bad_sig was not signed by foreign key {foreign_key}")
+        sig_ok = True
+        sig_detail = "refused by primary key, verified with foreign key (keys/zephyr_foreign.pem)"
+
+    return BuildResult(
+        board="zephyr",
+        variant=variant,
+        build_dir=build_dir,
+        binary_path=binary_path,
+        binary_size=size,
+        project_ver=var_cfg["project_ver"],
+        verified_variant=True,
+        verified_signature=sig_ok,
+        details=sig_detail,
+    )
+
+
+def build_zephyr_all(
+    repo_root: Path | None = None,
+    clean: bool = False,
+    runner: Callable | None = None,
+) -> dict[str, BuildResult]:
+    """Build all 5 Zephyr variants in order."""
+    results = {}
+    for var in ZEPHYR_VARIANTS:
+        results[var] = build_zephyr_variant(var, repo_root=repo_root, clean=clean, runner=runner)
+    return results
+
+
 def build_board(
     board: str,
     variant: str | None = None,
@@ -324,21 +527,21 @@ def build_board(
     runner: Callable | None = None,
 ) -> dict[str, BuildResult]:
     """Top-level build dispatcher for labflash build."""
-    if board == "zephyr":
-        raise ZephyrGatedError(
-            "Zephyr track is on hold pending BL-063b (HTML presentation & retrospective) per replan (2026-09-21)."
-        )
-
     if board == "idf":
         if variant and variant != "all":
             res = build_idf_variant(variant, repo_root=repo_root, clean=clean, runner=runner)
             return {variant: res}
         return build_idf_all(repo_root=repo_root, clean=clean, runner=runner)
 
+    if board == "zephyr":
+        if variant and variant != "all":
+            res = build_zephyr_variant(variant, repo_root=repo_root, clean=clean, runner=runner)
+            return {variant: res}
+        return build_zephyr_all(repo_root=repo_root, clean=clean, runner=runner)
+
     if board == "all":
-        # Build IDF, report Zephyr gated
-        all_res = build_idf_all(repo_root=repo_root, clean=clean, runner=runner)
-        print("[NOTE] Zephyr track is gated behind BL-063b; only IDF variants built.", file=sys.stderr)
-        return all_res
+        idf_res = build_idf_all(repo_root=repo_root, clean=clean, runner=runner)
+        zephyr_res = build_zephyr_all(repo_root=repo_root, clean=clean, runner=runner)
+        return {**idf_res, **zephyr_res}
 
     raise BuildError(f"Unknown board '{board}'. Choices: idf, zephyr, all")

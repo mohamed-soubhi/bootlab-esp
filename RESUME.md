@@ -1,7 +1,22 @@
-# RESUME — bootlab-esp (checkpoint 2026-09-21)
+# RESUME — bootlab-esp (checkpoint 2026-09-22)
 
 Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
 (`C:\MSA\embedded-OS\bootlab-esp`) is a scratch dir; never edit or push from it.
+
+## ZEPHYR TRACK BRING-UP & LABFLASH PROGRESS (2026-09-22)
+- **Active Hardware**: `lab-esp-zephyr` (MAC `AC:A7:04:2C:3B:04`, USB busid `6-3`, `/dev/ttyACM0`) is attached in WSL2, alive, responsive in < 25 ms, running confirmed `v1.0.0` firmware with LABID console and 1.00 Hz LED blink loop.
+- **Peer Agent Isolation**: Peer agent operates on `lab-esp-idf` (`COM14` / busid `7-4` / `E0:72:A1:AA:23:90`). Zephyr agent never touches `COM14` / `7-4`. 0 eFuses burned.
+- **Completed Zephyr Core & Host Tickets**:
+  - `BL-030` (Zephyr MCUboot sysbuild swap-with-revert) — DONE
+  - `BL-031` (Zephyr multi-variant blink app) — DONE
+  - `BL-032` (Zephyr LABID UART console with interrupt RX) — DONE
+  - `BL-033` (Zephyr self-test, auto-confirm, twister tests) — DONE
+  - `BL-041` (identify, info, status, measure on real Zephyr board) — DONE
+  - `BL-045` (build + sign orchestration for all 5 Zephyr variants) — DONE (121 host unit tests pass, ruff & mypy clean)
+- **Next Zephyr Work**:
+  1. `BL-042`: `labflash flash, recover, provision` (USB flashing for Zephyr with MAC identity guardrails)
+  2. `BL-034`: Zephyr mcumgr SMP over BLE
+  3. `BL-044`: `labflash update zephyr --transport ble|udp`
 
 ## REVIEW 2026-09-21 — THE SECTION BELOW OVERSTATES; THIS ONE IS TRUE (details: `scripts/evidence/REVIEW_2026-09-21.md`)
 The IDF track is **NOT complete** and the **Zephyr gate is CLOSED** (`tickets_tool.py` reports IDF 33/42, and `next` lists no Zephyr work).

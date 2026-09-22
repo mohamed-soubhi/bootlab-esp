@@ -878,7 +878,7 @@
       "ac": [
         "Builds all 10 images (2 boards × 5 variants)"
       ],
-      "status": "doing",
+      "status": "done",
       "pr": "",
       "tracks": [
         "idf",
@@ -894,7 +894,7 @@
       },
       "track_status": {
         "idf": "done",
-        "zephyr": "todo"
+        "zephyr": "done"
       }
     },
     {

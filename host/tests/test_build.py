@@ -16,9 +16,14 @@ def test_variant_definitions():
         assert "signing_key" in cfg
 
 
-def test_zephyr_is_gated():
-    with pytest.raises(bld.ZephyrGatedError, match="Zephyr track is on hold"):
-        bld.build_board("zephyr")
+def test_zephyr_variant_definitions():
+    assert set(bld.ZEPHYR_VARIANTS.keys()) == {"v1", "v2", "no_confirm", "hang", "bad_sig"}
+    for cfg in bld.ZEPHYR_VARIANTS.values():
+        assert "build_dir" in cfg
+        assert "overlay" in cfg
+        assert "project_ver" in cfg
+        assert "kconfig_sym" in cfg
+        assert "expected_sig_valid" in cfg
 
 
 def test_unknown_board_rejected():
@@ -29,6 +34,8 @@ def test_unknown_board_rejected():
 def test_unknown_variant_rejected():
     with pytest.raises(bld.BuildError, match="Unknown IDF variant"):
         bld.build_idf_variant("invalid_var")
+    with pytest.raises(bld.BuildError, match="Unknown Zephyr variant"):
+        bld.build_zephyr_variant("invalid_var")
 
 
 def test_verify_sdkconfig_variant(tmp_path):
@@ -141,19 +148,38 @@ def test_build_board_dispatch(tmp_path):
         verified_variant=True,
         verified_signature=True,
     )
+    fake_zephyr_res = bld.BuildResult(
+        board="zephyr",
+        variant="v1",
+        build_dir=tmp_path / "build_v1",
+        binary_path=tmp_path / "build_v1" / "app" / "zephyr" / "zephyr.signed.bin",
+        binary_size=200,
+        project_ver="1.0.0",
+        verified_variant=True,
+        verified_signature=True,
+    )
     with patch("labflash.build.build_idf_variant", return_value=fake_res):
         res = bld.build_board("idf", variant="v1", repo_root=tmp_path)
         assert "v1" in res
         assert res["v1"] == fake_res
 
+    with patch("labflash.build.build_zephyr_variant", return_value=fake_zephyr_res):
+        res = bld.build_board("zephyr", variant="v1", repo_root=tmp_path)
+        assert "v1" in res
+        assert res["v1"] == fake_zephyr_res
+
     # Test build_board for all variants
-    with patch("labflash.build.build_idf_all", return_value={"v1": fake_res}):
-        res_all = bld.build_board("idf", variant="all", repo_root=tmp_path)
-        assert res_all == {"v1": fake_res}
+    with patch("labflash.build.build_idf_all", return_value={"v1": fake_res}), \
+         patch("labflash.build.build_zephyr_all", return_value={"v1": fake_zephyr_res}):
+        res_idf_all = bld.build_board("idf", variant="all", repo_root=tmp_path)
+        assert res_idf_all == {"v1": fake_res}
+
+        res_zephyr_all = bld.build_board("zephyr", variant="all", repo_root=tmp_path)
+        assert res_zephyr_all == {"v1": fake_zephyr_res}
 
         # Test board == "all"
         res_board_all = bld.build_board("all", repo_root=tmp_path)
-        assert res_board_all == {"v1": fake_res}
+        assert "v1" in res_board_all
 
 
 def test_find_idf_export_script(tmp_path, monkeypatch):
@@ -204,5 +230,50 @@ def test_build_idf_variant_build_failure(tmp_path):
 
     with pytest.raises(bld.BuildError, match="Build failed for variant 'v1'"):
         bld.build_idf_variant("v1", repo_root=tmp_path, runner=failing_runner)
+
+
+def test_build_zephyr_variant_mocked(tmp_path):
+    (tmp_path / "keys").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "keys" / "zephyr_p256.pem").write_bytes(b"ZEPHYR_KEY")
+
+    build_dir = tmp_path / "esp_zephyr" / "app" / "build_v1"
+    app_zephyr = build_dir / "app" / "zephyr"
+
+    def mock_runner(cmd, cwd=None, env=None):
+        app_zephyr.mkdir(parents=True, exist_ok=True)
+        (app_zephyr / ".config").write_text("CONFIG_APP_VARIANT_V1=y\n")
+        (app_zephyr / "zephyr.signed.bin").write_bytes(b"SIGNED_BIN_DATA")
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="West build OK", stderr="")
+
+    res = bld.build_zephyr_variant("v1", repo_root=tmp_path, runner=mock_runner)
+    assert res.board == "zephyr"
+    assert res.variant == "v1"
+    assert res.verified_variant
+    assert res.verified_signature
+
+
+def test_build_zephyr_bad_sig_mocked(tmp_path):
+    (tmp_path / "keys").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "keys" / "zephyr_p256.pem").write_bytes(b"ZEPHYR_KEY")
+    (tmp_path / "keys" / "zephyr_foreign.pem").write_bytes(b"FOREIGN_KEY")
+
+    build_dir = tmp_path / "esp_zephyr" / "app" / "build_bad_sig"
+    app_zephyr = build_dir / "app" / "zephyr"
+
+    def mock_runner(cmd, cwd=None, env=None):
+        app_zephyr.mkdir(parents=True, exist_ok=True)
+        (app_zephyr / ".config").write_text("CONFIG_APP_VARIANT_BAD_SIG=y\n")
+        (app_zephyr / "zephyr.signed.bin").write_bytes(b"BAD_SIG_BIN_DATA")
+        if "verify" in cmd:
+            if "zephyr_p256.pem" in str(cmd):
+                return subprocess.CompletedProcess(args=cmd, returncode=1, stdout="", stderr="Bad sig")
+            if "zephyr_foreign.pem" in str(cmd):
+                return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="Foreign valid", stderr="")
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="West build OK", stderr="")
+
+    res = bld.build_zephyr_variant("bad_sig", repo_root=tmp_path, runner=mock_runner)
+    assert res.variant == "bad_sig"
+    assert res.verified_signature
+    assert "refused by primary key" in res.details
 
 

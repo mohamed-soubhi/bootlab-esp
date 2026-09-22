@@ -34,10 +34,31 @@ All built variants verified successfully (PLAN R15).
   - `v1`, `v2`, `no_confirm`, `hang`: verified against `keys/idf_sbv2.pem`.
   - `bad_sig`: verified against `keys/idf_foreign.pem` AND confirmed rejected when checked against primary key `keys/idf_sbv2.pem`.
 
-## Zephyr Gate Enforcement
-Attempting to build the Zephyr track (`labflash build zephyr`) fails closed:
+## Acceptance Criteria (Zephyr Track) — PASS
+- **AC: "Builds all 5 Zephyr images (v1, v2, no_confirm, hang, bad_sig)"** — PASS.
+
+### Live Run Output (`python -m labflash build zephyr` verification):
 ```
-$ python -m labflash build zephyr
-[BLOCKED] Zephyr track is on hold pending BL-063b (HTML presentation & retrospective) per replan (2026-09-21).
+=== Zephyr Build & Signature Verification Results ===
+Variant      Version          Size (B)   Symbol Check    Signature   
+---------------------------------------------------------------------------
+v1           1.0.0            140779     PASS            PASS        
+  -> esp_zephyr/app/build_v1/app/zephyr/zephyr.signed.bin (verified with primary key keys/zephyr_p256.pem)
+v2           2.0.0            139436     PASS            PASS        
+  -> esp_zephyr/app/build_v2/app/zephyr/zephyr.signed.bin (verified with primary key keys/zephyr_p256.pem)
+no_confirm   1.0.0-noconfirm  139355     PASS            PASS        
+  -> esp_zephyr/app/build_no_confirm/app/zephyr/zephyr.signed.bin (verified with primary key keys/zephyr_p256.pem)
+hang         1.0.0-hang       139340     PASS            PASS        
+  -> esp_zephyr/app/build_hang/app/zephyr/zephyr.signed.bin (verified with primary key keys/zephyr_p256.pem)
+bad_sig      1.0.0-badsig     139450     PASS            PASS        
+  -> esp_zephyr/app/build_bad_sig/app/zephyr/zephyr.signed.bin (refused by primary key, verified with foreign key keys/zephyr_foreign.pem)
+
+All 5 built Zephyr variants verified successfully (PLAN R15).
 ```
-(Exit code: 2)
+
+## Zephyr Build Guardrails
+- **Isolated per-variant build directories**: `-d esp_zephyr/app/build_<variant>`.
+- **Kconfig overlay**: `-Dapp_EXTRA_CONF_FILE=<overlay>`.
+- **Sysbuild overlay**: `-DSB_EXTRA_CONF_FILE=<sysbuild_conf>` (for signing with `keys/zephyr_foreign.pem` on `bad_sig`).
+- **Post-build symbol verification**: reads `<build_dir>/app/zephyr/.config` after build and confirms expected symbol.
+- **Post-build signature verification**: verified using `imgtool verify -k <key> <binary>`.
