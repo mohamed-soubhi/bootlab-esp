@@ -242,6 +242,7 @@ class LiveBackend:
         args = Namespace(
             board=self.board, image=str(image), transport=transport, labid_port=self.port, no_labid=False,
             board_mac=None, address=None, scan_timeout=10.0, board_ip=self.board_ip, host_ip=None, http_port=8443,
+            udp_port=1337, confirm_timeout=30.0,
             keys=str(self.keys_dir) if self.keys_dir else None, ca_cert=None, server_cert=None, server_key=None,
             token=None, env_file=self.env_file or "credentials.env", rig=self.rig_path, timeout=timeout_s or self.timeout_s)
         buf = io.StringIO()
