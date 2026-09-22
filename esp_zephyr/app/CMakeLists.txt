@@ -8,4 +8,7 @@ list(APPEND EXTRA_ZEPHYR_MODULES "${CMAKE_CURRENT_SOURCE_DIR}/../../common/labid
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(bootlab_zephyr_app)
 
-target_sources(app PRIVATE src/main.c)
+target_sources(app PRIVATE
+    src/main.c
+    src/app_blink_timing.c
+)

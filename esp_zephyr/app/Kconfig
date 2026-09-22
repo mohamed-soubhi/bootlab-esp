@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "bootlab-esp Zephyr Application"
+
+choice APP_VARIANT
+	prompt "Application Variant"
+	default APP_VARIANT_V1
+
+config APP_VARIANT_V1
+	bool "v1 (Factory, 1 Hz, confirms)"
+
+config APP_VARIANT_V2
+	bool "v2 (Upgrade, 4 Hz, confirms)"
+
+config APP_VARIANT_NO_CONFIRM
+	bool "no_confirm (1 Hz, never confirms)"
+
+config APP_VARIANT_HANG
+	bool "hang (stuck red, watchdog reset)"
+
+config APP_VARIANT_BAD_SIG
+	bool "bad_sig (signed with foreign key)"
+
+endchoice
+
+source "Kconfig.zephyr"
