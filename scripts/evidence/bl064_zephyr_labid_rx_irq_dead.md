@@ -224,16 +224,33 @@ fix candidates, not yet attempted:
   project's `west.yml`/manifest patch mechanism) so it survives `west update` -- a one-off local SDK
   edit like this session's diagnostic doesn't.
 
+## Shippable fix implemented: rate-limit the LED hardware update (`2705d53`)
+
+Instead of patching the shared Zephyr SDK (not trackable in this repo), fixed it at the app level:
+`esp_zephyr/app/src/main.c`'s blink loop now caps the actual `led_strip_update_rgb()` hardware call to
+the same ~2 Hz cadence already proven safe on v1 (every 500 ms), independent of the logical 4Hz toggle
+rate. `s_toggle_count`, self-test, and the heartbeat log all keep running at the full logical rate, so
+LABID's measured toggle Hz (`labflash.identify.measure()`, which reads the `STATE?` `toggles` field --
+confirmed not a physical light-sensor measurement) is unaffected.
+
+**Verified via direct esptool flash** (no OTA) + sustained LABID polling: stable for 60+ continuous
+seconds of real 4Hz blinking, `app=2.0.0, confirmed=1` every single check.
+
+**NOT yet verified end-to-end via a live OTA.** Attempted a real v1->v2 BLE OTA with this fix in place
+and hit a **different, pre-existing bug**: BL-065 (MCUboot never swaps slots despite the transfer
+reporting 100% + confirmed) reproduced over BLE this time, not just UDP -- so the board never actually
+reached the fixed v2 code path via OTA. Full BL-051 live-OTA acceptance for zephyr needs BL-065 fixed
+first, independent of this fix's correctness.
+
 ## Board state
 
-Left on the known-good confirmed `build_v1` (esptool, identity verified). The `ws2812_i2s.c` driver
-patch used to confirm the fix was reverted (shared SDK checkout, not this repo's to modify permanently
-without a proper patch mechanism).
+Left on the known-good confirmed `build_v1` (esptool, identity verified). The `ws2812_i2s.c` SDK driver
+patch used earlier to confirm the root cause was reverted (shared SDK checkout, not this repo's to
+modify permanently without a proper patch mechanism) -- the shipped fix is the app-level rate-limit
+above, which needs no SDK changes.
 
-## Status: root cause CONFIRMED, real fix not yet applied
+## Status
 
-Root cause: `ws2812_i2s` driver's 2-block DMA buffer pool exhausts under the 4Hz call rate, and that
-exhaustion state also kills the LABID console's UART RX interrupt (mechanism linking the two not fully
-traced, but the causal chain -- pool size -> exhaustion -> LABID freeze -- is empirically confirmed).
-A shippable fix (project-level call-rate reduction, or a proper tracked SDK patch) has not yet been
-applied to `build_v2`; `build_v2` on disk still has the original, broken behavior.
+Root cause CONFIRMED (`ws2812_i2s` DMA buffer pool exhaustion under sustained 4Hz calls, also kills the
+LABID UART RX interrupt). Fix IMPLEMENTED and committed, verified via direct flash. Full live-OTA
+end-to-end verification blocked on the separate BL-065 bug.
