@@ -193,14 +193,28 @@ int main(void)
 
     bool led_on = false;
     uint32_t log_tick = 0;
+    int64_t last_led_hw_update = 0;
 
     for (;;) {
         led_on = !led_on;
-        if (led_on) {
-            app_rgb_t c = app_blink_color(app_variant_id(), app_is_confirmed());
-            set_led(c.r, c.g, c.b);
-        } else {
-            clear_led();
+
+        /* BL-064: rate-limit the actual LED strip hardware update independently of the logical
+         * toggle rate. Zephyr's ws2812_i2s driver's DMA buffer pool (2 blocks, not exposed via
+         * devicetree) exhausts under sustained ~4Hz calls, and that exhaustion state was found to
+         * also kill the LABID console's UART RX interrupt (see
+         * scripts/evidence/bl064_zephyr_labid_rx_irq_dead.md). Cap hardware updates to the same
+         * ~2 Hz cadence already proven safe on v1 (500 ms); s_toggle_count/self-test/heartbeat
+         * below keep running at the full logical rate, so LABID's measured toggle Hz (STATE?
+         * toggles, see labflash.identify.measure()) is unaffected. */
+        int64_t now_ms = k_uptime_get();
+        if (now_ms - last_led_hw_update >= 500) {
+            last_led_hw_update = now_ms;
+            if (led_on) {
+                app_rgb_t c = app_blink_color(app_variant_id(), app_is_confirmed());
+                set_led(c.r, c.g, c.b);
+            } else {
+                clear_led();
+            }
         }
 
         atomic_add(&s_toggle_count, 1);
