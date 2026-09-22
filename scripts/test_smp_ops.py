@@ -3,7 +3,7 @@ import asyncio
 import sys
 from smpclient import SMPClient
 from smpclient.transport.ble import SMPBLETransport
-from smpclient.requests.os_management import EchoWrite
+from smpclient.requests.os_management import EchoWrite, ResetWrite
 from smpclient.requests.image_management import ImageStatesRead
 
 BLE_ADDRESS = "AC:A7:04:2C:3B:06"
@@ -25,6 +25,14 @@ async def main():
         img_resp = await client.request(ImageStatesRead())
         print(f"Image states response: {img_resp}")
         print(f"Images: {getattr(img_resp, 'images', None)}")
+
+        if "--reset" in sys.argv:
+            print("Sending ResetWrite...")
+            try:
+                await client.request(ResetWrite())
+                print("Reset request sent.")
+            except Exception as e:
+                print(f"Reset dispatched (connection dropped as expected: {e})")
 
     except Exception as e:
         print(f"ERROR during SMP operation: {e}")

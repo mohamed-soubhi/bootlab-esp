@@ -617,12 +617,14 @@ All six checked on the final P1 firmware, 2026-09-21; logs in `scripts/evidence/
 6. WiFi STA + DHCP + SMP over UDP in the **same build** as BT.
 
 **Acceptance**
-- [ ] `west flash` MCUboot + v1 → 1 Hz.
-- [ ] BLE SMP v1 → v2 → 4 Hz, image list confirmed == `$LAB,VER?`.
-- [ ] UDP SMP v2 → v1.
-- [ ] `no_confirm` and `hang` → reverted.
-- [ ] `bad_sig` refused by MCUboot.
-- [ ] BT + WiFi in one build. If impossible (RAM/coex): documented reason, two variants, **owner decides**.
+All six checked on the final P2 firmware, 2026-09-22; logs in `scripts/evidence/bl036_zephyr_phase_acceptance.md`
+(and `bl034_zephyr_ble_smp.md`, `bl035_zephyr_wifi_smp.md`).
+- [x] `west flash` MCUboot + v1 → 1 Hz. (1.00 Hz measured; ANNOUNCE at 2.54 s; ID/VER/STATE latencies <= 1.88 ms)
+- [x] BLE SMP v1 → v2 → 4 Hz, image list confirmed == `$LAB,VER?`. (3.90 Hz measured; image list matches VER? slot=0 confirmed=1)
+- [x] UDP SMP v2 → v1. (11.6 s, 61.7 KB/s; boots confirmed v1 at 1.00 Hz)
+- [x] `no_confirm` and `hang` → reverted. (no_confirm: trial boot unconfirmed=0, rolled back to v1 on reset; hang: 5.0 s watchdog reset rolls back to v1)
+- [x] `bad_sig` refused by MCUboot. (foreign key signature rejected by MCUboot, slot 1 refused, safe v1 kept running)
+- [x] BT + WiFi in one build. (single unified binary running BLE SMP and UDP SMP simultaneously with 0 conflict)
 
 ---
 

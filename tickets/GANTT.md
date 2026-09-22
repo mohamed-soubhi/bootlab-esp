@@ -7,17 +7,17 @@
 
 ## Progress
 
-- **IDF track:** `████████████████████████░░░░░░` **34/42 done**
-- **Zephyr track:** `██████████████████░░░░░░░░░░░░` **22/37 done**
+- **IDF track:** `█████████████████████████░░░░░` **35/42 done**
+- **Zephyr track:** `███████████████████░░░░░░░░░░░` **23/37 done**
 
 | Epic | Phase | IDF | Zephyr |
 |---|---|---|---|
 | E0 Host & rig setup | P0 | `██████████` 8/8 | `██████████` 6/6 |
 | EL LABID common library | PL | `██████████` 4/4 | `██████████` 4/4 |
 | E1 ESP32-S3 #2 — ESP-IDF | P1 | `██████████` 9/9 | — |
-| E2 ESP32-S3 #1 — Zephyr | P2 | — | `█████████░` 8/9 |
+| E2 ESP32-S3 #1 — Zephyr | P2 | — | `██████████` 9/9 |
 | E3 labflash CLI | P3 | `██████████` 6/6 | `███████░░░` 4/6 |
-| E4 HIL tests + CI | P4 | `████████░░` 7/9 | `░░░░░░░░░░` 0/8 |
+| E4 HIL tests + CI | P4 | `█████████░` 8/9 | `░░░░░░░░░░` 0/8 |
 | E5 Soak, docs, handover | P5 | `░░░░░░░░░░` 0/6 | `░░░░░░░░░░` 0/4 |
 
 ## Gantt — IDF track
@@ -66,7 +66,7 @@ gantt
     BL-053 HIL T10–T15 LABID + identity + USB :done, bl053, 2026-10-06, 1d
     BL-054 (Stretch) HIL T17 power cut :done, bl054, 2026-10-06, 2d
     BL-055 build.yml cloud CI :done, bl055, 2026-09-30, 2d
-    BL-056 hil.yml self-hosted runner on RPi4 :crit, bl056, 2026-10-07, 2d
+    BL-056 hil.yml self-hosted runner on RPi4 :done, bl056, 2026-10-07, 2d
     BL-056a IDF acceptance re-run on the RPi4 (OTA-progr :crit, bl056a, 2026-10-09, 2d
     BL-057a Full HIL suite green 3× in a row (IDF board) :done, bl057a, 2026-10-08, 1d
     section P5 Soak docs handover
@@ -84,7 +84,7 @@ gantt
 
 | Ticket | Blocks | Why it is blocked |
 |---|---|---|
-| **BL-056** hil.yml self-hosted runner on RPi4 | 3 tickets | hil.yml and its safety checks exist, but 'HIL job runs on PR for the idf board' is not demonstrated: no self-hosted runner is registered. Needs the R… |
+| **BL-056a** IDF acceptance re-run on the RPi4 (OTA-programming h | 2 tickets | AC1 not done: no `labflash update` was run from the RPi4 (curl of /version + a host audit only). BLE is impossible there today (bluetooth.service mas… |
 | **BL-061** README quick start | 2 tickets | README content is complete and its commands were exercised during BL-043/051, but 'Fresh clone reaches T02 green following README only' was not run f… |
 | **BL-062** Recovery runbook + adding-a-board guide | 2 tickets | Docs complete and the recovery evidence rests on the live BL-042 run (accepted); formally waits on BL-057 (dependency). |
 
@@ -96,8 +96,7 @@ gantt
 
 | Ticket | Status | Waiting on (unfinished dependencies) |
 |---|---|---|
-| BL-056 hil.yml self-hosted runner on RPi4 | 🟥 blocked | — |
-| BL-056a IDF acceptance re-run on the RPi4 (OTA-progr | 🟥 blocked | BL-056[idf] 🟥 |
+| BL-056a IDF acceptance re-run on the RPi4 (OTA-progr | 🟥 blocked | — |
 | BL-060 Overnight soak ×100 | ⬜ todo | — |
 | BL-061 README quick start | 🟥 blocked | — |
 | BL-062 Recovery runbook + adding-a-board guide | 🟥 blocked | — |
@@ -134,7 +133,7 @@ gantt
     BL-033 Zephyr self-test + confirm + twister tests :done, bl033, 2026-09-24, 1d
     BL-034 Zephyr mcumgr SMP over BLE :done, bl034, 2026-09-25, 2d
     BL-035 Zephyr WiFi + SMP over UDP (single build with :done, bl035, 2026-09-27, 4d
-    BL-036 Zephyr phase acceptance run :bl036, 2026-10-01, 1d
+    BL-036 Zephyr phase acceptance run :done, bl036, 2026-10-01, 1d
     section P3 labflash CLI
     BL-040 labflash core config UID resolution re-enumer :done, bl040, 2026-09-22, 2d
     BL-041 identify info status measure :done, bl041, 2026-09-25, 1d
@@ -166,21 +165,21 @@ None: nothing on this board is blocked.
 
 ### Ready to start — Zephyr track (todo, every dependency of this board done)
 
-- **BL-036** [S] Zephyr phase acceptance run
+- **BL-044** [M] update zephyr --transport ble|udp
+- **BL-055** [M] build.yml cloud CI
 
 ### Waiting-on — Zephyr track
 
 | Ticket | Status | Waiting on (unfinished dependencies) |
 |---|---|---|
-| BL-036 Zephyr phase acceptance run | ⬜ todo | — |
-| BL-044 update zephyr --transport ble|udp | ⬜ todo | BL-036[zephyr] ⬜ |
+| BL-044 update zephyr --transport ble|udp | ⬜ todo | — |
 | BL-046 labflash mocked unit tests | ⬜ todo | BL-044[zephyr] ⬜ |
 | BL-050 HIL framework fixtures markers artifacts | ⬜ todo | BL-046[zephyr] ⬜ |
 | BL-051 HIL T01–T03 boot + update | ⬜ todo | BL-050[zephyr] ⬜ |
 | BL-052 HIL T04–T09 rollback security robustness | ⬜ todo | BL-050[zephyr] ⬜ |
 | BL-053 HIL T10–T15 LABID + identity + USB | ⬜ todo | BL-050[zephyr] ⬜ |
 | BL-054 (Stretch) HIL T17 power cut | ⬜ todo | BL-050[zephyr] ⬜ |
-| BL-055 build.yml cloud CI | ⬜ todo | BL-036[zephyr] ⬜ |
+| BL-055 build.yml cloud CI | ⬜ todo | — |
 | BL-056 hil.yml self-hosted runner on RPi4 | ⬜ todo | BL-055[zephyr] ⬜, BL-051[zephyr] ⬜ |
 | BL-057b Full HIL suite green 3× in a row (Zephyr boa | ⬜ todo | BL-051[zephyr] ⬜, BL-052[zephyr] ⬜, BL-053[zephyr] ⬜, BL-056[zephyr] ⬜ |
 | BL-060 Overnight soak ×100 | ⬜ todo | BL-057b[zephyr] ⬜ |

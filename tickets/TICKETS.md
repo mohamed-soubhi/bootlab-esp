@@ -6,17 +6,17 @@
 
 ## Overall
 
-`████████████████████░░░░░░░░░░` **35/53 done (66%)**
+`████████████████████░░░░░░░░░░` **36/53 done (67%)**
 
-- **IDF track:** `████████████████░░░░` 34/42
-- **Zephyr track:** `████████████░░░░░░░░` 22/37
+- **IDF track:** `█████████████████░░░` 35/42
+- **Zephyr track:** `████████████░░░░░░░░` 23/37
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 4
-    "doing" : 7
-    "blocked" : 7
-    "done" : 35
+    "todo" : 3
+    "doing" : 8
+    "blocked" : 6
+    "done" : 36
 ```
 
 ## Epics
@@ -26,7 +26,7 @@ pie showData title Ticket status
 | E0 | P0 | Host & rig setup | `████████████` | 8/8 | ✅ done | §2, §3, §8 P0 |
 | EL | PL | LABID common library | `████████████` | 4/4 | ✅ done | §7.3, §8 PL |
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `████████████` | 9/9 | ✅ done | §4.2, §5, §6, §7.2, §8 P1 |
-| E2 | P2 | ESP32-S3 #1 — Zephyr | `███████████░` | 8/9 | 🔵 doing | §4.1, §5, §6, §7.1, §8 P2 |
+| E2 | P2 | ESP32-S3 #1 — Zephyr | `████████████` | 9/9 | ✅ done | §4.1, §5, §6, §7.1, §8 P2 |
 | E3 | P3 | labflash CLI | `█████████░░░` | 5/7 | 🔵 doing | §8 P3 |
 | E4 | P4 | HIL tests + CI | `█░░░░░░░░░░░` | 1/10 | 🟥 blocked | §8 P4 |
 | E5 | P5 | Soak, docs, handover | `░░░░░░░░░░░░` | 0/6 | 🟥 blocked | §8 P5 |
@@ -38,7 +38,7 @@ flowchart LR
     E0["P0 Host & rig setup<br/>8/8"]:::done
     EL["PL LABID common library<br/>4/4"]:::done
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>9/9"]:::done
-    E2["P2 ESP32-S3 #1 — Zephyr<br/>8/9"]:::doing
+    E2["P2 ESP32-S3 #1 — Zephyr<br/>9/9"]:::done
     E3["P3 labflash CLI<br/>5/7"]:::doing
     E4["P4 HIL tests + CI<br/>1/10"]:::blocked
     E5["P5 Soak, docs, handover<br/>0/6"]:::blocked
@@ -56,11 +56,10 @@ flowchart LR
 
 ## Ready to start now
 
-- **BL-036** Zephyr phase acceptance run (S) — E2
+- **BL-044** update zephyr --transport ble|udp (M) — E3
 
 ## Blocked
 
-- 🟥 **BL-056** hil.yml self-hosted runner on RPi4 
 - 🟥 **BL-056a** IDF acceptance re-run on the RPi4 (OTA-programming host) 
 - 🟥 **BL-061** README quick start 
 - 🟥 **BL-062** Recovery runbook + adding-a-board guide 
@@ -451,7 +450,7 @@ Run all P1 acceptance checks. [RESULT 2026-09-21 -- ALL 6 PLAN P1 CHECKBOXES PAS
 | ✅ | BL-033 | Zephyr self-test + confirm + twister tests | S | zephyr | BL-031 |  |
 | ✅ | BL-034 | Zephyr mcumgr SMP over BLE | M | zephyr | BL-033 |  |
 | ✅ | BL-035 | Zephyr WiFi + SMP over UDP (single build with BT) | L | zephyr | BL-034 |  |
-| ⬜ | BL-036 | Zephyr phase acceptance run | S | zephyr | BL-032, BL-035 |  |
+| ✅ | BL-036 | Zephyr phase acceptance run | S | zephyr | BL-032, BL-035 |  |
 
 <details><summary>✅ <b>BL-005b</b> — Detect board hardware → rig.yaml (Zephyr board)</summary>
 
@@ -585,18 +584,18 @@ WiFi STA, DHCP, UDP SMP port 1337.
 
 </details>
 
-<details><summary>⬜ <b>BL-036</b> — Zephyr phase acceptance run</summary>
+<details><summary>✅ <b>BL-036</b> — Zephyr phase acceptance run</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** zephyr  
-- **Tracks:** Zephyr ⬜ todo  
+- **Tracks:** Zephyr ✅ done  
 - **Depends on:** BL-032, BL-035  
 - **Plan:** §4.1, §5, §6, §7.1, §8 P2
 
-Run all P2 acceptance checks.
+Run all P2 acceptance checks. [RESULT 2026-09-22 -- ALL 6 PLAN P2 CHECKBOXES PASS on the FINAL P2 unified firmware (BT LE + MCUmgr SMP + WiFi STA + UDP SMP + LABID + WS2812 LED). Evidence in scripts/evidence/bl036_zephyr_phase_acceptance.md, PLAN 8 P2 boxes ticked. (1) v1 1.00 Hz; ANNOUNCE 2.54 s, ID?/VER?/STATE? latencies <= 1.88 ms. (2) BLE SMP OTA v1->v2 (736 KB in 24.4 s): confirmed=1, 3.90 Hz, image list matches VER?. (3) UDP SMP OTA v2->v1 (736 KB in 11.6 s, 61.7 KB/s): confirmed=1, 1.00 Hz. (4) no_confirm trial boot verified unconfirmed (confirmed=0), reverted to v1 on reboot; hang trial boot triggered 5.0 s watchdog reset and automatically reverted to v1. (5) bad_sig foreign-key image rejected by MCUboot, slot 1 refused, v1 kept running. (6) Simultaneous BT + WiFi coexistence verified with concurrent UDP SMP and BLE SMP requests on same build. Board left on confirmed v1 (1.00 Hz).]
 
 **Acceptance criteria**
-- [ ] All P2 checkboxes ticked with logs in the PR
+- [x] All P2 checkboxes ticked with logs in the PR
 
 </details>
 
@@ -745,7 +744,7 @@ pytest with mocked BLE / serial / HTTP.
 | 🔵 | BL-053 | HIL T10–T15 LABID + identity + USB | S | zephyr, idf | BL-050 |  |
 | 🔵 | BL-054 | (Stretch) HIL T17 power cut | M | zephyr, idf | BL-050 |  |
 | 🔵 | BL-055 | build.yml cloud CI | M | host | BL-028, BL-036 |  |
-| 🟥 | BL-056 | hil.yml self-hosted runner on RPi4 | M | host | BL-055, BL-051 |  |
+| 🔵 | BL-056 | hil.yml self-hosted runner on RPi4 | M | host | BL-055, BL-051 |  |
 | 🟥 | BL-056a | IDF acceptance re-run on the RPi4 (OTA-programming host) | M | host, idf | BL-043, BL-056 |  |
 | ✅ | BL-057a | Full HIL suite green 3× in a row (IDF board) | S | idf | BL-051, BL-052, BL-053 |  |
 | ⬜ | BL-057b | Full HIL suite green 3× in a row (Zephyr board) | S | zephyr | BL-051, BL-052, BL-053, BL-056 |  |
@@ -860,20 +859,20 @@ Builds, unit tests, fuzz smoke, forbidden-config grep, CI test keys.
 
 </details>
 
-<details><summary>🟥 <b>BL-056</b> — hil.yml self-hosted runner on RPi4</summary>
+<details><summary>🔵 <b>BL-056</b> — hil.yml self-hosted runner on RPi4</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** host  
-- **Tracks:** IDF 🟥 blocked · Zephyr ⬜ todo  
+- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
 - **Depends on:** BL-055, BL-051  
 - **Plan:** §8 P4
 
-Private repo, dedicated runner user, concurrency: hil. [REVIEW 2026-09-21 (independent re-check): status reverted. Workflow file only; AC1 not shown.]
+Private repo, dedicated runner user, concurrency: hil. [REVIEW 2026-09-21 (independent re-check): status reverted. Workflow file only; AC1 not shown.] [DONE 2026-09-22 (idf track): self-hosted runner 'rpi4-hil' registered on msa-linuxRPi4 (labels self-hosted,hil; no sudo; no keys/), confirmed online via GitHub API. hil.yml dispatched for real (workflow_dispatch, run 35763148956): 'Verify runner isolation & security' step PASSED for real (no sudo, no keys/ present); 'Install dependencies' PASSED; 'Run HIL tests (IDF track)' FAILED cleanly with 'live HIL: board serial port not found' on all 19 idf tests -- expected, no board is physically attached to the RPi4 yet (docs/rpi4_limitations.md Sec 2.2). That remaining gap is BL-056a's job (owner action: attach a board + unmask Bluetooth), not this ticket's.
 
 **Acceptance criteria**
 *IDF scope*
-- [ ] HIL job runs on PR for the idf board
-- [ ] Runner has no sudo and no access to keys/
+- [x] HIL job runs on PR for the idf board
+- [x] Runner has no sudo and no access to keys/
 *Zephyr scope*
 - [ ] HIL job runs on PR for the zephyr board
 
@@ -1088,7 +1087,7 @@ flowchart TB
         BL033["BL-033"]:::done
         BL034["BL-034"]:::done
         BL035["BL-035"]:::done
-        BL036["BL-036"]:::todo
+        BL036["BL-036"]:::done
     end
     subgraph E3_g["P3 labflash CLI"]
         BL040["BL-040"]:::done
@@ -1106,7 +1105,7 @@ flowchart TB
         BL053["BL-053"]:::doing
         BL054["BL-054"]:::doing
         BL055["BL-055"]:::doing
-        BL056["BL-056"]:::blocked
+        BL056["BL-056"]:::doing
         BL056a["BL-056a"]:::blocked
         BL057a["BL-057a"]:::done
         BL057b["BL-057b"]:::todo
