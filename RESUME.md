@@ -3,11 +3,59 @@
 Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
 (`C:\MSA\embedded-OS\bootlab-esp`) is a scratch dir; never edit or push from it.
 
-**Two agents are active on this repo.** This instance owns the IDF/HIL track (`tests_hil/`, `host/labflash/`,
-`scripts/evidence/bl05*`, `scripts/evidence/bl06*`, `scripts/soak_overnight.sh`). A peer agent owns Zephyr
-(`esp_zephyr/`, `scripts/*ble_smp*`, `scripts/evidence/bl03*/bl04*`, `docs/rpi4_limitations.md`) — its uncommitted
-work-in-progress files were left untouched by this session; do not assume they are lost or that this instance should
-finish them. The owner is restarting the machine; this section is this instance's checkpoint, written on request.
+**Two agents were active on this repo; the peer (Zephyr) instance ran out of tokens on 2026-09-22.**
+This instance picked up its remaining Zephyr work (BL-050/BL-051) rather than leaving it stalled --
+see "ZEPHYR TAKEOVER" below. Original split, kept for context: this instance owned the IDF/HIL track
+(`tests_hil/`, `host/labflash/`, `scripts/evidence/bl05*`, `scripts/evidence/bl06*`,
+`scripts/soak_overnight.sh`); the peer owned Zephyr (`esp_zephyr/`, `scripts/*ble_smp*`,
+`scripts/evidence/bl03*/bl04*`, `docs/rpi4_limitations.md`). Both agents share the SAME working
+directory on this machine AND the Windows mirror -- a commit made here can catch an uncommitted change
+from the other session (happened at least once, see commit `d308248`'s history); check `git status`
+and `git log -3` before assuming a clean starting point.
+
+## ZEPHYR TAKEOVER (this instance, 2026-09-22, after the peer ran out of tokens)
+
+- **BL-050[zephyr] done** (`4ba2cd0`). Board was found stuck in the ROM download bootloader (BOOT
+  button/GPIO0 held from an earlier manual boot-mode entry -- looked like a firmware crash loop,
+  wasn't). Recovered, ran `test_dummy_hil_zephyr_board` live: PASS, real LABID frames captured.
+  Evidence: `scripts/evidence/bl050_zephyr_dummy_hil_2026-09-22/`.
+- **BL-051: wrote real zephyr T01-T03 tests** (`f930a80`) replacing the stale gated-placeholder stub
+  (5 tests: T01 factory boot, T02/T03 v1<->v2 over both BLE and UDP SMP). Found and fixed two real
+  bugs running them live:
+  1. `LiveBackend.update()`'s hand-built `Namespace` was missing `udp_port`/`confirm_timeout` fields
+     `run_update_zephyr` needs -- crashed every zephyr OTA attempt (`3d4635f`).
+  2. `run_update`/`run_update_zephyr`'s internal pre/post LABID snapshot opened a SECOND serial
+     connection on the same COM port that BL-060's `SharedConsolePort` already holds open for the
+     whole test -- harmless before BL-060 (console.log was a stub), a hard "Access is denied" now
+     that it's real. Fixed by threading `transport_factory` through `args` so both reuse the same
+     connection (`0b35267`).
+  After both fixes, **hit a real Zephyr firmware bug, not a harness bug** -- see `BL-064` below.
+  `BL-051[idf]` was already done and is unaffected.
+- **BL-064 opened**: after a live BLE SMP OTA to the `build_v2` (WiFi+BT coexistence) build, the board
+  boots and runs fine (LABID ANNOUNCE, blink both work) but every subsequent host write over the same
+  UART hangs until timeout -- confirmed via the board's OWN heartbeat log: `irq=0, rx=0` at 16+ s of
+  uptime. The LABID console UART RX interrupt never fires on this build; the board never drains its
+  USB-CDC RX buffer. Reads still work; only writes are affected. Root cause not found yet -- suspect
+  `app_ble_smp.c`/`app_wifi.c`'s BLE+WiFi coexistence init interferes with the UART RX IRQ registered
+  by `labid_port`. Needs a source-level look + a `west` rebuild + reflash + retest to confirm any fix.
+  Full evidence and repro: `scripts/evidence/bl064_zephyr_labid_rx_irq_dead.md`. Blocks
+  `BL-051`/`BL-052`/`BL-053[zephyr]`.
+- **Board left healthy**: reflashed back to the known-good confirmed `build_v1` (unaffected by
+  BL-064) via esptool from WSL2 after the takeover work; `VER?` confirms `app=1.0.0, confirmed=1`.
+- **Windows mirror gotchas hit and fixed along the way** (useful if hit again):
+  - `.venv_win_ble` was found empty/broken (no `Scripts\`, no `pyvenv.cfg`) -- recreated with
+    `python -m venv .venv_win_ble` + `pip install -e host pytest bleak smpclient`.
+  - `usbipd list` showing a busid as `Shared (forced)` instead of `Shared`/`Not shared` means Windows
+    native apps (pyserial included) can't open that COM port -- `usbipd unbind --busid <n>` (needs an
+    elevated shell) restores the normal Windows driver. `usbipd bind`/`unbind`/`bind --force` all need
+    admin; `usbipd attach --wsl` alone does not.
+  - Zephyr build artifacts (`esp_zephyr/app/build*/`) are gitignored and only existed in this WSL
+    checkout, not on the Windows mirror -- copied `build_v1`/`build_v2` over via `/mnt/c/...` before
+    live zephyr OTA tests could find their images.
+  - Stray `serial_watch.py` processes left running from earlier diagnostics silently held COM12
+    exclusively (`PermissionError(13, Access is denied)` on the next open) -- `tasklist | findstr
+    python` / `Get-CimInstance Win32_Process -Filter "Name='python.exe'" | Select ProcessId,CommandLine`
+    to find them, `taskkill /F /PID <n>` to clear.
 
 ## POST-RESTART WORK (this instance, 2026-09-22, after the machine restart above)
 
