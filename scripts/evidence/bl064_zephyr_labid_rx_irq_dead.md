@@ -242,15 +242,54 @@ reporting 100% + confirmed) reproduced over BLE this time, not just UDP -- so th
 reached the fixed v2 code path via OTA. Full BL-051 live-OTA acceptance for zephyr needs BL-065 fixed
 first, independent of this fix's correctness.
 
+## BL-065 fixed (2026-09-23, `6875d3b`) -- and it revealed the mitigation isn't enough
+
+BL-065's real bug: `make_zephyr_udp_send`/`make_zephyr_ble_send` called
+`ImageStatesWrite(hash=target_hash, confirm=True)` immediately after upload, before the new image had
+ever booted. `confirm=True` let MCUboot update its own image-list bookkeeping to claim the new image
+active without ever performing the real swap. Fix: `confirm=False` (marks the image test/pending, which
+is what makes MCUboot actually swap and boot into it); the device then confirms itself permanently
+after boot via its own self-test logic, which `update_zephyr()` already polls for via
+`confirm_timeout_s` -- that design was already there, just bypassed by the premature host-side confirm.
+
+**Confirmed via a real live BLE OTA**: MCUboot's own boot log showed `Swap type: test` ->
+`Starting swap using move algorithm` -> a genuine boot into `Variant: v2`, `$LAB,ANNOUNCE...app=2.0.0`,
+`Self-test PASSED`, `confirmed=1`, WiFi connecting -- the first time in this whole investigation a real
+end-to-end swap has been observed working. **BL-065 is fixed.**
+
+## BL-064's rate-limit mitigation is NOT sufficient under real OTA conditions
+
+The same run that confirmed BL-065 also showed `irq=0, rx=0` again -- the 500ms (~2Hz) rate limit did
+not hold up here, even though it was stable for 60+ seconds in the earlier isolated direct-flash test.
+Strengthened to 1000ms (`97c9adf`, matching v1's *actual* call rate -- v1 calls `set_led`/`clear_led`
+twice per second, once per on/off transition at its native 1Hz blink, so 1000ms is if anything a lower
+call rate than v1's) and retested live: **still `irq=0, rx=0`** at 349s of uptime. This weakens the
+"call frequency alone" theory -- 1000ms is already at or below v1's proven-safe rate, yet still fails
+here.
+
+**Key variable not yet isolated**: both failing live-OTA tests reach v2 via a **real MCUboot swap +
+first boot of freshly-written flash** (move-algorithm swap, slot 1 -> slot 0). The passing isolated
+test reached v2 via a **direct esptool flash to slot 0** (no swap, no slot 1 involvement at all). Every
+passing observation of v2 in this investigation came from a direct flash; every failing observation
+came from an actual OTA swap. This is a real, unexplored candidate: something about the swap process
+itself (leftover slot 1 state, flash cache/mapping effects, or a genuine interaction between the
+move-swap algorithm and whatever the LABID UART IRQ depends on) may be the actual differentiator, not
+blink rate or call frequency per se. The earlier isolation test (diagnostic `build_v2_diag`, 1Hz forced,
+`app=2.0.0` label) that "worked" was ALSO a direct flash, not an OTA swap -- so it never actually tested
+this variable.
+
 ## Board state
 
 Left on the known-good confirmed `build_v1` (esptool, identity verified). The `ws2812_i2s.c` SDK driver
 patch used earlier to confirm the root cause was reverted (shared SDK checkout, not this repo's to
-modify permanently without a proper patch mechanism) -- the shipped fix is the app-level rate-limit
-above, which needs no SDK changes.
+modify permanently without a proper patch mechanism).
 
 ## Status
 
-Root cause CONFIRMED (`ws2812_i2s` DMA buffer pool exhaustion under sustained 4Hz calls, also kills the
-LABID UART RX interrupt). Fix IMPLEMENTED and committed, verified via direct flash. Full live-OTA
-end-to-end verification blocked on the separate BL-065 bug.
+- **BL-065: FIXED and verified live** (`6875d3b`). Real swap confirmed working end-to-end.
+- **BL-064: root cause confirmed, mitigation attempts (500ms and 1000ms LED rate limits) both
+  insufficient under real live-OTA conditions**, despite the 500ms version being stable for 60+s in an
+  isolated direct-flash test. Real differentiator not yet found -- strongest untested lead is
+  **OTA-swap vs. direct-flash** as the actual variable, not blink/call rate. Next session should design
+  a test that isolates this specifically (e.g., a real OTA swap to a variant that never blinks at all,
+  to see if the freeze still occurs with zero LED activity post-swap).
