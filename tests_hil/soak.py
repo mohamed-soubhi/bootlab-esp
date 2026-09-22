@@ -14,8 +14,8 @@ import argparse
 import json
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 EXPECTED = {"v1": "1.0.0", "v2": "2.0.0"}
 TRANSPORT_PATTERN = ("wifi", "wifi", "ble", "ble")   # per PLAN T16: mixed transports, WiFi and BLE both exercised
@@ -23,8 +23,21 @@ PASS_TARGET_PCT = 99.0
 
 
 def plan_cycle(cycle: int) -> tuple[str, str]:
-    """(target variant, transport) for 1-based `cycle`: odd -> v2, even -> v1."""
-    return ("v2" if cycle % 2 == 1 else "v1", TRANSPORT_PATTERN[(cycle - 1) % len(TRANSPORT_PATTERN)])
+    """(target variant, transport) for 1-based `cycle`, ASSUMING every prior cycle succeeded: odd -> v2, even -> v1.
+    Used only to log the intended plan; the actual target (`next_variant`) is derived from the board's real state,
+    so a failed cycle's recovery cannot make the next cycle resend the version the board is already on."""
+    return ("v2" if cycle % 2 == 1 else "v1", plan_transport(cycle))
+
+
+def plan_transport(cycle: int) -> str:
+    """Transport for 1-based `cycle` (WiFi and BLE both exercised); independent of version state."""
+    return TRANSPORT_PATTERN[(cycle - 1) % len(TRANSPORT_PATTERN)]
+
+
+def next_variant(current_app: str) -> str:
+    """The variant to target given the board's ACTUAL current app version -- always toggles away from it, so a
+    cycle that starts after a failed/recovered previous cycle never resends the version already running."""
+    return "v1" if current_app.startswith("2.") else "v2"
 
 
 def _read_done(jsonl: Path) -> list[dict]:
@@ -35,8 +48,8 @@ def _read_done(jsonl: Path) -> list[dict]:
             for r in [json.loads(line)] if "ok" in r]
 
 
-def _one_cycle(backend, cycle: int, log_path: Path, timeout_s: float | None) -> tuple[bool, str]:
-    variant, transport = plan_cycle(cycle)
+def _one_cycle(backend, cycle: int, variant: str, transport: str, log_path: Path,
+               timeout_s: float | None) -> tuple[bool, str]:
     try:
         ok = backend.update(variant, transport, log_path, timeout_s)
     except Exception as err:  # noqa: BLE001 - a failing cycle must be recorded, not crash the soak
@@ -69,8 +82,22 @@ def run_soak(backend, cycles: int, out_dir: Path, pause_s: float = 5.0, max_cons
 
     for cycle in range(start_cycle, cycles + 1):
         tc = clock()
-        ok, cause = _one_cycle(backend, cycle, log_path, timeout_s)
-        variant, transport = plan_cycle(cycle)
+        try:
+            variant = next_variant(backend.snapshot().app)
+        except Exception as err:  # noqa: BLE001 - an unreadable board before the attempt is itself a failure
+            rec = {"cycle": cycle, "variant": "?", "transport": plan_transport(cycle), "ok": False,
+                   "cause": f"board unreadable before update: {err}", "duration_s": round(clock() - tc, 1)}
+            with jsonl.open("a", encoding="utf-8") as f:
+                f.write(json.dumps(rec) + "\n")
+            done.append(rec)
+            consecutive += 1
+            if consecutive >= max_consecutive_failures:
+                aborted = True
+                break
+            sleep_fn(pause_s)
+            continue
+        transport = plan_transport(cycle)
+        ok, cause = _one_cycle(backend, cycle, variant, transport, log_path, timeout_s)
         rec = {"cycle": cycle, "variant": variant, "transport": transport, "ok": ok, "cause": cause,
                "duration_s": round(clock() - tc, 1)}
         with jsonl.open("a", encoding="utf-8") as f:

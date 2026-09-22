@@ -4,7 +4,8 @@ from __future__ import annotations
 import json
 
 from labflash.update import Snapshot
-from tests_hil.soak import plan_cycle, run_soak
+
+from tests_hil.soak import next_variant, plan_cycle, plan_transport, run_soak
 
 
 class FakeBackend:
@@ -38,6 +39,24 @@ def test_plan_alternates_variant_and_mixes_transports():
     plans = [plan_cycle(i) for i in range(1, 9)]
     assert [p[0] for p in plans] == ["v2", "v1"] * 4
     assert {p[1] for p in plans} == {"wifi", "ble"}
+    assert [plan_transport(i) for i in range(1, 9)] == [p[1] for p in plans]
+
+
+def test_next_variant_toggles_away_from_current():
+    assert next_variant("1.0.0") == "v2"
+    assert next_variant("2.0.0") == "v1"
+    assert next_variant("1.0.0-noconfirm") == "v2"
+
+
+def test_a_failed_cycle_does_not_cause_the_next_cycle_to_resend_the_same_version(tmp_path):
+    """Regression for the 2026-09-22 soak finding: cycle 1 (target v2) fails and recovery leaves the board on v1;
+    cycle 2 must target v2 again (the board's real state), never resend v1 while already on v1."""
+    b = FakeBackend(fail_cycles={1})
+    rep = run(tmp_path, b, cycles=2)
+    assert rep["total_cycles"] == 2
+    assert b.calls[0] == ("v2", "wifi") and b.calls[1] == ("v2", "wifi")  # cycle 2 retried v2, not a v1 resend
+    lines = [json.loads(line) for line in (tmp_path / "cycles.jsonl").read_text().splitlines()]
+    assert [r["variant"] for r in lines] == ["v2", "v2"]
 
 
 def test_all_pass_report_labelled_live_and_ends_on_v1(tmp_path):

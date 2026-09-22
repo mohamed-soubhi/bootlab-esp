@@ -159,8 +159,15 @@ def run_update(args) -> int:
             result = update_idf(image, args.transport, snapshot_fn=snapshot_fn, send_fn=send_fn,
                                 expected_uid=expected_uid, https_snapshot_fn=https_fn, timeout_s=args.timeout)
         except UpdateError as err:
+            if server is not None:
+                # "served" = what THIS HOST wrote to the socket, not what the board received/flashed
+                # (see idf_wifi_ota module docstring) -- printed so a stalled transfer is distinguishable
+                # from a host-serving failure.
+                print(f"host served: {server.served} (image was {len(image)} bytes)", file=sys.stderr)
             print(f"ERROR: {err}", file=sys.stderr)
             return 1
+        if server is not None:
+            print(f"host served: {server.served} (image was {len(image)} bytes)", flush=True)
         print(f"image version {result.version}; before: app={result.pre.app} slot={result.pre.slot}; "
               f"after: app={result.post.app if result.post else '?'} slot={result.post.slot if result.post else '?'}")
         for c in result.checks:
