@@ -4,16 +4,20 @@ import sys
 from typing import Any
 
 
-def main(argv=None):
-    argv = argv if argv is not None else sys.argv[1:]
+def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="labflash", description="ESP32-S3 Bootloader & OTA Lab CLI")
-    sub = p.add_subparsers(dest="cmd", required=True)
+    sub = p.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("doctor", help="environment check (BL-007 stub)")
-    resolve_p = sub.add_parser("resolve", help="resolve board device paths by USB serial (BL-040)")
+    def add_cmd(name: str, *args: Any, **kwargs: Any) -> argparse.ArgumentParser:
+        sp = sub.add_parser(name, *args, **kwargs)
+        sp.set_defaults(cmd=name)
+        return sp
+
+    add_cmd("doctor", help="environment check (BL-007 stub)")
+    resolve_p = add_cmd("resolve", help="resolve board device paths by USB serial (BL-040)")
     resolve_p.add_argument("--json", action="store_true", help="machine-readable JSON output")
     resolve_p.add_argument("--wait", type=float, default=5.0, help="seconds to wait for re-enumeration (default 5)")
-    id_p = sub.add_parser(
+    id_p = add_cmd(
         "identify",
         help="map boards by LABID query over serial (BL-041)",
         description="Sends LABID $LAB,ID? over serial and matches device UID against rig.yaml.",
@@ -22,7 +26,7 @@ def main(argv=None):
     id_p.add_argument("--board", choices=["idf", "zephyr"], help="board to identify")
     id_p.add_argument("--json", action="store_true", help="output JSON")
 
-    info_p = sub.add_parser(
+    info_p = add_cmd(
         "info",
         help="show board identity, software versions, and runtime state (BL-041)",
         description="Queries LABID ID?, VER?, and STATE? from the board.",
@@ -31,7 +35,7 @@ def main(argv=None):
     info_p.add_argument("--port", help="serial port to query (default: resolved from rig.yaml)")
     info_p.add_argument("--json", action="store_true", help="output JSON")
 
-    meas_p = sub.add_parser(
+    meas_p = add_cmd(
         "measure",
         help="measure LED blink rate over LABID from toggle counter (BL-041)",
         description="Samples STATE.toggles over duration and verifies measured Hz matches expected blink rate.",
@@ -42,7 +46,7 @@ def main(argv=None):
     meas_p.add_argument("--expect-hz", type=float, default=None, help="expected blink rate in Hz")
     meas_p.add_argument("--tolerance", type=int, default=1, help="acceptable toggle delta error (default: +/-1 toggle)")
 
-    flash_p = sub.add_parser(
+    flash_p = add_cmd(
         "flash",
         help="factory flash a board with identity check before writing (BL-042)",
         description="Flashes bootloader, partition table, otadata, and factory app to the board. "
@@ -51,14 +55,14 @@ def main(argv=None):
     flash_p.add_argument("board", choices=["idf", "zephyr"], help="board to flash")
     flash_p.add_argument("--port", help="serial port (default: resolved from rig.yaml)")
 
-    rec_p = sub.add_parser(
+    rec_p = add_cmd(
         "recover",
         help="erase flash and factory flash a board with identity check before writing (BL-042)",
         description="Erases flash and re-flashes factory binaries with identity check before writing.",
     )
     rec_p.add_argument("board", choices=["idf", "zephyr"], help="board to recover")
     rec_p.add_argument("--port", help="serial port (default: resolved from rig.yaml)")
-    upd = sub.add_parser(
+    upd = add_cmd(
         "update", help="OTA an ESP-IDF or Zephyr board over BLE, WiFi, or UDP and verify it via LABID (BL-043, BL-044)",
         description="Sends a signed app image to the board, then verifies: it runs the version the image carries, "
                     "the slot is confirmed, the uid matches, and LABID agrees with transport status (HTTPS or SMP). "
@@ -85,7 +89,7 @@ def main(argv=None):
     upd.add_argument("--timeout", type=float, default=240.0, help="seconds to wait for the new version (default 240)")
     upd.add_argument("--confirm-timeout", type=float, default=30.0, help="seconds to wait for confirmation (default 30)")
 
-    prov_p = sub.add_parser("provision", help="write WiFi credentials + token to NVS (BL-024)")
+    prov_p = add_cmd("provision", help="write WiFi credentials + token to NVS (BL-024)")
     prov_p.add_argument("board", choices=["idf"], help="board to provision")
     prov_p.add_argument("--ssid", help="WiFi SSID (defaults to WIFI_SSID from env file)")
     prov_p.add_argument("--psk", help="WiFi password (defaults to WIFI_PSK from env file)")
@@ -94,7 +98,7 @@ def main(argv=None):
     prov_p.add_argument("--env-file", default="credentials.env", help="Path to credentials env file (default: credentials.env)")
     prov_p.add_argument("--port", help="Explicit serial port (defaults to resolved rig.yaml port)")
 
-    bld_p = sub.add_parser(
+    bld_p = add_cmd(
         "build",
         help="build and sign application image variants (BL-045)",
         description="Builds and signs IDF / Zephyr application image variants per PLAN R15. "
@@ -109,29 +113,48 @@ def main(argv=None):
     )
     bld_p.add_argument("--clean", action="store_true", help="clean build directory before building")
 
+    gui_p = add_cmd(
+        "gui",
+        help="launch the bootlab-esp web operations console",
+        description="Launch local browser operations console to run and monitor tools.",
+    )
+    gui_p.add_argument("--host", default="127.0.0.1", help="Host address (default: 127.0.0.1)")
+    gui_p.add_argument("--port", type=int, default=8080, help="Port (default: 8080)")
+    gui_p.add_argument("--no-browser", action="store_true", help="Do not open browser automatically")
+
+    return p
+
+
+def main(argv=None):
+    argv = argv if argv is not None else sys.argv[1:]
+    p = build_parser()
     args = p.parse_args(argv)
 
-    if args.cmd == "doctor":
+    cmd = getattr(args, "command", getattr(args, "cmd", None))
+    if cmd == "gui":
+        from labflash.gui_cmd import run_gui
+        return run_gui(host=args.host, port=args.port, open_browser=not args.no_browser)
+    if cmd == "doctor":
         from labflash.doctor import main as doctor_main
         return doctor_main()
-    if args.cmd == "resolve":
+    if cmd == "resolve":
         return _resolve_cmd(json_out=args.json, wait_s=args.wait)
-    if args.cmd == "provision":
+    if cmd == "provision":
         return _provision_cmd(args)
-    if args.cmd == "update":
+    if cmd == "update":
         from labflash.update_cli import run_update
         return run_update(args)
-    if args.cmd == "build":
+    if cmd == "build":
         return _build_cmd(args)
-    if args.cmd == "identify":
+    if cmd == "identify":
         return _identify_cmd(args)
-    if args.cmd == "info":
+    if cmd == "info":
         return _info_cmd(args)
-    if args.cmd == "measure":
+    if cmd == "measure":
         return _measure_cmd(args)
-    if args.cmd == "flash":
+    if cmd == "flash":
         return _flash_cmd(args, recover=False)
-    if args.cmd == "recover":
+    if cmd == "recover":
         return _flash_cmd(args, recover=True)
     p.print_help()
     return 1
