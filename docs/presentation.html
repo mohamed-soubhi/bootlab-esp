@@ -624,7 +624,107 @@ UPDATE OK (slot 0 -&gt; 1, confirmed)</code></pre>
     </table>
   </div>
 
-  <!-- SLIDE 9: LESSONS LEARNED -->
+  <!-- SLIDE 9: MULTI-AGENT COLLABORATION -->
+  <div class="slide">
+    <span class="badge badge-purple">AUTONOMOUS MULTI-AGENT SWARM</span>
+    <h2>Multi-Agent Engineering Collaboration</h2>
+    <p>The entire testbed, firmware matrix, and HIL verification pipeline were engineered and validated through a coordinated multi-agent AI collaboration across workstation, edge silicon, and autonomous test runners:</p>
+
+    <div class="grid-2">
+      <div class="card" style="border-left: 4px solid var(--accent-blue);">
+        <h3 style="color: var(--accent-blue); display: flex; align-items: center; gap: 10px;">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+            <rect width="24" height="24" rx="5" fill="#172230" stroke="#38bdf8" stroke-width="1.2"/>
+            <path d="M12 3.5C12 7.64 8.64 11 4.5 11C8.64 11 12 14.36 12 18.5C12 14.36 15.36 11 19.5 11C15.36 11 12 7.64 12 3.5Z" fill="url(#ag-spark-pres)"/>
+            <circle cx="12" cy="11" r="1.6" fill="#ffffff"/>
+            <ellipse cx="12" cy="11" rx="7.5" ry="2.8" stroke="#38bdf8" stroke-width="0.8" stroke-dasharray="2 1.5" transform="rotate(-20 12 11)"/>
+            <defs>
+              <linearGradient id="ag-spark-pres" x1="4.5" y1="3.5" x2="19.5" y2="18.5" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#38bdf8"/>
+                <stop offset="0.5" stop-color="#818cf8"/>
+                <stop offset="1" stop-color="#c084fc"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <span>Antigravity (Google DeepMind)</span>
+        </h3>
+        <p style="font-size: 0.85rem; color: var(--accent-blue); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">System Architecture &amp; Verification Rigor</p>
+        <ul style="font-size: 0.95rem; margin-left: 1.25rem; line-height: 1.6;">
+          <li>Architected empirical verification gates (evidence before assertion, zero vacuous passes).</li>
+          <li>Designed end-to-end multi-transport test matrices, ticket governance, and system specifications.</li>
+          <li>Engineered interactive presentation engines and production documentation portals.</li>
+        </ul>
+      </div>
+
+      <div class="card" style="border-left: 4px solid var(--accent-green);">
+        <h3 style="color: var(--accent-green); display: flex; align-items: center; gap: 10px;">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+            <rect width="24" height="24" rx="5" fill="#172230" stroke="#f97316" stroke-width="1.2"/>
+            <g fill="#f97316">
+              <rect x="10.8" y="4" width="2.4" height="16" rx="1.2"/>
+              <rect x="4" y="10.8" width="16" height="2.4" rx="1.2"/>
+              <rect x="10.8" y="4" width="2.4" height="16" rx="1.2" transform="rotate(45 12 12)"/>
+              <rect x="10.8" y="4" width="2.4" height="16" rx="1.2" transform="rotate(-45 12 12)"/>
+              <circle cx="12" cy="12" r="2.4" fill="#ea580c"/>
+            </g>
+          </svg>
+          <span>Claude (Claude Code)</span>
+        </h3>
+        <p style="font-size: 0.85rem; color: var(--accent-green); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Firmware Systems &amp; Low-Level Engineering</p>
+        <ul style="font-size: 0.95rem; margin-left: 1.25rem; line-height: 1.6;">
+          <li>Developed production FreeRTOS &amp; Zephyr RTOS C99 firmware stacks on ESP32-S3.</li>
+          <li>Engineered MCUboot swap-with-revert hooks and hardware watchdog fail-safes.</li>
+          <li>Diagnosed and bypassed critical traps: WinRT BLE GATT caching and serial COM locking.</li>
+        </ul>
+      </div>
+
+      <div class="card" style="border-left: 4px solid var(--accent-amber);">
+        <h3 style="color: var(--accent-amber); display: flex; align-items: center; gap: 10px;">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+            <rect width="24" height="24" rx="5" fill="#172230" stroke="#f59e0b" stroke-width="1.2"/>
+            <path d="M12 7C9.2 7 7 9.2 7 12V14C7 16.8 9.2 17 12 17C14.8 17 17 16.8 17 14V12C17 9.2 14.8 7 12 7Z" fill="rgba(245, 158, 11, 0.2)" stroke="#f59e0b" stroke-width="1.3"/>
+            <path d="M6.5 11C4.5 9.5 4 7 5 5C7 5.5 8 7 8.5 9M17.5 11C19.5 9.5 20 7 19 5C17 5.5 16 7 15.5 9" stroke="#fbbf24" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="12" cy="12" r="1.6" fill="#fbbf24"/>
+            <path d="M10 15H14" stroke="#f59e0b" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+          <span>Hermes Agent</span>
+        </h3>
+        <p style="font-size: 0.85rem; color: var(--accent-amber); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Autonomous Edge Test Runner</p>
+        <ul style="font-size: 0.95rem; margin-left: 1.25rem; line-height: 1.6;">
+          <li>Operates locally on edge host (<code>msa-linuxRPi4</code>) executing unattended test plans.</li>
+          <li>Autonomously coordinates network OTA validation and target health queries over LAN.</li>
+          <li>Strict operational security boundary: zero-sudo privileges and ephemeral key isolation.</li>
+        </ul>
+      </div>
+
+      <div class="card" style="border-left: 4px solid var(--accent-purple);">
+        <h3 style="color: var(--accent-purple); display: flex; align-items: center; gap: 10px;">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+            <rect width="24" height="24" rx="5" fill="#172230" stroke="#f43f5e" stroke-width="1.2"/>
+            <path d="M12 6.5C11 5 9.5 4.5 7.5 5C8 7 9 8 11 8.5M12 6.5C13 5 14.5 4.5 16.5 5C16 7 15 8 13 8.5" fill="#10B981" stroke="#059669" stroke-width="0.5"/>
+            <circle cx="12" cy="5" r="0.8" fill="#10B981"/>
+            <circle cx="9.8" cy="10.5" r="1.6" fill="#E11D48"/>
+            <circle cx="14.2" cy="10.5" r="1.6" fill="#E11D48"/>
+            <circle cx="7.8" cy="13.2" r="1.5" fill="#BE123C"/>
+            <circle cx="12" cy="13" r="1.8" fill="#F43F5E"/>
+            <circle cx="16.2" cy="13.2" r="1.5" fill="#BE123C"/>
+            <circle cx="9.8" cy="15.8" r="1.5" fill="#BE123C"/>
+            <circle cx="14.2" cy="15.8" r="1.5" fill="#BE123C"/>
+            <circle cx="12" cy="18" r="1.3" fill="#9F1239"/>
+          </svg>
+          <span>Raspberry Pi 4 (<code>rpi4-hil</code>)</span>
+        </h3>
+        <p style="font-size: 0.85rem; color: var(--accent-purple); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Physical Hardware Edge Bridge</p>
+        <ul style="font-size: 0.95rem; margin-left: 1.25rem; line-height: 1.6;">
+          <li>Colocated hardware runner bridging cloud/workstation AI with physical target silicon.</li>
+          <li>LAN network dispatcher isolating targets from USB flashing power brownouts (<code>0x50000</code>).</li>
+          <li>Hosts self-hosted GitHub Actions runner (<code>rpi4-hil</code>) and automated test loop.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 10: LESSONS LEARNED -->
   <div class="slide">
     <span class="badge badge-red">RISK & TRAPS RETROSPECTIVE</span>
     <h2>Lessons Learned: 8 Critical Technical Traps</h2>
@@ -669,7 +769,7 @@ UPDATE OK (slot 0 -&gt; 1, confirmed)</code></pre>
     </div>
   </div>
 
-  <!-- SLIDE 10: GANTT & ROADMAP -->
+  <!-- SLIDE 11: GANTT & ROADMAP -->
   <div class="slide">
     <span class="badge badge-green">ROADMAP & STATUS</span>
     <h2>Gantt Timeline & Zephyr Gate Release</h2>
@@ -708,19 +808,15 @@ UPDATE OK (slot 0 -&gt; 1, confirmed)</code></pre>
       </svg>
     </div>
 
-    <div class="grid-2">
+    <div class="grid-2" style="margin-top: 1.5rem;">
       <div class="card">
-        <h3>IDF Track Sign-Off</h3>
-        <ul>
-          <li><strong>23 of 23</strong> IDF tickets completed, verified, and recorded in git history.</li>
-          <li>All documentation and operational runbooks delivered:
-            <ul>
-              <li><a href="../README.md">README.md</a>: Quick start guide (&lt; 5 min first OTA).</li>
-              <li><a href="../docs/recovery.md">docs/recovery.md</a>: Complete board recovery runbook.</li>
-              <li><a href="../docs/adding-a-board.md">docs/adding-a-board.md</a>: Multi-board expansion guide.</li>
-              <li><a href="../docs/rpi4_limitations.md">docs/rpi4_limitations.md</a>: Host topology guide.</li>
-            </ul>
-          </li>
+        <h3>Hardware Handover Checklist</h3>
+        <p>Before launching Zephyr, target board <code>lab-esp-idf</code> was returned to a stable, known-good baseline state:</p>
+        <ul style="margin-left: 1.5rem; font-size: 0.95rem; line-height: 1.6;">
+          <li>Reflashed factory firmware v1.0.0 (slot 0, 1.00 Hz LED).</li>
+          <li>Verified confirmed slot via <code>$LAB,VER*11</code> and HTTPS <code>/version</code>.</li>
+          <li>Power consumption verified baseline nominal ($\le 120$ mA).</li>
+          <li>Both OTA partitions intact, ready for automated updates.</li>
         </ul>
       </div>
 
@@ -737,7 +833,7 @@ UPDATE OK (slot 0 -&gt; 1, confirmed)</code></pre>
     </div>
   </div>
 
-  <!-- SLIDE 11: CONCLUSION & SUMMARY -->
+  <!-- SLIDE 12: CONCLUSION & SUMMARY -->
   <div class="slide">
     <div style="margin: auto 0;">
       <span class="badge badge-green">SUMMARY & HANDOVER</span>

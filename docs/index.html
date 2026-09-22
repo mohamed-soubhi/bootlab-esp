@@ -6,10 +6,10 @@
   <title>bootlab-esp — Dual-OS Embedded Bootloader & Resilient OTA Testbed</title>
   <meta name="description" content="Production-grade dual-OS (ESP-IDF + Zephyr RTOS) bootloader, fail-safe OTA engine, and automated Hardware-in-the-Loop testbed on ESP32-S3.">
   
-  <!-- Google Fonts: Bebas Neue, Inter, JetBrains Mono -->
+  <!-- Google Fonts: Inter, JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
     /* ==========================================================================
@@ -51,7 +51,7 @@
       --radius-lg: 18px;
       --radius-full: 9999px;
 
-      --font-heading: 'Bebas Neue', sans-serif;
+      --font-heading: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       --font-body: 'Inter', system-ui, -apple-system, sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
 
@@ -156,8 +156,9 @@
 
     .brand-title {
       font-family: var(--font-heading);
-      font-size: 24px;
-      letter-spacing: 0.06em;
+      font-weight: 800;
+      font-size: 20px;
+      letter-spacing: -0.01em;
       color: var(--text-contrast);
       display: flex;
       align-items: center;
@@ -279,14 +280,14 @@
 
     .hero-title {
       font-family: var(--font-heading);
-      font-size: clamp(48px, 6vw, 76px);
-      line-height: 0.95;
-      letter-spacing: 0.03em;
+      font-weight: 800;
+      font-size: clamp(40px, 5.5vw, 68px);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
       background: linear-gradient(135deg, var(--text-contrast) 0%, var(--accent-neon) 50%, var(--accent-primary) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      text-transform: uppercase;
       margin-bottom: 12px;
     }
 
@@ -419,9 +420,10 @@
     }
     .tech-badge-name {
       font-family: var(--font-heading);
-      font-size: 19px;
-      line-height: 1;
-      letter-spacing: 0.04em;
+      font-weight: 700;
+      font-size: 16px;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
       color: var(--text-contrast);
     }
     .tech-badge-sub {
@@ -464,10 +466,10 @@
 
     .section-heading {
       font-family: var(--font-heading);
-      font-size: clamp(32px, 4vw, 44px);
-      letter-spacing: 0.04em;
+      font-weight: 800;
+      font-size: clamp(26px, 3.5vw, 36px);
+      letter-spacing: -0.02em;
       color: var(--text-contrast);
-      text-transform: uppercase;
       margin-bottom: 8px;
     }
 
@@ -553,8 +555,9 @@
     }
     .perspective-box h4 {
       font-family: var(--font-heading);
-      font-size: 20px;
-      letter-spacing: 0.04em;
+      font-weight: 700;
+      font-size: 17px;
+      letter-spacing: -0.01em;
       color: var(--text-contrast);
       margin-bottom: 8px;
       display: flex;
@@ -611,8 +614,9 @@
 
     .arch-title {
       font-family: var(--font-heading);
-      font-size: 28px;
-      letter-spacing: 0.04em;
+      font-weight: 800;
+      font-size: 22px;
+      letter-spacing: -0.02em;
       color: var(--text-contrast);
       margin-bottom: 8px;
     }
@@ -674,8 +678,10 @@
 
     .card-title {
       font-family: var(--font-heading);
-      font-size: 22px;
-      letter-spacing: 0.03em;
+      font-weight: 700;
+      font-size: 18px;
+      line-height: 1.35;
+      letter-spacing: -0.01em;
       color: var(--text-contrast);
       margin-bottom: 8px;
     }
@@ -767,8 +773,9 @@
     }
     .footer-brand {
       font-family: var(--font-heading);
-      font-size: 24px;
-      letter-spacing: 0.05em;
+      font-weight: 800;
+      font-size: 20px;
+      letter-spacing: -0.01em;
       color: var(--text-contrast);
       margin-bottom: 6px;
     }
@@ -804,8 +811,9 @@
 
     .deck-brand {
       font-family: var(--font-heading);
-      font-size: 20px;
-      letter-spacing: 0.06em;
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: -0.01em;
       color: var(--accent-neon);
     }
 
@@ -853,9 +861,10 @@
 
     .slide-title {
       font-family: var(--font-heading);
-      font-size: clamp(38px, 5vw, 60px);
-      line-height: 1;
-      letter-spacing: 0.03em;
+      font-weight: 800;
+      font-size: clamp(30px, 4.2vw, 48px);
+      line-height: 1.15;
+      letter-spacing: -0.02em;
       color: var(--text-contrast);
     }
 
@@ -881,8 +890,9 @@
     }
     .slide-subcard h5 {
       font-family: var(--font-heading);
-      font-size: 20px;
-      letter-spacing: 0.04em;
+      font-weight: 700;
+      font-size: 17px;
+      letter-spacing: -0.01em;
       color: var(--text-contrast);
       margin-bottom: 6px;
     }
@@ -1102,7 +1112,7 @@
 
       <div class="perspectives-card">
         <div class="perspectives-header">
-          <div style="font-family: var(--font-heading); font-size: 22px; color: var(--text-contrast);">Select Focus Area</div>
+          <div style="font-family: var(--font-heading); font-weight: 700; font-size: 18px; letter-spacing: -0.01em; color: var(--text-contrast);">Select Focus Area</div>
           <div class="tab-pills">
             <button class="tab-btn active" onclick="switchLens('reliability')">🛡️ Product &amp; Reliability</button>
             <button class="tab-btn" onclick="switchLens('business')">📈 Business Value &amp; ROI</button>
@@ -1158,8 +1168,8 @@
               <p>Engineered an ASCII wire protocol (`$LAB,CMD*CS\n`) implemented identically in C99 firmware and Python host tools, featuring one-fputs atomic frame writes to prevent log interleaving.</p>
             </div>
             <div class="perspective-box">
-              <h4>Automated HIL Rig &amp; Serial Multiplexing</h4>
-              <p>Created `SharedConsolePort` to stream console logs continuously while servicing LABID queries over exclusive Windows COM handles, plus self-hosted runner integration on Raspberry Pi 4.</p>
+              <h4>Automated HIL Rig &amp; Multi-Agent Swarm</h4>
+              <p>Created <code>SharedConsolePort</code> to multiplex live logs and automated HIL testing orchestrated across an autonomous agent collaboration: Antigravity (architecture &amp; verification), Claude (firmware engineering), Hermes agent, and Raspberry Pi 4 edge runner.</p>
             </div>
           </div>
         </div>
@@ -1620,8 +1630,86 @@
       </div>
 
       <!-- SLIDE 9 -->
+      <div class="slide" data-notes="Multi-Agent Collaboration: Highlight the synergy of 4 autonomous and AI components. Antigravity and Claude Code collaborated on system architecture, firmware implementation, and trap resolution on the workstation; Hermes ran as an autonomous agent on the Raspberry Pi 4 edge runner to dispatch network OTA and validate target hardware in the physical lab.">
+        <span class="slide-badge">Slide 09 &bull; Multi-Agent Swarm</span>
+        <h2 class="slide-title">Autonomous Multi-Agent Collaboration</h2>
+        <p class="slide-summary">
+          Engineered and verified through an orchestrated synergy between workstation AI agents and edge autonomous runners bridging physical target silicon.
+        </p>
+        <div class="slide-cards-grid">
+          <div class="slide-subcard" style="border-left: 3px solid var(--accent-cyan);">
+            <h5 style="color: var(--accent-cyan); display: flex; align-items: center; gap: 8px;">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+                <rect width="24" height="24" rx="5" fill="#172230" stroke="#38bdf8" stroke-width="1.2"/>
+                <path d="M12 3.5C12 7.64 8.64 11 4.5 11C8.64 11 12 14.36 12 18.5C12 14.36 15.36 11 19.5 11C15.36 11 12 7.64 12 3.5Z" fill="url(#ag-spark-idx)"/>
+                <circle cx="12" cy="11" r="1.6" fill="#ffffff"/>
+                <ellipse cx="12" cy="11" rx="7.5" ry="2.8" stroke="#38bdf8" stroke-width="0.8" stroke-dasharray="2 1.5" transform="rotate(-20 12 11)"/>
+                <defs>
+                  <linearGradient id="ag-spark-idx" x1="4.5" y1="3.5" x2="19.5" y2="18.5" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#38bdf8"/>
+                    <stop offset="0.5" stop-color="#818cf8"/>
+                    <stop offset="1" stop-color="#c084fc"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+              <span>Antigravity (Google DeepMind)</span>
+            </h5>
+            <p><strong>System Architecture &amp; Verification Rigor:</strong><br>&bull; Designed empirical evidence gates (no claim verified without live target telemetry).<br>&bull; Architected end-to-end multi-transport test matrices and project specs.<br>&bull; Built executive presentation engine and interactive documentation portal.</p>
+          </div>
+          <div class="slide-subcard" style="border-left: 3px solid var(--accent-primary);">
+            <h5 style="color: var(--accent-primary); display: flex; align-items: center; gap: 8px;">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+                <rect width="24" height="24" rx="5" fill="#172230" stroke="#f97316" stroke-width="1.2"/>
+                <g fill="#f97316">
+                  <rect x="10.8" y="4" width="2.4" height="16" rx="1.2"/>
+                  <rect x="4" y="10.8" width="16" height="2.4" rx="1.2"/>
+                  <rect x="10.8" y="4" width="2.4" height="16" rx="1.2" transform="rotate(45 12 12)"/>
+                  <rect x="10.8" y="4" width="2.4" height="16" rx="1.2" transform="rotate(-45 12 12)"/>
+                  <circle cx="12" cy="12" r="2.4" fill="#ea580c"/>
+                </g>
+              </svg>
+              <span>Claude (Claude Code)</span>
+            </h5>
+            <p><strong>Firmware Systems &amp; Low-Level Engineering:</strong><br>&bull; Developed production FreeRTOS &amp; Zephyr RTOS C99 firmware stacks.<br>&bull; Integrated MCUboot swap-with-revert and hardware watchdog fail-safes.<br>&bull; Solved complex OS edge cases: WinRT BLE caching and serial COM multiplexing.</p>
+          </div>
+          <div class="slide-subcard" style="border-left: 3px solid var(--accent-amber);">
+            <h5 style="color: var(--accent-amber); display: flex; align-items: center; gap: 8px;">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+                <rect width="24" height="24" rx="5" fill="#172230" stroke="#f59e0b" stroke-width="1.2"/>
+                <path d="M12 7C9.2 7 7 9.2 7 12V14C7 16.8 9.2 17 12 17C14.8 17 17 16.8 17 14V12C17 9.2 14.8 7 12 7Z" fill="rgba(245, 158, 11, 0.2)" stroke="#f59e0b" stroke-width="1.3"/>
+                <path d="M6.5 11C4.5 9.5 4 7 5 5C7 5.5 8 7 8.5 9M17.5 11C19.5 9.5 20 7 19 5C17 5.5 16 7 15.5 9" stroke="#fbbf24" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="12" cy="12" r="1.6" fill="#fbbf24"/>
+                <path d="M10 15H14" stroke="#f59e0b" stroke-width="1.3" stroke-linecap="round"/>
+              </svg>
+              <span>Hermes Agent</span>
+            </h5>
+            <p><strong>Autonomous Edge Test Execution:</strong><br>&bull; Operates locally on edge runner (<code>msa-linuxRPi4</code>) executing test plans.<br>&bull; Autonomously coordinates network OTA validation and target health queries.<br>&bull; Strictly sandboxed under non-root / zero-sudo and ephemeral key isolation.</p>
+          </div>
+          <div class="slide-subcard" style="border-left: 3px solid var(--accent-violet);">
+            <h5 style="color: var(--accent-violet); display: flex; align-items: center; gap: 8px;">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+                <rect width="24" height="24" rx="5" fill="#172230" stroke="#f43f5e" stroke-width="1.2"/>
+                <path d="M12 6.5C11 5 9.5 4.5 7.5 5C8 7 9 8 11 8.5M12 6.5C13 5 14.5 4.5 16.5 5C16 7 15 8 13 8.5" fill="#10B981" stroke="#059669" stroke-width="0.5"/>
+                <circle cx="12" cy="5" r="0.8" fill="#10B981"/>
+                <circle cx="9.8" cy="10.5" r="1.6" fill="#E11D48"/>
+                <circle cx="14.2" cy="10.5" r="1.6" fill="#E11D48"/>
+                <circle cx="7.8" cy="13.2" r="1.5" fill="#BE123C"/>
+                <circle cx="12" cy="13" r="1.8" fill="#F43F5E"/>
+                <circle cx="16.2" cy="13.2" r="1.5" fill="#BE123C"/>
+                <circle cx="9.8" cy="15.8" r="1.5" fill="#BE123C"/>
+                <circle cx="14.2" cy="15.8" r="1.5" fill="#BE123C"/>
+                <circle cx="12" cy="18" r="1.3" fill="#9F1239"/>
+              </svg>
+              <span>Raspberry Pi 4 (<code>rpi4-hil</code>)</span>
+            </h5>
+            <p><strong>Physical Hardware Edge Bridge:</strong><br>&bull; Dedicated local runner node bridging AI agents with ESP32-S3 silicon.<br>&bull; Network OTA dispatcher isolating boards from USB flashing power brownouts.<br>&bull; Hosts self-hosted GitHub Actions runner and continuous telemetry loop.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 10 -->
       <div class="slide" data-notes="Challenge deep dive: WinRT GATT caching & COM exclusivity. These are real engineering war stories that interviewers and clients love hearing.">
-        <span class="slide-badge">Slide 09 &bull; Engineering War Stories 1</span>
+        <span class="slide-badge">Slide 10 &bull; Engineering War Stories 1</span>
         <h2 class="slide-title">Bluetooth Caching &amp; Serial Concurrency</h2>
         <p class="slide-summary">
           Solving real OS-level integration challenges between modern Windows hosts and low-level embedded hardware.
@@ -1638,9 +1726,9 @@
         </div>
       </div>
 
-      <!-- SLIDE 10 -->
+      <!-- SLIDE 11 -->
       <div class="slide" data-notes="Challenge deep dive 2: Power stability on RPi4 (0x50000 under-voltage) and Zephyr coexistence UART RX deadlock (BL-064).">
-        <span class="slide-badge">Slide 10 &bull; Engineering War Stories 2</span>
+        <span class="slide-badge">Slide 11 &bull; Engineering War Stories 2</span>
         <h2 class="slide-title">Power Brownouts &amp; Radio Coexistence</h2>
         <p class="slide-summary">
           Overcoming hardware power limits and complex multi-radio interrupt conflicts on physical silicon.
@@ -1657,9 +1745,9 @@
         </div>
       </div>
 
-      <!-- SLIDE 11 -->
+      <!-- SLIDE 12 -->
       <div class="slide" data-notes="Review the 15 risks (R1-R15). Emphasize our engineering discipline: no claims made without target evidence. Vacuous evidence trap avoided.">
-        <span class="slide-badge">Slide 11 &bull; Governance &amp; Risk</span>
+        <span class="slide-badge">Slide 12 &bull; Governance &amp; Risk</span>
         <h2 class="slide-title">Strategic Retrospective: R1–R15 Outcomes</h2>
         <p class="slide-summary">
           Transforming initial project assumptions into verified production realities through disciplined empirical auditing.
@@ -1676,9 +1764,9 @@
         </div>
       </div>
 
-      <!-- SLIDE 12 -->
+      <!-- SLIDE 13 -->
       <div class="slide" data-notes="Closing slide. Summarize achievements and open the floor for technical questions or client project discussion.">
-        <span class="slide-badge">Slide 12 &bull; Conclusion &amp; Next Steps</span>
+        <span class="slide-badge">Slide 13 &bull; Conclusion &amp; Next Steps</span>
         <h2 class="slide-title">Mission Accomplished &amp; Next Frontiers</h2>
         <p class="slide-summary">
           `bootlab-esp` demonstrates the pinnacle of embedded systems engineering: resilient, multi-OS, fully automated, and verified on real silicon.
@@ -1686,7 +1774,7 @@
         <div class="slide-cards-grid">
           <div class="slide-subcard">
             <h5>Current Verified State</h5>
-            <p>&bull; 39/56 tickets completed with evidence.<br>&bull; ESP-IDF track fully complete and 3x green.<br>&bull; Zephyr MCUboot BLE and UDP SMP verified.<br>&bull; RPi4 autonomous runner &amp; plan deployed.</p>
+            <p>&bull; 39/56 tickets completed with evidence.<br>&bull; ESP-IDF track fully complete and 3x green.<br>&bull; Zephyr MCUboot BLE and UDP SMP verified.<br>&bull; Multi-agent swarm (RPi4 + Hermes + Claude + Antigravity) verified.</p>
           </div>
           <div class="slide-subcard">
             <h5>Upcoming Milestones</h5>
@@ -1703,7 +1791,7 @@
     </div>
 
     <div class="deck-bottombar">
-      <div class="slide-counter" id="slide-num">Slide 1 of 12</div>
+      <div class="slide-counter" id="slide-num">Slide 1 of 13</div>
       <div class="progress-bar-track">
         <div class="progress-bar-fill" id="progress-fill"></div>
       </div>
