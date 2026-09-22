@@ -174,9 +174,17 @@ def make_zephyr_udp_send(target_ip: str, port: int = 1337, timeout_s: float = 20
                 if not uploaded:
                     raise UpdateError("uploaded image not found in slot 1")
 
+                # BL-065: confirm=False marks the image "test"/pending, which is what makes MCUboot
+                # actually perform the slot swap and boot into it on the next reset. confirm=True
+                # here (before the new image has ever run) let MCUboot update its own image-list
+                # bookkeeping to claim the new image active without ever swapping/booting it -- the
+                # board kept running the OLD image while SMP reported the new one "active". The
+                # device confirms itself permanently after boot via its own self-test logic
+                # (esp_zephyr/app/src/main.c's app_self_test_*), which update_zephyr() already
+                # polls for via confirm_timeout_s.
                 target_hash = getattr(uploaded, "hash", None) or bytes.fromhex(img_hash)
-                await client.request(ImageStatesWrite(hash=target_hash, confirm=True))
-                print("  UDP: marked permanent/confirmed; resetting device...", flush=True)
+                await client.request(ImageStatesWrite(hash=target_hash, confirm=False))
+                print("  UDP: marked pending/test; resetting device...", flush=True)
                 with contextlib.suppress(Exception):
                     await client.request(ResetWrite())
             finally:
@@ -232,9 +240,12 @@ def make_zephyr_ble_send(ble_address: str, timeout_s: float = 30.0):
                 if not uploaded:
                     raise UpdateError("uploaded image not found in slot 1")
 
+                # BL-065: see the matching comment in make_zephyr_udp_send -- confirm=False (test
+                # pending) is what makes MCUboot actually swap slots on reset; the device confirms
+                # itself after boot via its own self-test logic.
                 target_hash = getattr(uploaded, "hash", None) or bytes.fromhex(img_hash)
-                await client.request(ImageStatesWrite(hash=target_hash, confirm=True))
-                print("  BLE: marked permanent/confirmed; resetting device...", flush=True)
+                await client.request(ImageStatesWrite(hash=target_hash, confirm=False))
+                print("  BLE: marked pending/test; resetting device...", flush=True)
                 with contextlib.suppress(Exception):
                     await client.request(ResetWrite())
             finally:
