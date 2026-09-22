@@ -373,6 +373,79 @@
       user-select: none;
     }
 
+    /* --- Tech Vector Badges & Logos --- */
+    .tech-badges-container {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      margin: 18px 0 22px 0;
+    }
+
+    .tech-badge-card {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 8px 16px;
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition-fast);
+      text-decoration: none;
+    }
+    .tech-badge-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-glow);
+      text-decoration: none;
+    }
+    .tech-badge-card.esp:hover { border-color: #ef4444; }
+    .tech-badge-card.freertos:hover { border-color: var(--accent-primary); }
+    .tech-badge-card.zephyr:hover { border-color: var(--accent-cyan); }
+
+    .tech-badge-icon {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .tech-badge-info {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+    }
+    .tech-badge-name {
+      font-family: var(--font-heading);
+      font-size: 19px;
+      line-height: 1;
+      letter-spacing: 0.04em;
+      color: var(--text-contrast);
+    }
+    .tech-badge-sub {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+
+    .arch-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      gap: 12px;
+    }
+    .arch-card-logos {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
     /* --- Section Headers --- */
     .section-block {
       padding: 40px 0;
@@ -929,6 +1002,57 @@
         and <strong>Zephyr RTOS</strong> on physical ESP32-S3 hardware.
       </p>
 
+      <!-- Technology Logo Badges -->
+      <div class="tech-badges-container">
+        <!-- ESP32-S3 -->
+        <div class="tech-badge-card esp" title="Espressif ESP32-S3 Dual-Core Xtensa">
+          <div class="tech-badge-icon">
+            <svg viewBox="0 0 36 36" width="30" height="30" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="36" height="36" rx="7" fill="#E7352C"/>
+              <path d="M18 7C11.925 7 7 11.925 7 18C7 24.075 11.925 29 18 29C23.075 29 27.35 25.55 28.625 20.85H22.1C21.25 22.8 19.35 24.15 17.15 24.15C13.75 24.15 11 21.4 11 18C11 14.6 13.75 11.85 17.15 11.85C19.35 11.85 21.25 13.2 22.1 15.15H28.625C27.35 10.45 23.075 7 18 7Z" fill="white"/>
+              <circle cx="21" cy="18" r="3.2" fill="white"/>
+            </svg>
+          </div>
+          <div class="tech-badge-info">
+            <span class="tech-badge-name">ESP32-S3</span>
+            <span class="tech-badge-sub">Espressif Silicon</span>
+          </div>
+        </div>
+
+        <!-- FreeRTOS -->
+        <div class="tech-badge-card freertos" title="FreeRTOS Real-Time Kernel">
+          <div class="tech-badge-icon">
+            <svg viewBox="0 0 36 36" width="30" height="30" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="36" height="36" rx="7" fill="#172230" stroke="#10b981" stroke-width="1.5"/>
+              <path d="M8 11.5C8 9.5 9.5 8 11.5 8H24.5C26.5 8 28 9.5 28 11.5V15H8V11.5Z" fill="#10B981"/>
+              <path d="M8 17.5H28V24.5C28 26.5 26.5 28 24.5 28H11.5C9.5 28 8 26.5 8 24.5V17.5Z" fill="#F59E0B"/>
+              <text x="18" y="21" fill="#0A0E14" font-family="'JetBrains Mono', monospace" font-size="7" font-weight="900" text-anchor="middle">RTOS</text>
+            </svg>
+          </div>
+          <div class="tech-badge-info">
+            <span class="tech-badge-name">FreeRTOS</span>
+            <span class="tech-badge-sub">Real-Time Kernel</span>
+          </div>
+        </div>
+
+        <!-- Zephyr RTOS -->
+        <div class="tech-badge-card zephyr" title="Zephyr RTOS (Linux Foundation)">
+          <div class="tech-badge-icon">
+            <svg viewBox="0 0 36 36" width="30" height="30" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="36" height="36" rx="7" fill="#172230" stroke="#38bdf8" stroke-width="1.5"/>
+              <polygon points="18,6 27,15 18,17" fill="#8B5CF6"/>
+              <polygon points="18,6 9,15 18,17" fill="#00B4D8"/>
+              <polygon points="18,17 27,15 18,30" fill="#FF7A00"/>
+              <polygon points="18,17 9,15 18,30" fill="#10B981"/>
+            </svg>
+          </div>
+          <div class="tech-badge-info">
+            <span class="tech-badge-name">Zephyr RTOS</span>
+            <span class="tech-badge-sub">Linux Foundation</span>
+          </div>
+        </div>
+      </div>
+
       <div class="contact-bar">
         <button class="btn-pill primary" style="padding: 8px 20px; font-size: 13px;" onclick="launchDeck()">
           ▶ Start Presentation Deck [P]
@@ -1051,7 +1175,26 @@
       <div class="arch-grid">
         <!-- IDF BOX -->
         <div class="arch-box idf">
-          <span class="arch-chip">Track 1: ESP-IDF v5.4</span>
+          <div class="arch-card-header">
+            <span class="arch-chip">Track 1: ESP-IDF v5.4</span>
+            <div class="arch-card-logos">
+              <div title="Espressif ESP32-S3">
+                <svg viewBox="0 0 36 36" width="30" height="30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="36" height="36" rx="7" fill="#E7352C"/>
+                  <path d="M18 7C11.925 7 7 11.925 7 18C7 24.075 11.925 29 18 29C23.075 29 27.35 25.55 28.625 20.85H22.1C21.25 22.8 19.35 24.15 17.15 24.15C13.75 24.15 11 21.4 11 18C11 14.6 13.75 11.85 17.15 11.85C19.35 11.85 21.25 13.2 22.1 15.15H28.625C27.35 10.45 23.075 7 18 7Z" fill="white"/>
+                  <circle cx="21" cy="18" r="3.2" fill="white"/>
+                </svg>
+              </div>
+              <div title="FreeRTOS Real-Time Kernel">
+                <svg viewBox="0 0 36 36" width="30" height="30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="36" height="36" rx="7" fill="#172230" stroke="#10b981" stroke-width="1.5"/>
+                  <path d="M8 11.5C8 9.5 9.5 8 11.5 8H24.5C26.5 8 28 9.5 28 11.5V15H8V11.5Z" fill="#10B981"/>
+                  <path d="M8 17.5H28V24.5C28 26.5 26.5 28 24.5 28H11.5C9.5 28 8 26.5 8 24.5V17.5Z" fill="#F59E0B"/>
+                  <text x="18" y="21" fill="#0A0E14" font-family="'JetBrains Mono', monospace" font-size="7" font-weight="900" text-anchor="middle">RTOS</text>
+                </svg>
+              </div>
+            </div>
+          </div>
           <h3 class="arch-title">FreeRTOS &amp; Native Bootloader</h3>
           <p style="font-size: 13.5px; color: var(--text-secondary); margin-bottom: 12px;">
             Native Espressif 2-stage bootloader with anti-rollback version security, dual 2.5 MB application partitions, and 8 MB Octal PSRAM.
@@ -1068,7 +1211,27 @@
 
         <!-- ZEPHYR BOX -->
         <div class="arch-box zephyr">
-          <span class="arch-chip">Track 2: Zephyr RTOS v4.0</span>
+          <div class="arch-card-header">
+            <span class="arch-chip">Track 2: Zephyr RTOS v4.0</span>
+            <div class="arch-card-logos">
+              <div title="Zephyr Project (Linux Foundation)">
+                <svg viewBox="0 0 36 36" width="30" height="30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="36" height="36" rx="7" fill="#172230" stroke="#38bdf8" stroke-width="1.5"/>
+                  <polygon points="18,6 27,15 18,17" fill="#8B5CF6"/>
+                  <polygon points="18,6 9,15 18,17" fill="#00B4D8"/>
+                  <polygon points="18,17 27,15 18,30" fill="#FF7A00"/>
+                  <polygon points="18,17 9,15 18,30" fill="#10B981"/>
+                </svg>
+              </div>
+              <div title="MCUboot Secure Bootloader">
+                <svg viewBox="0 0 36 36" width="30" height="30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="36" height="36" rx="7" fill="#172230" stroke="#A855F7" stroke-width="1.5"/>
+                  <path d="M18 8L27 12V18C27 23.5 23.2 28 18 29.5C12.8 28 9 23.5 9 18V12L18 8Z" fill="rgba(168, 85, 247, 0.2)" stroke="#A855F7" stroke-width="1.5"/>
+                  <path d="M15 17L18 14L21 17M21 21L18 24L15 21" stroke="#A855F7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+            </div>
+          </div>
           <h3 class="arch-title">MCUboot &amp; MCUmgr SMP</h3>
           <p style="font-size: 13.5px; color: var(--text-secondary); margin-bottom: 12px;">
             Linux Foundation open-source RTOS with MCUboot swap-with-revert orchestration, MCUmgr SMP management over BLE and UDP port 1337.
@@ -1296,7 +1459,16 @@
 
       <!-- SLIDE 3 -->
       <div class="slide" data-notes="Showcase the silicon: ESP32-S3 Dual-Core Xtensa LX7 @ 240 MHz. Emphasize that we proved 8MB Octal PSRAM timing and USB-Serial-JTAG enumeration without hardware lock-in.">
-        <span class="slide-badge">Slide 03 &bull; Hardware Topology</span>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="slide-badge">Slide 03 &bull; Hardware Topology</span>
+          <div title="Espressif ESP32-S3">
+            <svg viewBox="0 0 36 36" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="36" height="36" rx="8" fill="#E7352C"/>
+              <path d="M18 7C11.925 7 7 11.925 7 18C7 24.075 11.925 29 18 29C23.075 29 27.35 25.55 28.625 20.85H22.1C21.25 22.8 19.35 24.15 17.15 24.15C13.75 24.15 11 21.4 11 18C11 14.6 13.75 11.85 17.15 11.85C19.35 11.85 21.25 13.2 22.1 15.15H28.625C27.35 10.45 23.075 7 18 7Z" fill="white"/>
+              <circle cx="21" cy="18" r="3.2" fill="white"/>
+            </svg>
+          </div>
+        </div>
         <h2 class="slide-title">Target Silicon: Physical ESP32-S3 Rig</h2>
         <p class="slide-summary">
           Tested on actual ESP32-S3 hardware (`lab-esp-idf` and `lab-esp-zephyr`) featuring high-speed Octal PSRAM and native USB-Serial-JTAG.
@@ -1315,7 +1487,26 @@
 
       <!-- SLIDE 4 -->
       <div class="slide" data-notes="ESP-IDF track deep dive: FreeRTOS architecture, dual 2.5MB application partitions, esp_https_ota pull over WiFi, NimBLE BLE OTA, and hardware watchdog panic verification.">
-        <span class="slide-badge">Slide 04 &bull; Track 1: ESP-IDF</span>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="slide-badge">Slide 04 &bull; Track 1: ESP-IDF</span>
+          <div style="display:flex; gap:8px;">
+            <div title="Espressif ESP32-S3">
+              <svg viewBox="0 0 36 36" width="32" height="32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="36" height="36" rx="7" fill="#E7352C"/>
+                <path d="M18 7C11.925 7 7 11.925 7 18C7 24.075 11.925 29 18 29C23.075 29 27.35 25.55 28.625 20.85H22.1C21.25 22.8 19.35 24.15 17.15 24.15C13.75 24.15 11 21.4 11 18C11 14.6 13.75 11.85 17.15 11.85C19.35 11.85 21.25 13.2 22.1 15.15H28.625C27.35 10.45 23.075 7 18 7Z" fill="white"/>
+                <circle cx="21" cy="18" r="3.2" fill="white"/>
+              </svg>
+            </div>
+            <div title="FreeRTOS Real-Time Kernel">
+              <svg viewBox="0 0 36 36" width="32" height="32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="36" height="36" rx="7" fill="#172230" stroke="#10b981" stroke-width="1.5"/>
+                <path d="M8 11.5C8 9.5 9.5 8 11.5 8H24.5C26.5 8 28 9.5 28 11.5V15H8V11.5Z" fill="#10B981"/>
+                <path d="M8 17.5H28V24.5C28 26.5 26.5 28 24.5 28H11.5C9.5 28 8 26.5 8 24.5V17.5Z" fill="#F59E0B"/>
+                <text x="18" y="21" fill="#0A0E14" font-family="'JetBrains Mono', monospace" font-size="7" font-weight="900" text-anchor="middle">RTOS</text>
+              </svg>
+            </div>
+          </div>
+        </div>
         <h2 class="slide-title">ESP-IDF: FreeRTOS Dual-Slot Rollback</h2>
         <p class="slide-summary">
           Production 2-stage bootloader architecture with anti-rollback protection, dual 2.5 MB app slots, and simultaneous WiFi + BLE radio stacks.
@@ -1334,7 +1525,27 @@
 
       <!-- SLIDE 5 -->
       <div class="slide" data-notes="Zephyr RTOS track: MCUboot swap-with-revert. Emphasize that we verified both Bluetooth LE SMP and WiFi UDP SMP running concurrently on internal SRAM.">
-        <span class="slide-badge">Slide 05 &bull; Track 2: Zephyr RTOS</span>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="slide-badge">Slide 05 &bull; Track 2: Zephyr RTOS</span>
+          <div style="display:flex; gap:8px;">
+            <div title="Zephyr Project (Linux Foundation)">
+              <svg viewBox="0 0 36 36" width="32" height="32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="36" height="36" rx="7" fill="#172230" stroke="#38bdf8" stroke-width="1.5"/>
+                <polygon points="18,6 27,15 18,17" fill="#8B5CF6"/>
+                <polygon points="18,6 9,15 18,17" fill="#00B4D8"/>
+                <polygon points="18,17 27,15 18,30" fill="#FF7A00"/>
+                <polygon points="18,17 9,15 18,30" fill="#10B981"/>
+              </svg>
+            </div>
+            <div title="MCUboot Secure Bootloader">
+              <svg viewBox="0 0 36 36" width="32" height="32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="36" height="36" rx="7" fill="#172230" stroke="#A855F7" stroke-width="1.5"/>
+                <path d="M18 8L27 12V18C27 23.5 23.2 28 18 29.5C12.8 28 9 23.5 9 18V12L18 8Z" fill="rgba(168, 85, 247, 0.2)" stroke="#A855F7" stroke-width="1.5"/>
+                <path d="M15 17L18 14L21 17M21 21L18 24L15 21" stroke="#A855F7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+        </div>
         <h2 class="slide-title">Zephyr RTOS: MCUboot &amp; MCUmgr SMP</h2>
         <p class="slide-summary">
           Open-source RTOS standard leveraging MCUboot swap-with-revert mechanics, MCUmgr SMP management over BLE and UDP port 1337.
