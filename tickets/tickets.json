@@ -983,7 +983,8 @@
       ],
       "deps": [
         "BL-050",
-        "BL-064"
+        "BL-064",
+        "BL-065"
       ],
       "desc": "PLAN \u00a78 P4 matrix.",
       "ac": [
@@ -1007,7 +1008,7 @@
         "idf": "done",
         "zephyr": "todo"
       },
-      "block_reason": "idf track done. zephyr track blocked on BL-064: LABID UART RX dead after booting the BLE-coexistence build (irq=0, rx=0), so the live T02/T03 BLE/UDP tests can't verify post-update state over LABID."
+      "block_reason": "idf track done. zephyr track blocked on BL-064 (LABID UART RX dies after a BLE connect/disconnect, fix attempt in progress and unconfirmed) and BL-065 (UDP SMP OTA reports success but MCUboot never swaps slots)."
     },
     {
       "id": "BL-052",
@@ -1480,6 +1481,27 @@
       "ac": [
         "Live host writes to the board over LABID UART succeed after booting build_v2 (or any BLE-coexistence variant)",
         "Board's own heartbeat log reports irq>0 after a host write is sent"
+      ],
+      "status": "todo",
+      "pr": ""
+    },
+    {
+      "id": "BL-065",
+      "epic": "E2",
+      "title": "Zephyr UDP SMP OTA: marked confirmed but MCUboot never swaps slots",
+      "size": "M",
+      "boards": [
+        "zephyr"
+      ],
+      "tracks": [
+        "zephyr"
+      ],
+      "deps": [
+        "BL-035"
+      ],
+      "desc": "Found 2026-09-23 while testing BL-064's reorder fix. A UDP SMP OTA v2->v1 uploaded 100%, the client sent ImageStatesWrite(confirm=True) successfully, and the device reset -- but LABID's before/after snapshot shows the board still running the OLD image after the reset (app=2.0.0 both before and after), i.e. MCUboot never actually swapped to the newly uploaded image. host/labflash/update_cli.py's make_zephyr_udp_send/check_zephyr_image path reported the upload and confirm as fully successful (all host-side checks PASS except the final 'running the new image' one), so this looks like either: the confirm write happened before the image was fully validated/written (a race), or the UDP SMP transport's slot targeting is wrong (uploading into the wrong slot, or the primary slot instead of the secondary), or MCUboot's swap_type logic isn't seeing the pending image as a valid upgrade candidate over this specific transport. Needs a live watched console (BL-060's console.log) during a UDP OTA to see what MCUboot actually does on reset -- was BL-064's fresh evidence, not yet in its own evidence file.",
+      "ac": [
+        "Live UDP SMP OTA v1<->v2 actually swaps and boots the new image (not just reports success)"
       ],
       "status": "todo",
       "pr": ""

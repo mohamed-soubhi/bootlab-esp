@@ -84,3 +84,30 @@ VER: {'bl': 'mcuboot', 'app': '1.0.0', ..., 'confirmed': '1'}
 
 Blocks `BL-051[zephyr]` (T02/T03 BLE/UDP need working LABID for pre/post verification) and by
 extension `BL-052`/`BL-053[zephyr]`. `BL-051[idf]` is unaffected and stays done.
+
+## Fix attempt 1 result: promising but unconfirmed against the real trigger
+
+Rebuilt `build_v2` with the reorder (`a9a0fdc`), reflashed, then ran `factory_reset`'s precondition
+step, which downgrades v2 -> v1 over **UDP** (not BLE -- `reset_to_v1()`'s default transport for
+zephyr). Result: the full UDP transfer (100%, "marked permanent/confirmed; resetting device") happened
+with LABID communicating cleanly throughout and after -- **no write-timeout freeze**, which is the
+best evidence so far that the reorder helps. However:
+
+1. This only exercised UDP, not the actual BLE connect/disconnect that originally triggered the bug
+   (`Disconnected from AC:A7:04:2C:3B:06`) -- still unconfirmed against the real trigger.
+2. It surfaced a **separate, unrelated bug**: despite "marked permanent/confirmed" and a reset, the
+   board came back still running `2.0.0` (`LABID before: app=2.0.0 slot=0; after: app=2.0.0 slot=0`),
+   i.e. MCUboot did not actually swap to the newly-uploaded v1 image via the UDP SMP path. Filed
+   separately as **BL-065** (not documented in depth here -- this file is BL-064's).
+3. A later `Write timeout` was reproduced again, but this time immediately after the pytest process
+   exited (uncaught error) rather than during live operation -- likely stale Windows COM driver state
+   from the abrupt process exit (seen this pattern earlier in the session, unrelated to the reorder
+   fix or firmware), not necessarily the original bug recurring. A fresh esptool connection over WSL2
+   opened/wrote/read the board fine immediately after.
+
+Board reflashed back to the known-good confirmed `build_v1` (pre-fix baseline, since the reorder is
+still unconfirmed) via esptool from WSL2 to leave it healthy for whoever continues this.
+
+**Next step for whoever continues:** with the board on a build carrying the reorder fix, force it to
+v1 directly via esptool (bypassing the broken UDP swap from BL-065) so a v1->v2 **BLE** OTA (the actual
+original trigger) can be tested end-to-end, watching for the write-timeout freeze specifically.

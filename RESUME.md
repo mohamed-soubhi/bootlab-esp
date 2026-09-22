@@ -13,6 +13,33 @@ directory on this machine AND the Windows mirror -- a commit made here can catch
 from the other session (happened at least once, see commit `d308248`'s history); check `git status`
 and `git log -3` before assuming a clean starting point.
 
+## BL-064 FIX ATTEMPT (this instance, 2026-09-23)
+
+- **Reordered `esp_zephyr/app/src/main.c`** (`a9a0fdc`): BLE/WiFi radio init now runs before
+  `labid_port_init()`, so the console UART RX interrupt registers last. Hypothesis: a BLE connection
+  event reprograms ESP32's interrupt matrix and can silently steal an earlier-claimed vector.
+- **Also fixed a real, unrelated bug found along the way**: `LiveBackend.image_for()` looked up
+  zephyr's v1 image under `VARIANT_DIRS["v1"]="build"` (IDF's convention), which pointed at a stale
+  pre-BLE/WiFi build from initial Zephyr bring-up (137 KB vs the real ~736 KB). Zephyr's actual
+  convention is `build_<variant>` uniformly; now prefers `build_v1` first.
+- **Result: promising but NOT yet confirmed against the real trigger.** Rebuilt+reflashed build_v2,
+  ran a full UDP OTA transfer through `factory_reset`'s precondition step -- LABID communicated
+  cleanly throughout and after, no write-timeout freeze (the original bug's exact symptom). Good
+  partial evidence. But this only exercised UDP, not the actual BLE connect/disconnect that originally
+  broke it -- still unconfirmed.
+- **BL-065 opened**: that same UDP test surfaced a SEPARATE bug -- the OTA reports 100% uploaded +
+  confirmed, but MCUboot never actually swaps slots (board still runs the old image after reset).
+  Blocks `BL-051[zephyr]` alongside BL-064.
+- **Board left on the pre-fix known-good confirmed `build_v1`** (esptool from WSL2, identity verified)
+  -- NOT the build_v2-with-reorder-fix, since that fix is still unconfirmed and BL-065 makes UDP-based
+  testing unreliable right now.
+- Full evidence, including the fix-attempt writeup: `scripts/evidence/bl064_zephyr_labid_rx_irq_dead.md`.
+
+**Next step for whoever continues BL-064**: flash the board to v1 directly via esptool (skip the
+broken UDP swap, BL-065), then run a real v1->v2 **BLE** OTA (`test_t02_update_v1_to_v2_ble_zephyr`)
+against a build carrying the `a9a0fdc` reorder fix -- that's the actual original trigger, not yet
+tested end-to-end.
+
 ## ZEPHYR TAKEOVER (this instance, 2026-09-22, after the peer ran out of tokens)
 
 - **BL-050[zephyr] done** (`4ba2cd0`). Board was found stuck in the ROM download bootloader (BOOT
