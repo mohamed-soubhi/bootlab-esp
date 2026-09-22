@@ -24,9 +24,16 @@ and `git log -3` before assuming a clean starting point.
   mid-test with BLE actively advertising (`irq=130, rx=1260`). It's specifically booting
   `APP_VARIANT_V2` that kills it -- reproduced identically via a live OTA swap AND a fresh direct
   esptool flash of build_v2 (no OTA involved at all). So the trigger is NOT a BLE connection event and
-  NOT init order -- it's tied to the v2 variant itself. The only other variant-specific code path
-  (`app_blink_half_period_ms`, just a `k_msleep` interval for the same LED driver) was reasoned through
-  and looks unlikely, but not proven on hardware.
+  NOT init order.
+- **Isolation test — root cause narrowed to the 4Hz blink rate, not the version label.** Built a
+  diagnostic image (`app=2.0.0` label, `led_strip` timing forced to the 1Hz path): LABID worked fine
+  (`irq=1, rx=10` after one query). Combined with v1@1Hz working and v2@4Hz not, this isolates it
+  cleanly: the 4Hz blink rate is the trigger, not `APP_VARIANT_V2` itself. Candidate mechanism: WS2812
+  is driven over I2S (`CONFIG_WS2812_STRIP_I2S`), called once per half-period in the blink loop -- 4x
+  more often at 4Hz than 1Hz; the `ws2812_i2s` Zephyr driver may block/disable interrupts during a
+  transaction, or share a DMA channel/interrupt priority with USB-Serial-JTAG. Not yet confirmed at the
+  driver-source level (`~/zephyrproject/zephyr` modules, not inspected). Diagnostic source change was
+  reverted, not committed; `build_v2` rebuilt clean.
 - **Also fixed a real, unrelated, KEPT bug**: `LiveBackend.image_for()` looked up zephyr's v1 image
   under `VARIANT_DIRS["v1"]="build"` (IDF's convention), which pointed at a stale pre-BLE/WiFi build
   from initial bring-up (137 KB vs the real ~736 KB). Now prefers `build_v1` first, matching zephyr's
@@ -34,12 +41,14 @@ and `git log -3` before assuming a clean starting point.
 - **BL-065 opened** (separate bug, found along the way): a UDP SMP OTA reports 100% uploaded +
   confirmed, but MCUboot never actually swaps slots. Blocks `BL-051[zephyr]` alongside BL-064.
 - **Board left on the known-good confirmed `build_v1`** (esptool from WSL2, identity verified).
-- Full evidence, both attempts: `scripts/evidence/bl064_zephyr_labid_rx_irq_dead.md`. Ideas for next
-  steps (binary-search blink_hz vs variant label, instrument `uart_irq_rx_enable()`'s return value
-  over time, check ESP32 Zephyr HAL erratum trackers) are listed there too.
+- Full evidence, all rounds: `scripts/evidence/bl064_zephyr_labid_rx_irq_dead.md`. Next-step ideas
+  (read `ws2812_i2s` driver source, try an RMT-backed LED driver instead, rate-limit
+  `led_strip_update_rgb()` calls while keeping the visible 4Hz toggle) are listed there.
 
-**Session note**: each rebuild+flash+live-BLE-test cycle costs ~10 minutes of real board/session time;
-stopped after disproving attempt 1 rather than keep guessing blind. Root cause is still open.
+**Session note**: each rebuild+flash+live-test cycle costs ~10 minutes of real board/session time. Went
+from "unknown firmware bug" to a clean, reproducible, narrowed-to-one-mechanism repro (4Hz LED-over-I2S
+update rate) across three rounds of live testing. A source-level fix in the LED driver or blink loop is
+the likely next step, not yet attempted.
 
 ## ZEPHYR TAKEOVER (this instance, 2026-09-22, after the peer ran out of tokens)
 
