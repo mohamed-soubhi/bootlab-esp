@@ -48,6 +48,7 @@ esp_zephyr/**/build*/
 
 # Local scratch / helper clones
 bootloader/
-tools/
+tools/*
+!tools/dashboard/
 package.json
 tests_hil/reports/
