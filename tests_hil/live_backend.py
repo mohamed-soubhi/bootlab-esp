@@ -245,6 +245,7 @@ class LiveBackend:
             udp_port=1337, confirm_timeout=30.0,
             keys=str(self.keys_dir) if self.keys_dir else None, ca_cert=None, server_cert=None, server_key=None,
             token=None, env_file=self.env_file or "credentials.env", rig=self.rig_path, timeout=timeout_s or self.timeout_s)
+        args.transport_factory = self.transport_factory   # shares the SharedConsolePort, if one is open (BL-060)
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             rc = self.update_fn(args)

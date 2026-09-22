@@ -400,7 +400,7 @@ def run_update_zephyr(args, image: bytes) -> int:
             except BoardResolutionError as err:
                 print(f"ERROR: {err} (pass --labid-port COMx, or --no-labid)", file=sys.stderr)
                 return 1
-        snapshot_fn = labid_snapshot_fn(port)
+        snapshot_fn = labid_snapshot_fn(port, getattr(args, "transport_factory", None))
         smp_fn = smp_snapshot_fn
 
     print(f"Updating zephyr over {args.transport}: {args.image} ({len(image)} bytes, hash {image_hash[:8]}...)", flush=True)
@@ -460,7 +460,7 @@ def run_update_idf(args, image: bytes) -> int:
                 except BoardResolutionError as err:
                     print(f"ERROR: {err} (pass --labid-port COMx, or --no-labid)", file=sys.stderr)
                     return 1
-            snapshot_fn = labid_snapshot_fn(port)
+            snapshot_fn = labid_snapshot_fn(port, getattr(args, "transport_factory", None))
 
         if args.transport == "wifi":
             server = OtaServer(workdir_cm.name, args.http_port, args.server_cert or keys / "server_cert.pem",
