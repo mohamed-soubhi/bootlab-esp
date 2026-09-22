@@ -49,3 +49,7 @@ i2s_led: &i2s0 {
 &wdt0 {
 	status = "okay";
 };
+
+&wifi {
+	status = "okay";
+};

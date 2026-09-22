@@ -6,17 +6,17 @@
 
 ## Overall
 
-`███████████████████░░░░░░░░░░░` **33/52 done (63%)**
+`████████████████████░░░░░░░░░░` **35/53 done (66%)**
 
-- **IDF track:** `████████████████░░░░` 33/42
-- **Zephyr track:** `███████████░░░░░░░░░` 21/37
+- **IDF track:** `████████████████░░░░` 34/42
+- **Zephyr track:** `████████████░░░░░░░░` 22/37
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 5
+    "todo" : 4
     "doing" : 7
     "blocked" : 7
-    "done" : 33
+    "done" : 35
 ```
 
 ## Epics
@@ -26,9 +26,9 @@ pie showData title Ticket status
 | E0 | P0 | Host & rig setup | `████████████` | 8/8 | ✅ done | §2, §3, §8 P0 |
 | EL | PL | LABID common library | `████████████` | 4/4 | ✅ done | §7.3, §8 PL |
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `████████████` | 9/9 | ✅ done | §4.2, §5, §6, §7.2, §8 P1 |
-| E2 | P2 | ESP32-S3 #1 — Zephyr | `█████████░░░` | 7/9 | 🔵 doing | §4.1, §5, §6, §7.1, §8 P2 |
+| E2 | P2 | ESP32-S3 #1 — Zephyr | `███████████░` | 8/9 | 🔵 doing | §4.1, §5, §6, §7.1, §8 P2 |
 | E3 | P3 | labflash CLI | `█████████░░░` | 5/7 | 🔵 doing | §8 P3 |
-| E4 | P4 | HIL tests + CI | `░░░░░░░░░░░░` | 0/9 | 🟥 blocked | §8 P4 |
+| E4 | P4 | HIL tests + CI | `█░░░░░░░░░░░` | 1/10 | 🟥 blocked | §8 P4 |
 | E5 | P5 | Soak, docs, handover | `░░░░░░░░░░░░` | 0/6 | 🟥 blocked | §8 P5 |
 
 ## Epic dependency graph
@@ -38,9 +38,9 @@ flowchart LR
     E0["P0 Host & rig setup<br/>8/8"]:::done
     EL["PL LABID common library<br/>4/4"]:::done
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>9/9"]:::done
-    E2["P2 ESP32-S3 #1 — Zephyr<br/>7/9"]:::doing
+    E2["P2 ESP32-S3 #1 — Zephyr<br/>8/9"]:::doing
     E3["P3 labflash CLI<br/>5/7"]:::doing
-    E4["P4 HIL tests + CI<br/>0/9"]:::blocked
+    E4["P4 HIL tests + CI<br/>1/10"]:::blocked
     E5["P5 Soak, docs, handover<br/>0/6"]:::blocked
     E0 --> EL
     E1 --> E3
@@ -56,7 +56,7 @@ flowchart LR
 
 ## Ready to start now
 
-- **BL-035** Zephyr WiFi + SMP over UDP (single build with BT) (L) — E2
+- **BL-036** Zephyr phase acceptance run (S) — E2
 
 ## Blocked
 
@@ -450,7 +450,7 @@ Run all P1 acceptance checks. [RESULT 2026-09-21 -- ALL 6 PLAN P1 CHECKBOXES PAS
 | ✅ | BL-032 | Zephyr LABID port on console | S | zephyr | BL-031, BL-014b |  |
 | ✅ | BL-033 | Zephyr self-test + confirm + twister tests | S | zephyr | BL-031 |  |
 | ✅ | BL-034 | Zephyr mcumgr SMP over BLE | M | zephyr | BL-033 |  |
-| ⬜ | BL-035 | Zephyr WiFi + SMP over UDP (single build with BT) | L | zephyr | BL-034 |  |
+| ✅ | BL-035 | Zephyr WiFi + SMP over UDP (single build with BT) | L | zephyr | BL-034 |  |
 | ⬜ | BL-036 | Zephyr phase acceptance run | S | zephyr | BL-032, BL-035 |  |
 
 <details><summary>✅ <b>BL-005b</b> — Detect board hardware → rig.yaml (Zephyr board)</summary>
@@ -569,19 +569,19 @@ MCUMGR image + os groups over BT.
 
 </details>
 
-<details><summary>⬜ <b>BL-035</b> — Zephyr WiFi + SMP over UDP (single build with BT)</summary>
+<details><summary>✅ <b>BL-035</b> — Zephyr WiFi + SMP over UDP (single build with BT)</summary>
 
 - **Size:** L (3–5 days)  
 - **Boards:** zephyr  
-- **Tracks:** Zephyr ⬜ todo  
+- **Tracks:** Zephyr ✅ done  
 - **Depends on:** BL-034  
 - **Plan:** §4.1, §5, §6, §7.1, §8 P2
 
 WiFi STA, DHCP, UDP SMP port 1337.
 
 **Acceptance criteria**
-- [ ] v2 → v1 over UDP
-- [ ] One build with BT + WiFi, OR documented reason + 2 variants + owner decision
+- [x] v2 → v1 over UDP
+- [x] One build with BT + WiFi, OR documented reason + 2 variants + owner decision
 
 </details>
 
@@ -747,7 +747,8 @@ pytest with mocked BLE / serial / HTTP.
 | 🔵 | BL-055 | build.yml cloud CI | M | host | BL-028, BL-036 |  |
 | 🟥 | BL-056 | hil.yml self-hosted runner on RPi4 | M | host | BL-055, BL-051 |  |
 | 🟥 | BL-056a | IDF acceptance re-run on the RPi4 (OTA-programming host) | M | host, idf | BL-043, BL-056 |  |
-| ⬜ | BL-057 | Full HIL suite green 3× in a row | S | zephyr, idf | BL-051, BL-052, BL-053, BL-056 |  |
+| ✅ | BL-057a | Full HIL suite green 3× in a row (IDF board) | S | idf | BL-051, BL-052, BL-053 |  |
+| ⬜ | BL-057b | Full HIL suite green 3× in a row (Zephyr board) | S | zephyr | BL-051, BL-052, BL-053, BL-056 |  |
 
 <details><summary>🔵 <b>BL-050</b> — HIL framework: fixtures, markers, artifacts</summary>
 
@@ -895,21 +896,33 @@ Owner decision 2026-09-21: development stays on the current machine (WSL2 + Wind
 
 </details>
 
-<details><summary>⬜ <b>BL-057</b> — Full HIL suite green 3× in a row</summary>
+<details><summary>✅ <b>BL-057a</b> — Full HIL suite green 3× in a row (IDF board)</summary>
 
 - **Size:** S (≤ 0.5 day)  
-- **Boards:** zephyr, idf  
-- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
+- **Boards:** idf  
+- **Tracks:** IDF ✅ done  
+- **Depends on:** BL-051, BL-052, BL-053  
+- **Plan:** §8 P4
+
+Split from BL-057 on 2026-09-22 (owner decision: drop the BL-056/RPi4-runner dependency for the idf track -- these runs are live against the board from the workstation, not gated on a self-hosted CI runner). DONE: 3 consecutive live green whole-suite runs on lab-esp-idf (COM14, E0:72:A1:AA:23:90); evidence scripts/evidence/bl057_live_suite_2026-09-22/. A real bug was found and fixed along the way: Windows/bleak sometimes returns an undiscovered GATT table on connect, so idf_ble_ota.upload now retries the connect up to 3x.
+
+**Acceptance criteria**
+- [x] 3 consecutive green runs on the idf board
+- [x] Runtime documented
+
+</details>
+
+<details><summary>⬜ <b>BL-057b</b> — Full HIL suite green 3× in a row (Zephyr board)</summary>
+
+- **Size:** S (≤ 0.5 day)  
+- **Boards:** zephyr  
+- **Tracks:** Zephyr ⬜ todo  
 - **Depends on:** BL-051, BL-052, BL-053, BL-056  
 - **Plan:** §8 P4
 
-Stability gate. [REVIEW 2026-09-21 (independent re-check): status reverted. The 3 'green runs' were `pytest tests_hil --mock-rig` (18 tests in ~5 s = a simulator, not the idf board). Repeat the suite live against the board 3x in a row.]
+Split from BL-057 on 2026-09-22. REMAINING: 3 consecutive live green whole-suite runs on lab-esp-zephyr. Kept dependent on BL-056 (RPi4/self-hosted runner) since this half has not run live yet; Zephyr hold applies.
 
 **Acceptance criteria**
-*IDF scope*
-- [ ] 3 consecutive green runs on the idf board
-- [ ] Runtime documented
-*Zephyr scope*
 - [ ] 3 consecutive green runs on the zephyr board
 
 </details>
@@ -918,9 +931,9 @@ Stability gate. [REVIEW 2026-09-21 (independent re-check): status reverted. The 
 
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
-| ⬜ | BL-060 | Overnight soak ×100 | S | zephyr, idf | BL-057 |  |
-| 🟥 | BL-061 | README quick start | S | host | BL-057 |  |
-| 🟥 | BL-062 | Recovery runbook + adding-a-board guide | S | host | BL-057 |  |
+| ⬜ | BL-060 | Overnight soak ×100 | S | zephyr, idf | BL-057a, BL-057b |  |
+| 🟥 | BL-061 | README quick start | S | host | BL-057a, BL-057b |  |
+| 🟥 | BL-062 | Recovery runbook + adding-a-board guide | S | host | BL-057a, BL-057b |  |
 | 🟥 | BL-063 | Final PLAN.md update | S | host | BL-060 |  |
 | 🟥 | BL-063a | IDF lessons learned (retrospective) | S | host | BL-060, BL-061, BL-062, BL-063, BL-056a |  |
 | 🟥 | BL-063b | HTML presentation of the IDF track | M | host | BL-063a |  |
@@ -930,7 +943,7 @@ Stability gate. [REVIEW 2026-09-21 (independent re-check): status reverted. The 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** zephyr, idf  
 - **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
-- **Depends on:** BL-057  
+- **Depends on:** BL-057a, BL-057b  
 - **Plan:** §8 P5
 
 T16 repeated per board/transport. [REVIEW 2026-09-21 (independent re-check): status reverted. The recorded '100 cycles, 100% pass' was tests_hil/test_t16_soak.py run with --mock-rig (elapsed 0.0 s; a simulated rig), not a soak on the board. A real T16 is ~100 alternating OTA cycles on lab-esp-idf via `labflash update` (hours), with the console captured. Needs a live implementation of update_ota in tests_hil/conftest.py and an owner-approved overnight window.]
@@ -950,7 +963,7 @@ T16 repeated per board/transport. [REVIEW 2026-09-21 (independent re-check): sta
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
 - **Tracks:** IDF 🟥 blocked · Zephyr ⬜ todo  
-- **Depends on:** BL-057  
+- **Depends on:** BL-057a, BL-057b  
 - **Plan:** §8 P5
 
 < 5 min from clone to first OTA. [REVIEW 2026-09-21 (independent re-check): the fresh-clone AC was not actually exercised.]
@@ -968,7 +981,7 @@ T16 repeated per board/transport. [REVIEW 2026-09-21 (independent re-check): sta
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
 - **Tracks:** IDF 🟥 blocked · Zephyr ⬜ todo  
-- **Depends on:** BL-057  
+- **Depends on:** BL-057a, BL-057b  
 - **Plan:** §8 P5
 
 docs/recovery.md, docs/adding-a-board.md. [REVIEW 2026-09-21 (independent re-check): content accepted; held by dependency BL-057.]
@@ -1074,7 +1087,7 @@ flowchart TB
         BL032["BL-032"]:::done
         BL033["BL-033"]:::done
         BL034["BL-034"]:::done
-        BL035["BL-035"]:::todo
+        BL035["BL-035"]:::done
         BL036["BL-036"]:::todo
     end
     subgraph E3_g["P3 labflash CLI"]
@@ -1095,7 +1108,8 @@ flowchart TB
         BL055["BL-055"]:::doing
         BL056["BL-056"]:::blocked
         BL056a["BL-056a"]:::blocked
-        BL057["BL-057"]:::todo
+        BL057a["BL-057a"]:::done
+        BL057b["BL-057b"]:::todo
     end
     subgraph E5_g["P5 Soak, docs, handover"]
         BL060["BL-060"]:::todo
@@ -1181,13 +1195,19 @@ flowchart TB
     BL051 --> BL056
     BL043 --> BL056a
     BL056 --> BL056a
-    BL051 --> BL057
-    BL052 --> BL057
-    BL053 --> BL057
-    BL056 --> BL057
-    BL057 --> BL060
-    BL057 --> BL061
-    BL057 --> BL062
+    BL051 --> BL057a
+    BL052 --> BL057a
+    BL053 --> BL057a
+    BL051 --> BL057b
+    BL052 --> BL057b
+    BL053 --> BL057b
+    BL056 --> BL057b
+    BL057a --> BL060
+    BL057b --> BL060
+    BL057a --> BL061
+    BL057b --> BL061
+    BL057a --> BL062
+    BL057b --> BL062
     BL060 --> BL063
     BL060 --> BL063a
     BL061 --> BL063a

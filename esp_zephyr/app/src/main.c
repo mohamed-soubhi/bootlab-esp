@@ -15,6 +15,7 @@
 #include "app_self_test.h"
 #include "labid_port_zephyr.h"
 #include "app_ble_smp.h"
+#include "app_wifi.h"
 
 LOG_MODULE_REGISTER(bootlab_app, LOG_LEVEL_INF);
 
@@ -163,6 +164,11 @@ int main(void)
     int ble_rc = app_ble_smp_init();
     if (ble_rc != 0) {
         LOG_WRN("Failed to initialize BLE SMP: %d", ble_rc);
+    }
+
+    int wifi_rc = app_wifi_init();
+    if (wifi_rc != 0) {
+        LOG_WRN("Failed to initialize WiFi: %d", wifi_rc);
     }
 
 #if defined(CONFIG_APP_VARIANT_HANG)

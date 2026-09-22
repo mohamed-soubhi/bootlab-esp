@@ -107,11 +107,22 @@ finish them. The owner is restarting the machine; this section is this instance'
     - Verified `hang` variant test-boot: uploaded `zephyr_hang.bin` (361,738 bytes in 10.9s), armed watchdog, watchdog reset after 5.0s, and MCUboot rolled back to `v2` in slot 0.
     - Verified `bad_sig` variant refusal: uploaded `zephyr_bad_sig.bin` (427,467 bytes in 10.9s) signed with foreign key, MCUboot rejected signature, refused to boot slot 1, and booted safe `v2` in slot 0.
     - Full evidence written to `scripts/evidence/bl034_zephyr_ble_smp.md`.
-    - Next: `BL-035` (Zephyr WiFi + SMP over UDP).
+  - `BL-035` (Zephyr WiFi + SMP over UDP) — **DONE & VERIFIED ON TARGET**:
+    - Zephyr firmware updated with ESP32 WiFi STA driver, L2 networking, and MCUmgr UDP transport on port 1337 (`esp_zephyr/app/src/app_wifi.[ch]`).
+    - Unified single binary build achieved: both Bluetooth LE and WiFi run concurrently on internal SRAM.
+    - Verified network association and DHCP IPv4 acquisition (`192.168.1.153`).
+    - Verified SMP Echo (`EchoWrite`) and image list (`ImageStatesRead`) over UDP port 1337.
+    - Verified live UDP OTA downgrade `v2 -> v1` (736,028 bytes) in 15.4s (46.7 KB/s). Device rebooted into `v1`, auto-confirmed.
+    - Verified coexistence: simultaneous responses on both BLE and UDP transports on the running build.
+    - Full evidence written to `scripts/evidence/bl035_zephyr_wifi_smp.md`.
+    - Next: `BL-036` (Zephyr phase acceptance run).
   - Helper tools created & verified:
     - `scripts/ble_smp_query.py`: inspect GATT database with uncached discovery.
     - `scripts/test_smp_ops.py`: smoke test SMP Echo and ImageStatesRead over BLE.
     - `scripts/zephyr_ble_ota.py`: full BLE OTA pipeline (upload, test/confirm, reset, verify) using `smpclient` with flash erase auto-reconnect.
+    - `scripts/probe_udp_smp.py`: subnet scanner discovering Zephyr UDP SMP servers on port 1337.
+    - `scripts/test_udp_smp.py`: smoke test SMP Echo and ImageStatesRead over UDP port 1337.
+    - `scripts/zephyr_udp_ota.py`: full UDP OTA pipeline (upload, test/confirm, reset, verify) using `smpclient.transport.udp.SMPUDPTransport`.
 
 ## REVIEW 2026-09-21 — THE SECTION BELOW OVERSTATES; THIS ONE IS TRUE (details: `scripts/evidence/REVIEW_2026-09-21.md`)
 The IDF track is **NOT complete** and the **Zephyr gate is CLOSED** (`tickets_tool.py` reports IDF 33/42, and `next` lists no Zephyr work).
