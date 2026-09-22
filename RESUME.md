@@ -1,23 +1,32 @@
-# RESUME — bootlab-esp (checkpoint 2026-09-22)
+# RESUME — bootlab-esp (checkpoint 2026-09-22 15:10)
 
 Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
 (`C:\MSA\embedded-OS\bootlab-esp`) is a scratch dir; never edit or push from it.
 
-## ZEPHYR TRACK BRING-UP & LABFLASH PROGRESS (2026-09-22)
-- **Active Hardware**: `lab-esp-zephyr` (MAC `AC:A7:04:2C:3B:04`, USB busid `6-3`, `/dev/ttyACM0`) is attached in WSL2, alive, responsive in < 25 ms, running confirmed `v1.0.0` firmware with LABID console and 1.00 Hz LED blink loop.
-- **Peer Agent Isolation**: Peer agent operates on `lab-esp-idf` (`COM14` / busid `7-4` / `E0:72:A1:AA:23:90`). Zephyr agent never touches `COM14` / `7-4`. 0 eFuses burned.
-- **Completed Zephyr Core & Host Tickets**:
-  - `BL-030` (Zephyr MCUboot sysbuild swap-with-revert) — DONE
-  - `BL-031` (Zephyr multi-variant blink app) — DONE
-  - `BL-032` (Zephyr LABID UART console with interrupt RX) — DONE
-  - `BL-033` (Zephyr self-test, auto-confirm, twister tests) — DONE
-  - `BL-041` (identify, info, status, measure on real Zephyr board) — DONE
-  - `BL-045` (build + sign orchestration for all 5 Zephyr variants) — DONE
-  - `BL-042` (flash, recover, provision USB for Zephyr with MAC guardrails, verified on real hardware) — DONE (123 host unit tests pass, ruff & mypy clean)
-- **Next Zephyr Work**:
-  1. `BL-034`: Zephyr mcumgr SMP over BLE
-  2. `BL-035`: Zephyr UDP OTA (net / sockets)
-  3. `BL-044`: `labflash update zephyr --transport ble|udp`
+## CURRENT WORK & HARDWARE RESTART INSTRUCTIONS (2026-09-22 15:10)
+- **Machine Reboot Notice**: User requested machine restart.
+- **Peer Agent Isolation**: Peer agent is actively executing IDF soak tests in `scripts/evidence/bl060_soak_2026-09-22/`. NEVER touch, stage, modify, or commit anything in `scripts/evidence/bl060_soak_2026-09-22*`.
+- **Hardware Status**:
+  - `lab-esp-zephyr` (MAC `AC:A7:04:2C:3B:04`, BLE `AC:A7:04:2C:3B:06`, USB busid `6-3`).
+  - **After host reboot**: Attach board to WSL2 from Windows PowerShell:
+    ```powershell
+    usbipd attach --wsl --busid 6-3
+    ```
+- **Zephyr Progress Summary**:
+  - `BL-045` (build + sign orchestration for all 5 Zephyr variants) — DONE & PUSHED (`8b10e02`).
+  - `BL-042` (flash, recover, provision USB for Zephyr with identity protection) — DONE & PUSHED (`2e2b782`).
+  - `BL-034` (Zephyr mcumgr SMP over BLE) — **IN PROGRESS / 80% VERIFIED**:
+    - Zephyr firmware updated with Bluetooth LE & MCUmgr SMP (`esp_zephyr/app/src/app_ble_smp.c`).
+    - Hal Espressif blobs fetched into `/home/msoubhi/zephyrproject/modules/hal/espressif/zephyr/blobs/lib/esp32s3/`.
+    - Windows BLE GATT Caching Quirk solved: WinRT caches GATT services across reboots for a known MAC address. `winrt={"use_cached_services": False}` in BleakClient / `SMPBLETransport` forces fresh service resolution.
+    - Verified SMP Echo (`EchoWrite`) and image list (`ImageStatesRead`) over BLE.
+    - Verified live BLE OTA upload of `v2` (427,482 bytes) in 81.5s. Device rebooted into `v2`, auto-confirmed, and toggled GPIO 13 at 4.0 Hz (measured by LABID).
+    - Verified `no_confirm` variant test-boot: booted into `variant=no_confirm` without confirming, and MCUboot cleanly reverted to `v2` on subsequent reset.
+    - Remaining for BL-034: Run `hang` (watchdog revert) and `bad_sig` (refused by MCUboot) tests, write evidence `scripts/evidence/bl034_zephyr_ble_smp.md`, mark ticket done, and push.
+  - Helper tools created & verified:
+    - `scripts/ble_smp_query.py`: inspect GATT database with uncached discovery.
+    - `scripts/test_smp_ops.py`: smoke test SMP Echo and ImageStatesRead over BLE.
+    - `scripts/zephyr_ble_ota.py`: full BLE OTA pipeline (upload, test/confirm, reset, verify) using `smpclient`.
 
 ## REVIEW 2026-09-21 — THE SECTION BELOW OVERSTATES; THIS ONE IS TRUE (details: `scripts/evidence/REVIEW_2026-09-21.md`)
 The IDF track is **NOT complete** and the **Zephyr gate is CLOSED** (`tickets_tool.py` reports IDF 33/42, and `next` lists no Zephyr work).
