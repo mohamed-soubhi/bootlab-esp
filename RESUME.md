@@ -44,6 +44,21 @@ finish them. The owner is restarting the machine; this section is this instance'
     connects to the image server) and the BLE-cycle symptom was "all 305 sectors ACKed, board never
     switches slot" (see `scripts/evidence/bl060_soak_2026-09-22c/README.md` for the pre-existing
     finding this is meant to root-cause).
+- **BL-056[idf] done** — self-hosted `hil.yml` runner registered on the RPi4 (`msa-linuxRPi4`, user
+  `msa`, no sudo, `nohup ./run.sh` under `~/actions-runner`, survives SSH disconnect). Verified for
+  real via `workflow_dispatch` (run `35763148956`): the security-check step (no sudo, no `keys/`)
+  PASSED for real; the pytest step FAILED cleanly on all 19 idf tests with `board serial port not
+  found` -- expected, no board is physically attached to the RPi4 yet (that gap is BL-056a's, still
+  owner-blocked). Evidence: `scripts/evidence/bl056_rpi4_runner.md`. `BL-056[zephyr]` stays `todo`
+  (Zephyr hold). **Note on this checkpoint's own history**: the tickets.json edit + new evidence file
+  for this got swept into the peer agent's unpushed `d308248` Zephyr commit (shared working
+  directory, two sessions committing concurrently) before it was noticed; by the time it was caught,
+  `d308248` was already pushed, so it was left as-is rather than rewriting pushed history. Content is
+  correct, just filed under a Zephyr-titled commit message -- `git log -p d308248 -- tickets.json` if
+  the mixed attribution is ever confusing.
+- **RPi4 runner is live infrastructure now, not a one-off**: PID tracked via `[1] 77089` on
+  `msa-linuxRPi4` at registration time (session-specific, will differ after any restart); leave it
+  running for future PR-triggered `hil.yml` runs.
 
 ## CURRENT WORK — IDF/HIL live path (this instance, 2026-09-22, machine restart checkpoint)
 
