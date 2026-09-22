@@ -140,9 +140,15 @@ class LiveBackend:
         if d is None:
             raise LiveRigError(f"unknown variant {variant!r}")
         if self.board == "zephyr":
+            # Zephyr's real convention is build_<variant> uniformly (build_v1, build_v2, build_hang, ...);
+            # VARIANT_DIRS["v1"] = "build" is IDF's convention leaking in via the shared dict and points at
+            # a stale pre-BLE/WiFi build (BL-064). Prefer build_<variant> first.
+            variant_d = f"build_{variant}"
             candidates = [
+                self.images_dir / variant_d / "app" / "zephyr" / "zephyr.signed.bin",
                 self.images_dir / d / "app" / "zephyr" / "zephyr.signed.bin",
                 self.images_dir / d / "zephyr.signed.bin",
+                REPO / "esp_zephyr" / "app" / variant_d / "app" / "zephyr" / "zephyr.signed.bin",
                 REPO / "esp_zephyr" / "app" / d / "app" / "zephyr" / "zephyr.signed.bin",
             ]
             for p in candidates:

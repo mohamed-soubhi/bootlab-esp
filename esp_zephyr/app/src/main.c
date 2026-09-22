@@ -149,6 +149,21 @@ int main(void)
         LOG_WRN("Proceeding without hardware watchdog (%d)", wdt_rc);
     }
 
+    /* BL-064: BLE/WiFi radio init runs BEFORE labid_port_init() so the LABID console UART RX
+     * interrupt registers last, after both radio stacks have claimed their interrupt vectors --
+     * a BLE connect/disconnect event was observed to silently kill an earlier-registered UART RX
+     * IRQ (irq=0, rx=0 forever after), most likely via ESP32's interrupt matrix being reprogrammed
+     * during active RF connection handling. */
+    int ble_rc = app_ble_smp_init();
+    if (ble_rc != 0) {
+        LOG_WRN("Failed to initialize BLE SMP: %d", ble_rc);
+    }
+
+    int wifi_rc = app_wifi_init();
+    if (wifi_rc != 0) {
+        LOG_WRN("Failed to initialize WiFi: %d", wifi_rc);
+    }
+
     struct labid_app_info info = {
         .variant = app_variant_str(),
         .version = (app_variant_id() == APP_VARIANT_V2) ? "2.0.0" : "1.0.0",
@@ -159,16 +174,6 @@ int main(void)
     int labid_rc = labid_port_init(&info);
     if (labid_rc != 0) {
         LOG_WRN("Failed to initialize LABID port: %d", labid_rc);
-    }
-
-    int ble_rc = app_ble_smp_init();
-    if (ble_rc != 0) {
-        LOG_WRN("Failed to initialize BLE SMP: %d", ble_rc);
-    }
-
-    int wifi_rc = app_wifi_init();
-    if (wifi_rc != 0) {
-        LOG_WRN("Failed to initialize WiFi: %d", wifi_rc);
     }
 
 #if defined(CONFIG_APP_VARIANT_HANG)

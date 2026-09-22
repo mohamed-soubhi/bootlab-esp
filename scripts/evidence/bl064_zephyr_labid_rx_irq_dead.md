@@ -45,13 +45,30 @@ boot. The device never drains its USB-CDC RX buffer, so every host write blocks 
 level until it times out. This is a **device-side firmware bug**, not a labflash/pyserial/harness
 issue -- confirmed by reproducing it with a completely fresh, unrelated connection.
 
-## Not yet found
+## Refined diagnosis (2026-09-23): trigger is a BLE connection event, not BLE being enabled
 
-Root cause in the source. Suspect: BLE+WiFi coexistence init (BL-035, `app_ble_smp.c`/`app_wifi.c`)
-either fails to register the console UART RX IRQ on this build, or claims/disables it after
-`labid_port`'s own init runs (`labid_port: LABID initialized on console (irq RX, ANNOUNCE in 1500 ms)`
-does print at boot -- so registration is *attempted* -- but the IRQ apparently never actually fires
-once BLE is running).
+`main.c` initializes in this order: `labid_port_init()` -> `app_ble_smp_init()` -> `app_wifi_init()`.
+BLE is active (advertising) on every variant, including v1 -- and v1 answered LABID fine earlier in
+this session, fresh-booted, BLE advertising but never connected to. `build_v2` only broke LABID writes
+*after* a real BLE central (the OTA host) connected, transferred an image over SMP, and disconnected
+(`Disconnected from AC:A7:04:2C:3B:06` in the captured log immediately precedes the write timeouts).
+
+So the trigger is a **BLE connect/disconnect event**, not BLE merely being enabled/advertising. This
+matches a known class of ESP32 issue: the BT controller can reprogram the interrupt matrix (a limited
+hardware resource) during active RF connection events, and can silently reclaim the interrupt slot the
+USB-Serial-JTAG UART driver (`labid_port_zephyr.c`'s `uart_irq_callback_user_data_set` /
+`uart_irq_rx_enable`) was using -- permanently killing its RX IRQ until a full reset.
+
+## Fix attempt 1: reorder init so the console UART IRQ registers last
+
+Hypothesis: registering the UART RX interrupt (`labid_port_init()`) *before* the radio stacks claim
+their interrupt vectors (`app_ble_smp_init()`/`app_wifi_init()`) makes it vulnerable to being silently
+overwritten once a BLE connection event reprograms the interrupt matrix. Reordering so LABID's UART IRQ
+registers *last* -- after both radios are up -- should make it the most recently claimed vector and
+less likely to be stomped.
+
+Change: `esp_zephyr/app/src/main.c` -- call `app_ble_smp_init()` and `app_wifi_init()` before
+`labid_port_init()`.
 
 ## Recovery
 
