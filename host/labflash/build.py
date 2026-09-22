@@ -445,7 +445,12 @@ def build_zephyr_variant(
         extra_cmake.append(f"-DSB_EXTRA_CONF_FILE={sb_conf}")
     cmd.extend(["--", *extra_cmake])
 
+    venv_bin = str(root / ".venv" / "bin")
+    current_path = os.environ.get("PATH", "")
+    new_path = f"{venv_bin}:{current_path}" if venv_bin not in current_path else current_path
+
     zephyr_env = {
+        "PATH": new_path,
         "ZEPHYR_BASE": os.environ.get("ZEPHYR_BASE", "/home/msoubhi/zephyrproject/zephyr"),
         "ZEPHYR_TOOLCHAIN_VARIANT": "cross-compile",
         "CROSS_COMPILE": os.environ.get(

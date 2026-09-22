@@ -82,6 +82,8 @@ def make_wifi_send(board, server, host_ip: str, workdir: Path):
     def send(image: bytes, version: str) -> None:
         (workdir / "update.bin").write_bytes(image)
         status = board.trigger(f"https://{host_ip}:{server.port}/update.bin", version)
+        if status == -1:
+            raise UpdateError("the board never answered POST /ota (timed out after retrying)")
         if status != 202:
             raise UpdateError(f"the board refused POST /ota: HTTP {status} (401 = wrong token, 409 = an OTA is running)")
         print(f"  WiFi: board accepted the request; serving {len(image)} bytes from {host_ip}:{server.port}", flush=True)

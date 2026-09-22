@@ -21,12 +21,17 @@ import json
 import os
 import ssl
 import threading
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
 
 VERSION_TIMEOUT_S = 3.0
-TRIGGER_TIMEOUT_S = 5.0
+TRIGGER_TIMEOUT_S = 10.0    # soak evidence 2026-09-22: failures clustered at 5.2-5.6s against the old 5.0s
+                            # budget (the board is slower to answer once a real download server is involved
+                            # vs. an unreachable URL, which fails fast) -- widened with headroom, plus one retry.
+TRIGGER_RETRIES = 2
+TRIGGER_RETRY_PAUSE_S = 1.0
 COPY_CHUNK = 16384
 
 
@@ -126,12 +131,19 @@ class WifiBoard:
             return None
 
     def trigger(self, url: str, version: str) -> int:
-        """POST /ota {url, version}; returns the HTTP status (202 = accepted)."""
+        """POST /ota {url, version}; returns the HTTP status (202 = accepted), or -1 if the board never
+        answered after retrying (a timeout here is not necessarily the board refusing; see TRIGGER_TIMEOUT_S)."""
         req = urllib.request.Request(
             f"{self.base}/ota", data=json.dumps({"url": url, "version": version}).encode(),
             headers={"Authorization": f"Bearer {self._token}", "Content-Type": "application/json"})
-        try:
-            with urllib.request.urlopen(req, context=self._ctx, timeout=TRIGGER_TIMEOUT_S) as r:
-                return r.status
-        except urllib.error.HTTPError as err:
-            return err.code
+        for attempt in range(1, TRIGGER_RETRIES + 1):
+            try:
+                with urllib.request.urlopen(req, context=self._ctx, timeout=TRIGGER_TIMEOUT_S) as r:
+                    return r.status
+            except urllib.error.HTTPError as err:
+                return err.code
+            except urllib.error.URLError:
+                if attempt == TRIGGER_RETRIES:
+                    return -1
+                time.sleep(TRIGGER_RETRY_PAUSE_S)
+        return -1
