@@ -1,0 +1,2 @@
+mode: live
+T12 consistent: app=1.0.0 slot=1

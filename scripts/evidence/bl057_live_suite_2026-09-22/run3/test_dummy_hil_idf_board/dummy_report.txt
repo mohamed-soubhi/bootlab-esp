@@ -1,0 +1,2 @@
+mode: live
+Dummy HIL IDF test passed successfully

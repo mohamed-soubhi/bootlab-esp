@@ -40,6 +40,8 @@ DEFAULT_NAME = "nimble-ble-ota"
 ACK_TIMEOUT_S = 30.0
 START_TIMEOUT_S = 10.0
 SECTOR_RETRIES = 3
+CONNECT_ATTEMPTS = 3        # Windows/WinRT sometimes reports the GATT table before it is discovered
+CONNECT_RETRY_PAUSE_S = 2.0
 SCAN_TIMEOUT_S = 10.0
 PROGRESS_EVERY = 16
 
@@ -192,7 +194,7 @@ async def upload(image: bytes, address: str, on_progress: Callable[[int, int], N
             raise BleOtaError(f"timeout waiting for {what} ({timeout:.0f} s)") from exc
 
     started = time.monotonic()
-    async with BleakClient(address, timeout=20.0) as client:
+    async def session(client) -> dict:
         mtu = max(int(getattr(client, "mtu_size", MIN_MTU)), MIN_MTU)
         await client.start_notify(RECV_FW_UUID, on_sector_ack)
         await client.start_notify(COMMAND_UUID, on_cmd_ack)
@@ -226,8 +228,18 @@ async def upload(image: bytes, address: str, on_progress: Callable[[int, int], N
             await asyncio.wait_for(cmd_acks.get(), 3.0)
         except Exception:  # noqa: S110, BLE001 - a dropped link here means the board already rebooted
             pass
-    return {"aborted": False, "sectors_sent": len(sectors), "mtu": mtu,
-            "seconds": time.monotonic() - started}
+        return {"aborted": False, "sectors_sent": len(sectors), "mtu": mtu,
+                "seconds": time.monotonic() - started}
+
+    missing: list[str] = []
+    for attempt in range(1, CONNECT_ATTEMPTS + 1):
+        async with BleakClient(address, timeout=20.0) as client:
+            missing = [u for u in (RECV_FW_UUID, COMMAND_UUID) if client.services.get_characteristic(u) is None]
+            if not missing:
+                return await session(client)
+        if attempt < CONNECT_ATTEMPTS:
+            await asyncio.sleep(CONNECT_RETRY_PAUSE_S)
+    raise BleOtaError(f"OTA characteristics never appeared after {CONNECT_ATTEMPTS} connects: {missing}")
 
 
 def _progress(done: int, total: int) -> None:

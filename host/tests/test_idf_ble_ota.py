@@ -201,3 +201,46 @@ def test_cli_run_scan_only():
         assert rc == 0
 
 
+
+
+def test_upload_retries_when_gatt_table_incomplete_then_succeeds(monkeypatch):
+    """Windows intermittently connects with an undiscovered GATT table: reconnect instead of crashing (run-2 failure)."""
+    import asyncio
+    from unittest.mock import AsyncMock, MagicMock, patch
+
+    monkeypatch.setattr(ota, "CONNECT_RETRY_PAUSE_S", 0)
+    clients = []
+
+    def make_client(*_a, **_k):
+        c = MagicMock()
+        c.__aenter__ = AsyncMock(return_value=c)
+        c.__aexit__ = AsyncMock(return_value=None)
+        c.services.get_characteristic = MagicMock(return_value=None if len(clients) == 0 else object())
+        clients.append(c)
+        return c
+
+    # 2nd client has the characteristics -> proceeds into the transfer (start_notify on a MagicMock is not awaitable
+    # -> TypeError proves we got past discovery)
+    with patch("bleak.BleakClient", side_effect=make_client), pytest.raises(Exception) as ei:
+        asyncio.run(ota.upload(bytes(4096), "E0:72:A1:AA:23:92"))
+    assert len(clients) == 2 and "never appeared" not in str(ei.value)
+
+
+def test_upload_raises_bleotaerror_when_gatt_never_appears(monkeypatch):
+    import asyncio
+    from unittest.mock import AsyncMock, MagicMock, patch
+
+    monkeypatch.setattr(ota, "CONNECT_RETRY_PAUSE_S", 0)
+    made = []
+
+    def make_client(*_a, **_k):
+        c = MagicMock()
+        c.__aenter__ = AsyncMock(return_value=c)
+        c.__aexit__ = AsyncMock(return_value=None)
+        c.services.get_characteristic = MagicMock(return_value=None)
+        made.append(c)
+        return c
+
+    with patch("bleak.BleakClient", side_effect=make_client), pytest.raises(ota.BleOtaError, match="never appeared"):
+        asyncio.run(ota.upload(bytes(4096), "E0:72:A1:AA:23:92"))
+    assert len(made) == ota.CONNECT_ATTEMPTS

@@ -1,0 +1,2 @@
+mode: live
+T02 BLE Update OK: 2.0.0, slot 0, 4.10 Hz

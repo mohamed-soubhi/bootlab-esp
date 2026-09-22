@@ -7,7 +7,6 @@ import ssl
 import subprocess
 
 import pytest
-
 from labflash.idf_wifi_ota import OtaServer
 
 pytestmark = pytest.mark.skipif(shutil.which("openssl") is None, reason="openssl not available")
@@ -27,7 +26,7 @@ def _get(port: int, path: str = "/update.bin") -> tuple[int, int]:
     conn = http.client.HTTPSConnection("127.0.0.1", port, context=ctx, timeout=5)
     conn.request("GET", path)
     resp = conn.getresponse()
-    declared = int(resp.getheader("Content-Length"))
+    declared = int(resp.getheader("Content-Length") or 0)
     got = 0
     try:
         while chunk := resp.read(4096):

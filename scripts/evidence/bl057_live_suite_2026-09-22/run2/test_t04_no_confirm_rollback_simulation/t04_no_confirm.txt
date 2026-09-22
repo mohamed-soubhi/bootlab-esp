@@ -1,0 +1,2 @@
+mode: live
+T04 LIVE: {'app': '1.0.0', 'slot': 1, 'confirmed': True, 'uid': 'E072A1AA2390'} -> pending {'app': '1.0.0-noconfirm', 'slot': 0, 'confirmed': False, 'uid': 'E072A1AA2390'} -> reset -> {'app': '1.0.0', 'slot': 1, 'confirmed': True}

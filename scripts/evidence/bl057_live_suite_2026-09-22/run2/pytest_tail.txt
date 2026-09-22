@@ -1,0 +1,45 @@
+    send_fn(image, version)
+host\labflash\update_cli.py:101: in send
+    asyncio.run(run())
+C:\Users\MSoubhi\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py:194: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+C:\Users\MSoubhi\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\MSoubhi\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py:687: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+host\labflash\update_cli.py:98: in run
+    return await ble.upload(image, dev.address,
+host\labflash\idf_ble_ota.py:197: in upload
+    await client.start_notify(RECV_FW_UUID, on_sector_ack)
+C:\Users\MSoubhi\AppData\Local\Programs\Python\Python312\Lib\site-packages\bleak\__init__.py:892: in start_notify
+    characteristic = _resolve_characteristic(char_specifier, self.services)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+char_specifier = '00008020-0000-1000-8000-00805f9b34fb'
+services = <bleak.backends.service.BleakGATTServiceCollection object at 0x000001D730C09670>
+
+    def _resolve_characteristic(
+        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
+        services: BleakGATTServiceCollection,
+    ) -> BleakGATTCharacteristic:
+    
+        if isinstance(char_specifier, BleakGATTCharacteristic):
+            return char_specifier
+    
+        characteristic = services.get_characteristic(char_specifier)
+    
+        if not characteristic:
+>           raise BleakCharacteristicNotFoundError(char_specifier)
+E           bleak.exc.BleakCharacteristicNotFoundError: Characteristic 00008020-0000-1000-8000-00805f9b34fb was not found!
+
+C:\Users\MSoubhi\AppData\Local\Programs\Python\Python312\Lib\site-packages\bleak\__init__.py:432: BleakCharacteristicNotFoundError
+------------------------------ Captured log call ------------------------------
+WARNING  bleak.backends.winrt.client:client.py:245 E0:72:A1:AA:23:92: unhandled services changed event
+=========================== short test summary info ===========================
+SKIPPED [5] tests_hil\conftest.py:110: Zephyr track is on hold pending BL-063b per replan (2026-09-21)
+SKIPPED [1] tests_hil\conftest.py:115: No switchable USB power hub (uhubctl) detected; skipping power-cut test
+====== 1 failed, 36 passed, 6 skipped, 2 deselected in 802.14s (0:13:22) ======

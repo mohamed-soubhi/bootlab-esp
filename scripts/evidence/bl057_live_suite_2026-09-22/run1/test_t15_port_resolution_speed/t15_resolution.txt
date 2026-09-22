@@ -1,0 +1,2 @@
+mode: live
+T15 port resolved in 0.015 s (COM14)
