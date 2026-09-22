@@ -137,16 +137,50 @@ just computes a `k_msleep` interval (125ms at 4Hz vs 500ms at 1Hz) for the same 
 call -- no separate timer/interrupt resource, so unlikely to be silently claiming the UART's interrupt
 vector, but this was reasoned from source, not proven on hardware.
 
+## Isolation test: it's the 4Hz blink rate, not the variant/version label
+
+Built a diagnostic `build_v2_diag`: identical to `build_v2` (still reports `app=2.0.0`, `variant=v2`,
+blue LED) except `app_blink_half_period_ms()` forced to the 1Hz path instead of 4Hz -- a one-line
+temporary change in `main.c`, reverted after this test, not committed. Direct esptool flash (no OTA),
+then checked LABID:
+
+```
+VER: {'bl': 'mcuboot', 'app': '2.0.0', ..., 'variant': 'v2', 'confirmed': '1'}
+```
+
+**Worked immediately.** Confirmed via the raw interrupt counter too, after sending exactly one `VER?`
+query (10 bytes):
+
+```
+irq=1, rx=10
+```
+
+One interrupt, all 10 bytes received -- matches the query exactly. `app=2.0.0` with a 1Hz blink does
+NOT trigger the bug. Combined with the earlier finding (v1 at 1Hz works, v2 at 4Hz doesn't), this
+isolates the trigger cleanly: **the 4Hz blink rate, not the version/variant label, not BLE, not init
+order, not the OTA swap path.**
+
+### Candidate mechanism
+
+The LED strip is WS2812 over **I2S** (`CONFIG_WS2812_STRIP_I2S=y`, board overlay
+`compatible = "worldsemi,ws2812-i2s"`), and `led_strip_update_rgb()` is called once per half-period in
+the blink loop (`main.c`) -- 4x more often at 4Hz (every 125 ms) than at 1Hz (every 500 ms). No
+explicit `irq_lock()`/`k_busy_wait()` in the app's own blink loop, so if interrupts are being blocked,
+it's inside the I2S/WS2812 driver itself (Zephyr's `ws2812_i2s` driver internals, not inspected yet).
+
 ## Not yet tried
 
-- Binary-search the actual trigger: build a variant that's identical to v1 except `blink_hz=4` (isolate
-  the blink-rate difference specifically), and one identical to v2 except `blink_hz=1`, to see if the
-  bug follows the LED rate or the `app=2.0.0`/`variant` label itself.
+- Read Zephyr's `ws2812_i2s` driver source (not in this repo -- in `~/zephyrproject/zephyr` modules)
+  for anything that disables interrupts or blocks during an I2S transaction; check if it shares a DMA
+  channel or interrupt priority level with the USB-Serial-JTAG UART driver.
+- Try `CONFIG_WS2812_STRIP_SPI` or an RMT-backed driver instead of I2S, if available for this SoC, to
+  see if the bug is I2S-driver-specific.
+- Rate-limit the actual `led_strip_update_rgb()` calls (e.g. skip every other half-period at 4Hz) while
+  keeping the visible 4Hz *toggle* rate, to see if call frequency alone (not the 4Hz label) is what
+  matters -- would further confirm/refute the I2S-driver-load hypothesis.
 - Instrument `uart_irq_rx_enable()`'s return value and re-check it periodically (not just at boot) --
-  if something disables RX IRQ later, the return value of a later re-enable call might reveal a
-  driver-level rejection.
-- Check the ESP32-S3 Zephyr HAL/driver changelog or issue tracker for known USB-Serial-JTAG RX
-  interrupt erratum interactions with BLE controller or with build variant/Kconfig differences.
+  if something disables RX IRQ later, a later re-enable call's return value might reveal a driver-level
+  rejection.
 
 ## Board state
 
