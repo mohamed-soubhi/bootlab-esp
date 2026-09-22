@@ -1,0 +1,41 @@
+{
+  "mode": "live",
+  "requested_cycles": 100,
+  "total_cycles": 4,
+  "passes": 0,
+  "failures": 4,
+  "pass_rate_pct": 0.0,
+  "target_pct": 99.0,
+  "aborted": true,
+  "final_state_v1": true,
+  "elapsed_s": 593.0,
+  "by_transport": {
+    "wifi": {
+      "total": 2,
+      "passes": 0
+    },
+    "ble": {
+      "total": 2,
+      "passes": 0
+    }
+  },
+  "resumed_from": 1,
+  "failure_log": [
+    {
+      "cycle": 1,
+      "cause": "update raised URLError: <urlopen error timed out>"
+    },
+    {
+      "cycle": 2,
+      "cause": "update raised URLError: <urlopen error timed out>"
+    },
+    {
+      "cycle": 3,
+      "cause": "update v2 via ble failed (see update.log)"
+    },
+    {
+      "cycle": 4,
+      "cause": "update v1 via ble failed (see update.log)"
+    }
+  ]
+}

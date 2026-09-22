@@ -1,0 +1,55 @@
+--- update v2 via wifi rc=1
+Updating idf over wifi: C:\MSA\embedded-OS\bootlab-esp\esp_idf\build_v2\bootlab_idf_blink.bin (1249280 bytes)
+  WiFi: board accepted the request; serving 1249280 bytes from 192.168.1.134:8443
+host served: {} (image was 1249280 bytes)
+image version 2.0.0; before: app=1.0.0 slot=0; after: app=1.0.0 slot=0
+[FAIL] running the new image: board reports '1.0.0', image is '2.0.0'
+[FAIL] slot flipped: slot 0 -> 0
+[FAIL] confirmed: still pending verify
+[PASS] identity (uid): board E072A1AA2390, expected E072A1AA2390
+[PASS] LABID == HTTPS version: LABID app=1.0.0 slot=0; HTTPS app=1.0.0 slot=0
+UPDATE FAILED
+
+--- update v2 via wifi rc=1
+Updating idf over wifi: C:\MSA\embedded-OS\bootlab-esp\esp_idf\build_v2\bootlab_idf_blink.bin (1249280 bytes)
+  WiFi: board accepted the request; serving 1249280 bytes from 192.168.1.134:8443
+host served: {} (image was 1249280 bytes)
+image version 2.0.0; before: app=1.0.0 slot=0; after: app=1.0.0 slot=0
+[FAIL] running the new image: board reports '1.0.0', image is '2.0.0'
+[FAIL] slot flipped: slot 0 -> 0
+[FAIL] confirmed: still pending verify
+[PASS] identity (uid): board E072A1AA2390, expected E072A1AA2390
+[PASS] LABID == HTTPS version: LABID app=1.0.0 slot=0; HTTPS app=1.0.0 slot=0
+UPDATE FAILED
+
+--- update v2 via ble rc=1
+Updating idf over ble: C:\MSA\embedded-OS\bootlab-esp\esp_idf\build_v2\bootlab_idf_blink.bin (1249280 bytes)
+  BLE: found nimble-ble-ota at E0:72:A1:AA:23:92
+  BLE: sector 1/305
+  BLE: sector 17/305
+  BLE: sector 33/305
+  BLE: sector 49/305
+  BLE: sector 65/305
+  BLE: sector 81/305
+  BLE: sector 97/305
+  BLE: sector 113/305
+  BLE: sector 129/305
+  BLE: sector 145/305
+  BLE: sector 161/305
+  BLE: sector 177/305
+  BLE: sector 193/305
+  BLE: sector 209/305
+  BLE: sector 225/305
+  BLE: sector 241/305
+  BLE: sector 257/305
+  BLE: sector 273/305
+  BLE: sector 289/305
+  BLE: sector 305/305
+image version 2.0.0; before: app=1.0.0 slot=0; after: app=1.0.0 slot=0
+[FAIL] running the new image: board reports '1.0.0', image is '2.0.0'
+[FAIL] slot flipped: slot 0 -> 0
+[FAIL] confirmed: still pending verify
+[PASS] identity (uid): board E072A1AA2390, expected E072A1AA2390
+[PASS] LABID == HTTPS version: LABID app=1.0.0 slot=0; HTTPS app=1.0.0 slot=0
+UPDATE FAILED
+

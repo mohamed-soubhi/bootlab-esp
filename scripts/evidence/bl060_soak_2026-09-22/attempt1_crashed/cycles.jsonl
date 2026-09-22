@@ -1,0 +1,6 @@
+{"cycle": 1, "variant": "v2", "transport": "wifi", "ok": false, "cause": "update raised URLError: <urlopen error timed out>", "duration_s": 5.6}
+{"cycle": 2, "variant": "v1", "transport": "wifi", "ok": false, "cause": "update raised URLError: <urlopen error timed out>", "duration_s": 5.5}
+{"cycle": 2, "note": "recovery reset raised URLError: <urlopen error timed out>"}
+{"cycle": 3, "variant": "v2", "transport": "ble", "ok": false, "cause": "update v2 via ble failed (see update.log)", "duration_s": 44.8}
+{"cycle": 4, "variant": "v1", "transport": "ble", "ok": false, "cause": "update v1 via ble failed (see update.log)", "duration_s": 526.9}
+{"cycle": 6, "variant": "v1", "transport": "wifi", "ok": false, "cause": "update raised URLError: <urlopen error timed out>", "duration_s": 5.3}

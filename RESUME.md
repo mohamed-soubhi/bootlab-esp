@@ -3,6 +3,52 @@
 Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
 (`C:\MSA\embedded-OS\bootlab-esp`) is a scratch dir; never edit or push from it.
 
+**Two agents are active on this repo.** This instance owns the IDF/HIL track (`tests_hil/`, `host/labflash/`,
+`scripts/evidence/bl05*`, `scripts/evidence/bl06*`, `scripts/soak_overnight.sh`). A peer agent owns Zephyr
+(`esp_zephyr/`, `scripts/*ble_smp*`, `scripts/evidence/bl03*/bl04*`, `docs/rpi4_limitations.md`) — its uncommitted
+work-in-progress files were left untouched by this session; do not assume they are lost or that this instance should
+finish them. The owner is restarting the machine; this section is this instance's checkpoint, written on request.
+
+## CURRENT WORK — IDF/HIL live path (this instance, 2026-09-22, machine restart checkpoint)
+
+**Owner said "make the live HIL path real and continue", then approved each live run.** Summary, newest first:
+
+- **Made `tests_hil/conftest.py` live-real** (`tests_hil/live_backend.py`): calls labflash's Python APIs directly
+  against the board, verifies through LABID, refuses to run under WSL2 (R14), labels every artifact `mode: mock|live`.
+  Built a hardware DTR/RTS reset sequence (proven on the board — a plain RTS pulse does NOT reset this port; the
+  esptool-style transition sequence does).
+- **Ran every HIL test group live on `lab-esp-idf` (COM14, `E0:72:A1:AA:23:90`) and they passed**: T01–T03, T04–T09
+  (including T08 via a new `OtaServer(abort_after_bytes=...)` interrupted-transfer driver), T10–T15. T17 still skips
+  (no power hub, no driver — NOT verified).
+- **BL-057 (3x consecutive green live whole-suite run) MET** — evidence `scripts/evidence/bl057_live_suite_2026-09-22/`.
+  Found and fixed a real bug along the way: Windows/bleak sometimes returns an undiscovered GATT table on connect;
+  `idf_ble_ota.upload` now retries the connect up to 3x. **Ticket left `todo`**: `BL-057[idf]` still depends on
+  `BL-056` (RPi4 runner) though these runs are from the workstation per the 2026-09-21 replan — **owner decision
+  still needed**: drop/re-scope that dependency.
+- **BL-060 (100-cycle soak) is NOT met and is now blocked on a real finding, not a host bug.** Built
+  `tests_hil/soak.py` (resumable, JSONL log, abort-on-failure, restores v1) + `scripts/soak_overnight.sh` launcher.
+  Found and fixed three real host-side bugs in sequence (each with evidence under `scripts/evidence/bl060_soak_2026-09-22*/`):
+  1. An unhandled exception in the runner's best-effort recovery reset could crash the whole run — fixed (`f77c01c`).
+  2. `WifiBoard.trigger()`'s 5.0s timeout was marginal — soak failures clustered at 5.2–5.6s. Widened to 10s + retry
+     (`0ab9b22`).
+  3. The soak targeted each cycle by parity (odd=v2/even=v1), so a failure's recovery could leave the board on a
+     version the next cycle would blindly resend. Now targets off the board's actual state (`f7715ad`).
+  **After all three fixes, cycles 1–3 of a watched 15-cycle run still failed**: WiFi cycles never even connected to
+  the host's image server (`host served: {}`), and a BLE cycle sent and got ACKs for all 305 sectors yet the board
+  still never switched to the new image (stayed `1.0.0` slot 0, confirmed, healthy). **Both transports show the same
+  symptom by different paths — this now looks like the board's own OTA-apply logic (`esp_ota_end` /
+  `esp_ota_set_boot_partition` / the bootloader's slot-select), not labflash or the soak harness.** Full detail:
+  `scripts/evidence/bl060_soak_2026-09-22c/README.md`.
+  **Blocked on missing tooling**: `tests_hil/conftest.py`'s live `serial_capture` fixture does not actually capture
+  console output (a stub note only) — there is no board-side log of what happens during/after a rejected OTA.
+  **Next step for whoever continues BL-060**: build a real console reader (open a second, read-only path or share
+  the LABID serial connection) and run ONE watched WiFi update to see the board's own log lines during the failure.
+- **Board hardware state at checkpoint**: `lab-esp-idf` confirmed on `1.0.0`, slot 0, COM14 / 192.168.1.152. No
+  eFuses burned. The scratch `keys/server_key.pem` copy on the Windows mirror is removed after every run (verified).
+- **Uncommitted in the working tree, NOT mine — left alone**: `esp_zephyr/app/{CMakeLists.txt,prj.conf,src/main.c}`
+  (modified), `esp_zephyr/app/src/app_ble_smp.{c,h}`, `scripts/{ble_smp_query.py,test_smp_ops.py,zephyr_ble_ota.py}`
+  (untracked) — peer agent's Zephyr BLE SMP work-in-progress (see their section below, BL-034).
+
 ## CURRENT WORK & HARDWARE RESTART INSTRUCTIONS (2026-09-22 15:10)
 - **Machine Reboot Notice**: User requested machine restart.
 - **Peer Agent Isolation**: Peer agent is actively executing IDF soak tests in `scripts/evidence/bl060_soak_2026-09-22/`. NEVER touch, stage, modify, or commit anything in `scripts/evidence/bl060_soak_2026-09-22*`.
