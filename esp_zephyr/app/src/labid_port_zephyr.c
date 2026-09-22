@@ -11,6 +11,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/hwinfo.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/sys/ring_buffer.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/version.h>
 #include <stdio.h>
@@ -20,15 +21,21 @@
 
 LOG_MODULE_REGISTER(labid_port, LOG_LEVEL_INF);
 
-#define LABID_THREAD_STACK_SIZE 2048
+#define LABID_THREAD_STACK_SIZE 4096
 #define LABID_THREAD_PRIO       K_LOWEST_APPLICATION_THREAD_PRIO
-#define LABID_ANNOUNCE_DELAY_MS 1000  /* <= 2 s per PLAN §7.3.2 */
+#define LABID_ANNOUNCE_DELAY_MS 1500  /* <= 2 s per PLAN §7.3.2 */
 #define LABID_MAC_BYTES         6
+#define LABID_RING_BUF_SIZE     512
+
+volatile uint32_t g_irq_count = 0;
+volatile uint32_t g_rx_bytes = 0;
 
 static struct labid_ctx s_ctx;
 static struct labid_app_info s_app;
-
 static const struct device *s_uart_dev;
+
+RING_BUF_DECLARE(s_rx_ring, LABID_RING_BUF_SIZE);
+K_SEM_DEFINE(s_rx_sem, 0, LABID_RING_BUF_SIZE);
 K_MUTEX_DEFINE(s_tx_mutex);
 
 K_THREAD_STACK_DEFINE(s_labid_stack, LABID_THREAD_STACK_SIZE);
@@ -169,8 +176,40 @@ static const struct labid_provider s_prov = {
 static void send_frame(const char *frame)
 {
     k_mutex_lock(&s_tx_mutex, K_FOREVER);
-    printk("%s", frame);
+    if (s_uart_dev) {
+        size_t len = strlen(frame);
+        size_t sent = 0;
+        int retries = 0;
+        while (sent < len && retries++ < 5000) {
+            int ret = uart_fifo_fill(s_uart_dev, (const uint8_t *)frame + sent, (int)(len - sent));
+            if (ret > 0) {
+                sent += (size_t)ret;
+            } else {
+                k_busy_wait(50);
+            }
+        }
+    } else {
+        printk("%s", frame);
+    }
     k_mutex_unlock(&s_tx_mutex);
+}
+
+static void uart_irq_cb(const struct device *dev, void *user_data)
+{
+    ARG_UNUSED(user_data);
+    g_irq_count++;
+    uart_irq_update(dev);
+    while (uart_irq_rx_ready(dev)) {
+        uint8_t byte;
+        int ret = uart_fifo_read(dev, &byte, 1);
+        if (ret > 0) {
+            g_rx_bytes++;
+            ring_buf_put(&s_rx_ring, &byte, 1);
+            k_sem_give(&s_rx_sem);
+        } else {
+            break;
+        }
+    }
 }
 
 static void labid_thread_entry(void *p1, void *p2, void *p3)
@@ -189,14 +228,14 @@ static void labid_thread_entry(void *p1, void *p2, void *p3)
     }
 
     for (;;) {
+        k_sem_take(&s_rx_sem, K_FOREVER);
         uint8_t byte;
-        while (s_uart_dev && uart_poll_in(s_uart_dev, &byte) == 0) {
+        while (ring_buf_get(&s_rx_ring, &byte, 1) > 0) {
             int len = labid_ctx_feed(&s_ctx, byte, out, sizeof(out));
             if (len > 0) {
                 send_frame(out);
             }
         }
-        k_msleep(5);
     }
 }
 
@@ -208,11 +247,15 @@ int labid_port_init(const struct labid_app_info *app)
     s_app = *app;
     labid_ctx_init(&s_ctx, &s_prov);
 
-    s_uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
-    if (!device_is_ready(s_uart_dev)) {
-        LOG_ERR("Console device %s is not ready", s_uart_dev->name);
+    const struct device *const uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+    if (!device_is_ready(uart_dev)) {
+        LOG_ERR("Console device %s is not ready", uart_dev->name);
         return -ENODEV;
     }
+    s_uart_dev = uart_dev;
+
+    uart_irq_callback_user_data_set(uart_dev, uart_irq_cb, NULL);
+    uart_irq_rx_enable(uart_dev);
 
     k_thread_create(&s_labid_thread_data, s_labid_stack,
                     K_THREAD_STACK_SIZEOF(s_labid_stack),
@@ -220,6 +263,6 @@ int labid_port_init(const struct labid_app_info *app)
                     LABID_THREAD_PRIO, 0, K_NO_WAIT);
     k_thread_name_set(&s_labid_thread_data, "labid");
 
-    LOG_INF("LABID initialized on console (poll RX, ANNOUNCE in %d ms)", LABID_ANNOUNCE_DELAY_MS);
+    LOG_INF("LABID initialized on console (irq RX, ANNOUNCE in %d ms)", LABID_ANNOUNCE_DELAY_MS);
     return 0;
 }

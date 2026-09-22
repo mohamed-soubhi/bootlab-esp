@@ -615,7 +615,7 @@
         "ID?, VER?, STATE? ≤ 100 ms",
         "1 000 requests under heavy logging, 0 corrupt"
       ],
-      "status": "todo",
+      "status": "done",
       "pr": "",
       "tracks": [
         "zephyr"

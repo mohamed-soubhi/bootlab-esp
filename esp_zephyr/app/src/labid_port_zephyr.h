@@ -18,6 +18,9 @@ struct labid_app_info {
     bool (*is_confirmed)(void);
 };
 
+extern volatile uint32_t g_irq_count;
+extern volatile uint32_t g_rx_bytes;
+
 int labid_port_init(const struct labid_app_info *app);
 
 #endif /* LABID_PORT_ZEPHYR_H */

@@ -6,17 +6,17 @@
 
 ## Overall
 
-`████████████████░░░░░░░░░░░░░░` **27/52 done (51%)**
+`████████████████░░░░░░░░░░░░░░` **28/52 done (53%)**
 
 - **IDF track:** `████████████████░░░░` 33/42
-- **Zephyr track:** `████████░░░░░░░░░░░░` 15/37
+- **Zephyr track:** `█████████░░░░░░░░░░░` 16/37
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 8
+    "todo" : 7
     "doing" : 10
     "blocked" : 7
-    "done" : 27
+    "done" : 28
 ```
 
 ## Epics
@@ -26,7 +26,7 @@ pie showData title Ticket status
 | E0 | P0 | Host & rig setup | `████████████` | 8/8 | ✅ done | §2, §3, §8 P0 |
 | EL | PL | LABID common library | `████████████` | 4/4 | ✅ done | §7.3, §8 PL |
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `████████████` | 9/9 | ✅ done | §4.2, §5, §6, §7.2, §8 P1 |
-| E2 | P2 | ESP32-S3 #1 — Zephyr | `█████░░░░░░░` | 4/9 | 🔵 doing | §4.1, §5, §6, §7.1, §8 P2 |
+| E2 | P2 | ESP32-S3 #1 — Zephyr | `███████░░░░░` | 5/9 | 🔵 doing | §4.1, §5, §6, §7.1, §8 P2 |
 | E3 | P3 | labflash CLI | `███░░░░░░░░░` | 2/7 | 🔵 doing | §8 P3 |
 | E4 | P4 | HIL tests + CI | `░░░░░░░░░░░░` | 0/9 | 🟥 blocked | §8 P4 |
 | E5 | P5 | Soak, docs, handover | `░░░░░░░░░░░░` | 0/6 | 🟥 blocked | §8 P5 |
@@ -38,7 +38,7 @@ flowchart LR
     E0["P0 Host & rig setup<br/>8/8"]:::done
     EL["PL LABID common library<br/>4/4"]:::done
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>9/9"]:::done
-    E2["P2 ESP32-S3 #1 — Zephyr<br/>4/9"]:::doing
+    E2["P2 ESP32-S3 #1 — Zephyr<br/>5/9"]:::doing
     E3["P3 labflash CLI<br/>2/7"]:::doing
     E4["P4 HIL tests + CI<br/>0/9"]:::blocked
     E5["P5 Soak, docs, handover<br/>0/6"]:::blocked
@@ -56,7 +56,6 @@ flowchart LR
 
 ## Ready to start now
 
-- **BL-032** Zephyr LABID port on console (S) — E2
 - **BL-033** Zephyr self-test + confirm + twister tests (S) — E2
 
 ## Blocked
@@ -448,7 +447,7 @@ Run all P1 acceptance checks. [RESULT 2026-09-21 -- ALL 6 PLAN P1 CHECKBOXES PAS
 | ✅ | BL-014b | Packaging: Zephyr module (native_sim) | S | common, zephyr | BL-010 |  |
 | ✅ | BL-030 | Zephyr west + sysbuild MCUboot + swap-with-revert check | M | zephyr | BL-002, BL-006 |  |
 | ✅ | BL-031 | Zephyr blink app + toggles + 5 variants + watchdog | M | zephyr | BL-030, BL-005b |  |
-| ⬜ | BL-032 | Zephyr LABID port on console | S | zephyr | BL-031, BL-014b |  |
+| ✅ | BL-032 | Zephyr LABID port on console | S | zephyr | BL-031, BL-014b |  |
 | ⬜ | BL-033 | Zephyr self-test + confirm + twister tests | S | zephyr | BL-031 |  |
 | ⬜ | BL-034 | Zephyr mcumgr SMP over BLE | M | zephyr | BL-033 |  |
 | ⬜ | BL-035 | Zephyr WiFi + SMP over UDP (single build with BT) | L | zephyr | BL-034 |  |
@@ -520,20 +519,20 @@ LED strip driver (verify WS2812 backend), toggles, variants, hardware watchdog. 
 
 </details>
 
-<details><summary>⬜ <b>BL-032</b> — Zephyr LABID port on console</summary>
+<details><summary>✅ <b>BL-032</b> — Zephyr LABID port on console</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** zephyr  
-- **Tracks:** Zephyr ⬜ todo  
+- **Tracks:** Zephyr ✅ done  
 - **Depends on:** BL-031, BL-014b  
 - **Plan:** §4.1, §5, §6, §7.1, §8 P2
 
 Console device (USB-Serial-JTAG), irq RX, hwinfo UID, boot API, shell off.
 
 **Acceptance criteria**
-- [ ] ANNOUNCE ≤ 2 s
-- [ ] ID?, VER?, STATE? ≤ 100 ms
-- [ ] 1 000 requests under heavy logging, 0 corrupt
+- [x] ANNOUNCE ≤ 2 s
+- [x] ID?, VER?, STATE? ≤ 100 ms
+- [x] 1 000 requests under heavy logging, 0 corrupt
 
 </details>
 
@@ -1072,7 +1071,7 @@ flowchart TB
         BL014b["BL-014b"]:::done
         BL030["BL-030"]:::done
         BL031["BL-031"]:::done
-        BL032["BL-032"]:::todo
+        BL032["BL-032"]:::done
         BL033["BL-033"]:::todo
         BL034["BL-034"]:::todo
         BL035["BL-035"]:::todo

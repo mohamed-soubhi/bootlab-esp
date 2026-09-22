@@ -213,8 +213,9 @@ int main(void)
 
         log_tick++;
         if (log_tick % (1000 / half_period) == 0) {
-            LOG_INF("[APP] Heartbeat: variant=%s, toggles=%u, confirmed=%d, uptime=%lld ms",
-                    app_variant_str(), app_get_toggle_count(), (int)app_is_confirmed(), k_uptime_get());
+            LOG_INF("[APP] Heartbeat: variant=%s, toggles=%u, confirmed=%d, uptime=%lld ms, irq=%u, rx=%u",
+                    app_variant_str(), app_get_toggle_count(), (int)app_is_confirmed(), k_uptime_get(),
+                    g_irq_count, g_rx_bytes);
         }
 
         k_msleep(half_period);

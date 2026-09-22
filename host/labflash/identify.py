@@ -33,7 +33,7 @@ class SerialLineTransport:
     once that firmware lands, rather than only having a mock.
     """
 
-    def __init__(self, port: str, baudrate: int = 115200, timeout: float = 0.05):
+    def __init__(self, port: str, baudrate: int = 115200, timeout: float = 0.02):
         import serial
         ser = serial.Serial()
         ser.port = port
@@ -45,12 +45,22 @@ class SerialLineTransport:
         ser.rts = False
         ser.open()
         self._ser = ser
+        self._buf = bytearray()
 
     def read1(self) -> bytes:
-        return self._ser.read(1)
+        if not self._buf:
+            waiting = getattr(self._ser, "in_waiting", 0)
+            n = waiting if isinstance(waiting, int) and waiting > 0 else 1
+            chunk = self._ser.read(n)
+            if chunk:
+                self._buf.extend(chunk)
+        if self._buf:
+            return bytes([self._buf.pop(0)])
+        return b""
 
     def write(self, data: bytes) -> None:
         self._ser.write(data)
+        self._ser.flush()
 
     def close(self) -> None:
         self._ser.close()
@@ -83,7 +93,7 @@ def _read_frame(transport: Transport, deadline: float) -> tuple[str, dict] | Non
         if not b:
             time.sleep(0.005)
             continue
-        rc = parser.feed(b[0])
+        rc = parser.feed(b)
         if rc == FRAME:
             ft = parser.frame_type()
             if ft is not None:
