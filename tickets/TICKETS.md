@@ -6,17 +6,17 @@
 
 ## Overall
 
-`██████████████████████░░░░░░░░` **39/53 done (73%)**
+`█████████████████████░░░░░░░░░` **40/56 done (71%)**
 
-- **IDF track:** `█████████████████░░░` 35/42
-- **Zephyr track:** `██████████████░░░░░░` 26/37
+- **IDF track:** `█████████████████░░░` 36/43
+- **Zephyr track:** `██████████████░░░░░░` 27/40
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 2
+    "todo" : 4
     "doing" : 6
     "blocked" : 6
-    "done" : 39
+    "done" : 40
 ```
 
 ## Epics
@@ -26,10 +26,10 @@ pie showData title Ticket status
 | E0 | P0 | Host & rig setup | `████████████` | 8/8 | ✅ done | §2, §3, §8 P0 |
 | EL | PL | LABID common library | `████████████` | 4/4 | ✅ done | §7.3, §8 PL |
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `████████████` | 9/9 | ✅ done | §4.2, §5, §6, §7.2, §8 P1 |
-| E2 | P2 | ESP32-S3 #1 — Zephyr | `████████████` | 9/9 | ✅ done | §4.1, §5, §6, §7.1, §8 P2 |
+| E2 | P2 | ESP32-S3 #1 — Zephyr | `██████████░░` | 9/11 | 🔵 doing | §4.1, §5, §6, §7.1, §8 P2 |
 | E3 | P3 | labflash CLI | `████████████` | 7/7 | ✅ done | §8 P3 |
 | E4 | P4 | HIL tests + CI | `██░░░░░░░░░░` | 2/10 | 🟥 blocked | §8 P4 |
-| E5 | P5 | Soak, docs, handover | `░░░░░░░░░░░░` | 0/6 | 🟥 blocked | §8 P5 |
+| E5 | P5 | Soak, docs, handover | `██░░░░░░░░░░` | 1/7 | 🟥 blocked | §8 P5 |
 
 ## Epic dependency graph
 
@@ -38,10 +38,10 @@ flowchart LR
     E0["P0 Host & rig setup<br/>8/8"]:::done
     EL["PL LABID common library<br/>4/4"]:::done
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>9/9"]:::done
-    E2["P2 ESP32-S3 #1 — Zephyr<br/>9/9"]:::done
+    E2["P2 ESP32-S3 #1 — Zephyr<br/>9/11"]:::doing
     E3["P3 labflash CLI<br/>7/7"]:::done
     E4["P4 HIL tests + CI<br/>2/10"]:::blocked
-    E5["P5 Soak, docs, handover<br/>0/6"]:::blocked
+    E5["P5 Soak, docs, handover<br/>1/7"]:::blocked
     E0 --> EL
     E1 --> E3
     E2 --> E3
@@ -56,7 +56,8 @@ flowchart LR
 
 ## Ready to start now
 
-- Nothing ready (check blocked tickets).
+- **BL-064** Zephyr v2 build: LABID UART RX interrupt never fires (irq=0, rx=0) (M) — E2
+- **BL-065** Zephyr UDP SMP OTA: marked confirmed but MCUboot never swaps slots (M) — E2
 
 ## Blocked
 
@@ -451,6 +452,8 @@ Run all P1 acceptance checks. [RESULT 2026-09-21 -- ALL 6 PLAN P1 CHECKBOXES PAS
 | ✅ | BL-034 | Zephyr mcumgr SMP over BLE | M | zephyr | BL-033 |  |
 | ✅ | BL-035 | Zephyr WiFi + SMP over UDP (single build with BT) | L | zephyr | BL-034 |  |
 | ✅ | BL-036 | Zephyr phase acceptance run | S | zephyr | BL-032, BL-035 |  |
+| ⬜ | BL-064 | Zephyr v2 build: LABID UART RX interrupt never fires (irq=0, rx=0) | M | zephyr | BL-035 |  |
+| ⬜ | BL-065 | Zephyr UDP SMP OTA: marked confirmed but MCUboot never swaps slots | M | zephyr | BL-035 |  |
 
 <details><summary>✅ <b>BL-005b</b> — Detect board hardware → rig.yaml (Zephyr board)</summary>
 
@@ -599,6 +602,37 @@ Run all P2 acceptance checks. [RESULT 2026-09-22 -- ALL 6 PLAN P2 CHECKBOXES PAS
 
 </details>
 
+<details><summary>⬜ <b>BL-064</b> — Zephyr v2 build: LABID UART RX interrupt never fires (irq=0, rx=0)</summary>
+
+- **Size:** M (1–2 days)  
+- **Boards:** zephyr  
+- **Tracks:** Zephyr ⬜ todo  
+- **Depends on:** BL-035  
+- **Plan:** §4.1, §5, §6, §7.1, §8 P2
+
+Found 2026-09-22 running BL-051 live on lab-esp-zephyr. After a live BLE SMP OTA v1->v2 (build_v2, the WiFi+BT coexistence build from BL-035), the board boots and runs fine (LABID ANNOUNCE and blink both work), but every subsequent host->board write over the same UART times out (pyserial SerialTimeoutException, reproduced with an 8s write_timeout -- genuinely stuck, not just slow). The board's own heartbeat log confirms it: '[APP] Heartbeat: variant=v2, ..., irq=0, rx=0' -- the LABID console UART RX interrupt has never fired since boot, so the device never drains its USB-CDC RX buffer and every host write blocks until the driver times out. Reads (device->host) work fine throughout; only writes are affected. Root cause not yet found -- likely the BLE+WiFi coexistence init in this build either fails to register the console UART RX IRQ, or something in app_ble_smp.c/app_wifi.c claims/disables it. Needs a source-level look at esp_zephyr/app/src/{main.c,labid_port wiring} for how/when the UART RX IRQ is enabled relative to BLE/WiFi init, then a west rebuild + reflash + a repeat of this same live-write test to confirm the fix. Board was reflashed back to the known-good confirmed v1 (build_v1, unaffected) to leave it healthy; evidence: scripts/evidence/bl064_zephyr_labid_rx_irq_dead.md. [UPDATE 2026-09-23: fix attempt 1 (reorder BLE/WiFi init before labid_port_init, hypothesis: BLE connection reprograms the interrupt matrix and steals an earlier-claimed vector) tested against the REAL trigger (a live v1->v2 BLE OTA) and DISPROVEN -- same exact failure recurred. New data: irq works fine on v1 with BLE advertising (irq=130, rx=1260 mid-test); it's specifically APP_VARIANT_V2 that never gets a working RX IRQ, reproduced both via OTA swap and via a fresh direct esptool flash of build_v2 -- not tied to BLE connection events or init order. Reverted the reorder (no benefit, misleading). Full detail: scripts/evidence/bl064_zephyr_labid_rx_irq_dead.md.
+
+**Acceptance criteria**
+- [ ] Live host writes to the board over LABID UART succeed after booting build_v2 (or any BLE-coexistence variant)
+- [ ] Board's own heartbeat log reports irq>0 after a host write is sent
+
+</details>
+
+<details><summary>⬜ <b>BL-065</b> — Zephyr UDP SMP OTA: marked confirmed but MCUboot never swaps slots</summary>
+
+- **Size:** M (1–2 days)  
+- **Boards:** zephyr  
+- **Tracks:** Zephyr ⬜ todo  
+- **Depends on:** BL-035  
+- **Plan:** §4.1, §5, §6, §7.1, §8 P2
+
+Found 2026-09-23 while testing BL-064's reorder fix. A UDP SMP OTA v2->v1 uploaded 100%, the client sent ImageStatesWrite(confirm=True) successfully, and the device reset -- but LABID's before/after snapshot shows the board still running the OLD image after the reset (app=2.0.0 both before and after), i.e. MCUboot never actually swapped to the newly uploaded image. host/labflash/update_cli.py's make_zephyr_udp_send/check_zephyr_image path reported the upload and confirm as fully successful (all host-side checks PASS except the final 'running the new image' one), so this looks like either: the confirm write happened before the image was fully validated/written (a race), or the UDP SMP transport's slot targeting is wrong (uploading into the wrong slot, or the primary slot instead of the secondary), or MCUboot's swap_type logic isn't seeing the pending image as a valid upgrade candidate over this specific transport. Needs a live watched console (BL-060's console.log) during a UDP OTA to see what MCUboot actually does on reset -- was BL-064's fresh evidence, not yet in its own evidence file.
+
+**Acceptance criteria**
+- [ ] Live UDP SMP OTA v1<->v2 actually swaps and boots the new image (not just reports success)
+
+</details>
+
 ### E3 · P3 — labflash CLI
 
 | | ID | Title | Size | Boards | Depends on | PR |
@@ -739,7 +773,7 @@ pytest with mocked BLE / serial / HTTP. [DONE 2026-09-22 -- 180 unit tests passi
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
 | ✅ | BL-050 | HIL framework: fixtures, markers, artifacts | M | host | BL-046 |  |
-| 🔵 | BL-051 | HIL T01–T03 boot + update | S | zephyr, idf | BL-050 |  |
+| 🔵 | BL-051 | HIL T01–T03 boot + update | S | zephyr, idf | BL-050, BL-064, BL-065 |  |
 | 🔵 | BL-052 | HIL T04–T09 rollback, security, robustness | M | zephyr, idf | BL-050 |  |
 | 🔵 | BL-053 | HIL T10–T15 LABID + identity + USB | S | zephyr, idf | BL-050 |  |
 | 🔵 | BL-054 | (Stretch) HIL T17 power cut | M | zephyr, idf | BL-050 |  |
@@ -772,7 +806,7 @@ rig fixture, factory_reset, btmon capture, JUnit.
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** zephyr, idf  
 - **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
-- **Depends on:** BL-050  
+- **Depends on:** BL-050, BL-064, BL-065  
 - **Plan:** §8 P4
 
 PLAN §8 P4 matrix.
@@ -936,6 +970,7 @@ Split from BL-057 on 2026-09-22. REMAINING: 3 consecutive live green whole-suite
 | 🟥 | BL-063 | Final PLAN.md update | S | host | BL-060 |  |
 | 🟥 | BL-063a | IDF lessons learned (retrospective) | S | host | BL-060, BL-061, BL-062, BL-063, BL-056a |  |
 | 🟥 | BL-063b | HTML presentation of the IDF track | M | host | BL-063a |  |
+| ✅ | BL-066 | GitHub Pages project showcase & presentation deck (Dual-OS, challenges, lessons learned) | M | host | — |  |
 
 <details><summary>⬜ <b>BL-060</b> — Overnight soak ×100</summary>
 
@@ -1045,6 +1080,25 @@ Owner deliverable: a presentation of the finished IDF track. Completing it is wh
 
 </details>
 
+<details><summary>✅ <b>BL-066</b> — GitHub Pages project showcase & presentation deck (Dual-OS, challenges, lessons learned)</summary>
+
+- **Size:** M (1–2 days)  
+- **Boards:** host  
+- **Tracks:** IDF ✅ done · Zephyr ✅ done  
+- **Depends on:** —  
+- **Plan:** §8 P5
+
+Comprehensive public presentation site and interactive deck published to GitHub Pages (docs/index.html). Tailored for multi-stakeholder presentations: customers, CEO/executive interviews, and technical deep-dives. Features a modern dark cyber-industrial UI with dual modes (interactive showcase and fullscreen presentation deck), live KPI counters, architecture diagrams, deep dives into the 6 major engineering challenges (WinRT GATT caching, SharedConsolePort concurrency, software vs hardware reset, RPi4 power isolation, Zephyr coexistence IRQ, and the vacuous evidence trap), and a structured lessons-learned matrix.
+
+**Acceptance criteria**
+- [x] One self-contained HTML5/CSS3/JS website at docs/index.html with zero external CDN dependencies
+- [x] Interactive showcase mode with audience filters (Customer, CEO/Exec, Tech Lead)
+- [x] Fullscreen presentation deck mode with keyboard controls (Arrow keys, Space, Esc) and presenter talking points
+- [x] Detailed interactive cards for the 6 technical challenges and lessons learned matrix
+- [x] Renders cleanly and responsively across desktop, tablet, and mobile browsers
+
+</details>
+
 ## Full ticket dependency graph
 
 <details><summary>Show graph</summary>
@@ -1088,6 +1142,8 @@ flowchart TB
         BL034["BL-034"]:::done
         BL035["BL-035"]:::done
         BL036["BL-036"]:::done
+        BL064["BL-064"]:::todo
+        BL065["BL-065"]:::todo
     end
     subgraph E3_g["P3 labflash CLI"]
         BL040["BL-040"]:::done
@@ -1117,6 +1173,7 @@ flowchart TB
         BL063["BL-063"]:::blocked
         BL063a["BL-063a"]:::blocked
         BL063b["BL-063b"]:::blocked
+        BL066["BL-066"]:::done
     end
     BL001 --> BL002
     BL002 --> BL003
@@ -1185,6 +1242,8 @@ flowchart TB
     BL045 --> BL046
     BL046 --> BL050
     BL050 --> BL051
+    BL064 --> BL051
+    BL065 --> BL051
     BL050 --> BL052
     BL050 --> BL053
     BL050 --> BL054
@@ -1214,6 +1273,8 @@ flowchart TB
     BL063 --> BL063a
     BL056a --> BL063a
     BL063a --> BL063b
+    BL035 --> BL064
+    BL035 --> BL065
     classDef todo fill:#eeeeee,stroke:#999,color:#333
     classDef doing fill:#cfe3ff,stroke:#2f6fdb,color:#123
     classDef blocked fill:#ffd6d6,stroke:#c62828,color:#400
