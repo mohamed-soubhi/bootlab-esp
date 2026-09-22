@@ -35,15 +35,8 @@ class SerialLineTransport:
 
     def __init__(self, port: str, baudrate: int = 115200, timeout: float = 0.02):
         import serial
-        ser = serial.Serial()
-        ser.port = port
-        ser.baudrate = baudrate
-        ser.timeout = timeout
-        # Hold DTR/RTS inactive BEFORE opening: on the ESP32-S3 USB-Serial-JTAG
-        # an asserting open can toggle reset/boot lines (PLAN R14).
-        ser.dtr = False
-        ser.rts = False
-        ser.open()
+        ser = serial.Serial(port, baudrate=baudrate, timeout=timeout, write_timeout=1.0)
+        ser.reset_input_buffer()
         self._ser = ser
         self._buf = bytearray()
 

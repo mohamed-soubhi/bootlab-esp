@@ -8,7 +8,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "host"))
 
-from labflash.identify import SerialLineTransport, _read_frame, query, get_state, get_version
+from labflash.identify import (
+    SerialLineTransport,
+    _read_frame,
+    query,
+    get_state,
+    get_version,
+    identify,
+    map_board_by_id,
+    measure,
+)
 
 PORT = "/dev/ttyACM0"
 BAUD = 115200
@@ -67,8 +76,23 @@ def main():
     print(f"Post-5s check (uptime >= 5.5s -> confirmed == '1'): {'PASS' if post_ok else 'FAIL'}")
     assert post_ok, f"Expected confirmed == '1' after 5s, got {confirmed_post}"
 
+    # 5. Check ID? and measure (BL-041 verification)
+    print("\n--- Testing BL-041 identify and measure on Zephyr board ---")
+    idf = identify(tr)
+    print(f"identify(): {idf}")
+    assert idf.get("uid") == "ACA7042C3B04", f"Expected uid ACA7042C3B04, got {idf.get('uid')}"
+    assert idf.get("board") == "zephyr", f"Expected board zephyr, got {idf.get('board')}"
+
+    board_key, id_fields = map_board_by_id(tr)
+    print(f"map_board_by_id(): board={board_key}")
+    assert board_key == "zephyr"
+
+    delta, hz, meas_ok = measure(tr, duration_s=4.0, expect_hz=1.0)
+    print(f"measure(4.0s): delta={delta} toggles, measured_hz={hz:.2f} Hz, passed={meas_ok}")
+    assert meas_ok, f"Expected measure to pass, got delta={delta}, hz={hz}"
+
     tr.close()
-    print("\nALL ACs PASSED for BL-033 hardware verification!")
+    print("\nALL ACs PASSED for BL-033 and BL-041 on Zephyr hardware!")
     return 0
 
 if __name__ == "__main__":

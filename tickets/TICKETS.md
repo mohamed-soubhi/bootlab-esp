@@ -6,17 +6,17 @@
 
 ## Overall
 
-`█████████████████░░░░░░░░░░░░░` **29/52 done (55%)**
+`█████████████████░░░░░░░░░░░░░` **30/52 done (57%)**
 
 - **IDF track:** `████████████████░░░░` 33/42
-- **Zephyr track:** `█████████░░░░░░░░░░░` 17/37
+- **Zephyr track:** `██████████░░░░░░░░░░` 18/37
 
 ```mermaid
 pie showData title Ticket status
     "todo" : 6
-    "doing" : 10
+    "doing" : 9
     "blocked" : 7
-    "done" : 29
+    "done" : 30
 ```
 
 ## Epics
@@ -27,7 +27,7 @@ pie showData title Ticket status
 | EL | PL | LABID common library | `████████████` | 4/4 | ✅ done | §7.3, §8 PL |
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `████████████` | 9/9 | ✅ done | §4.2, §5, §6, §7.2, §8 P1 |
 | E2 | P2 | ESP32-S3 #1 — Zephyr | `████████░░░░` | 6/9 | 🔵 doing | §4.1, §5, §6, §7.1, §8 P2 |
-| E3 | P3 | labflash CLI | `███░░░░░░░░░` | 2/7 | 🔵 doing | §8 P3 |
+| E3 | P3 | labflash CLI | `█████░░░░░░░` | 3/7 | 🔵 doing | §8 P3 |
 | E4 | P4 | HIL tests + CI | `░░░░░░░░░░░░` | 0/9 | 🟥 blocked | §8 P4 |
 | E5 | P5 | Soak, docs, handover | `░░░░░░░░░░░░` | 0/6 | 🟥 blocked | §8 P5 |
 
@@ -39,7 +39,7 @@ flowchart LR
     EL["PL LABID common library<br/>4/4"]:::done
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>9/9"]:::done
     E2["P2 ESP32-S3 #1 — Zephyr<br/>6/9"]:::doing
-    E3["P3 labflash CLI<br/>2/7"]:::doing
+    E3["P3 labflash CLI<br/>3/7"]:::doing
     E4["P4 HIL tests + CI<br/>0/9"]:::blocked
     E5["P5 Soak, docs, handover<br/>0/6"]:::blocked
     E0 --> EL
@@ -605,7 +605,7 @@ Run all P2 acceptance checks.
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
 | ✅ | BL-040 | labflash core: config, UID resolution, re-enumeration wait | M | host | BL-013, BL-007 |  |
-| 🔵 | BL-041 | identify, info, status, measure | S | host | BL-040, BL-020, BL-022, BL-031, BL-032 |  |
+| ✅ | BL-041 | identify, info, status, measure | S | host | BL-040, BL-020, BL-022, BL-031, BL-032 |  |
 | 🔵 | BL-042 | flash, recover, provision (USB) | S | host | BL-040, BL-020, BL-021, BL-030, BL-031 |  |
 | ✅ | BL-043 | update idf --transport ble|wifi | M | host, idf | BL-040, BL-028 |  |
 | ⬜ | BL-044 | update zephyr --transport ble|udp | M | host, zephyr | BL-040, BL-036 |  |
@@ -627,11 +627,11 @@ rig.yaml, resolve ports by UID, wait ≤ 5 s after resets, --json. [DONE 2026-09
 
 </details>
 
-<details><summary>🔵 <b>BL-041</b> — identify, info, status, measure</summary>
+<details><summary>✅ <b>BL-041</b> — identify, info, status, measure</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
-- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
+- **Tracks:** IDF ✅ done · Zephyr ✅ done  
 - **Depends on:** BL-040, BL-020, BL-022, BL-031, BL-032  
 - **Plan:** §8 P3
 
@@ -642,8 +642,8 @@ LABID discovery, cross-check, toggle-based Hz. Deps corrected 2026-09-20: AC nee
 - [x] identify maps the idf board (LABID uid matches rig.yaml)
 - [x] measure within ± 1 toggle over 5 s on the idf board
 *Zephyr scope*
-- [ ] identify maps the zephyr board
-- [ ] measure within ± 1 toggle over 5 s on the zephyr board
+- [x] identify maps the zephyr board
+- [x] measure within ± 1 toggle over 5 s on the zephyr board
 
 </details>
 
@@ -1079,7 +1079,7 @@ flowchart TB
     end
     subgraph E3_g["P3 labflash CLI"]
         BL040["BL-040"]:::done
-        BL041["BL-041"]:::doing
+        BL041["BL-041"]:::done
         BL042["BL-042"]:::doing
         BL043["BL-043"]:::done
         BL044["BL-044"]:::todo
