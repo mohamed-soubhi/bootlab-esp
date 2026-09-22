@@ -93,7 +93,10 @@ class ProcessRunner:
 
             # Set execution environment with PYTHONPATH
             env = os.environ.copy()
-            env["PYTHONPATH"] = f"{self._cwd / 'host'}:{self._cwd}:{env.get('PYTHONPATH', '')}"
+            pp_parts = [str(self._cwd / "host"), str(self._cwd)]
+            if env.get("PYTHONPATH"):
+                pp_parts.append(env["PYTHONPATH"])
+            env["PYTHONPATH"] = os.pathsep.join(pp_parts)
             env["PYTHONUNBUFFERED"] = "1"
 
             # Preexec for process group creation on POSIX

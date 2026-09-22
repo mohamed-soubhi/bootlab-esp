@@ -16,6 +16,9 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+HOST_DIR = REPO_ROOT / "host"
+if str(HOST_DIR) not in sys.path:
+    sys.path.insert(0, str(HOST_DIR))
 
 from tools.dashboard.runner import ProcessRunner
 from tools.dashboard.tools_registry import (
