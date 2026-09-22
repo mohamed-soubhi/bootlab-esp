@@ -1,528 +1,717 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>bootlab-esp — Dual-OS Embedded Bootloader & Resilient OTA Testbed</title>
   <meta name="description" content="Production-grade dual-OS (ESP-IDF + Zephyr RTOS) bootloader, fail-safe OTA engine, and automated Hardware-in-the-Loop testbed on ESP32-S3.">
+  
+  <!-- Google Fonts: Bebas Neue, Inter, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <style>
+    /* ==========================================================================
+       Design Tokens & Themes — Synced with mohamed-soubhi.github.io
+       ========================================================================== */
     :root {
-      --bg-primary: #070b14;
-      --bg-surface: #0d1527;
-      --bg-card: #131f38;
-      --bg-card-hover: #1a2a4c;
-      --border-subtle: #1e293b;
-      --border-active: #38bdf8;
-      --text-main: #f1f5f9;
-      --text-muted: #94a3b8;
-      --text-subtle: #64748b;
-      --accent-cyan: #38bdf8;
-      --accent-emerald: #10b981;
-      --accent-amber: #f59e0b;
-      --accent-purple: #a855f7;
-      --accent-rose: #f43f5e;
-      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      --shadow-glow: 0 0 25px rgba(56, 189, 248, 0.15);
-      --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+      /* Cyber Matrix (Dark Mode - Default) */
+      --bg-primary: #0a0e14;
+      --bg-secondary: #111822;
+      --bg-card: #121a24;
+      --bg-surface: #172230;
+      --bg-surface-hover: #1c2a3b;
+      --bg-chip: rgba(30, 41, 59, 0.5);
+
+      --text-primary: #f0fdf4;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --text-contrast: #ffffff;
+
+      --border-color: #1e293b;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(16, 185, 129, 0.35);
+
+      /* Brand Accents */
+      --accent-primary: #10b981;    /* Emerald */
+      --accent-neon: #00ff88;       /* Matrix Neon */
+      --accent-cyan: #38bdf8;       /* Sky / Cyber Blue */
+      --accent-amber: #f59e0b;      /* Safety Amber */
+      --accent-violet: #a855f7;     /* Deep Violet */
+      --accent-rose: #f43f5e;       /* Rose */
+
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+      --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.6);
+      --shadow-glow: 0 0 25px rgba(0, 255, 136, 0.15);
+
+      --radius-sm: 6px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --radius-full: 9999px;
+
+      --font-heading: 'Bebas Neue', sans-serif;
+      --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-normal: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; font-size: 16px; }
+    [data-theme="light"] {
+      /* Clean Slate (Light Mode) */
+      --bg-primary: #f8fafc;
+      --bg-secondary: #ffffff;
+      --bg-card: #ffffff;
+      --bg-surface: #f1f5f9;
+      --bg-surface-hover: #e2e8f0;
+      --bg-chip: #e2e8f0;
+
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --text-contrast: #0f172a;
+
+      --border-color: #cbd5e1;
+      --border-subtle: rgba(0, 0, 0, 0.08);
+      --border-glow: rgba(5, 150, 105, 0.25);
+
+      --accent-primary: #059669;
+      --accent-neon: #047857;
+      --accent-cyan: #0284c7;
+      --accent-amber: #d97706;
+      --accent-violet: #7e22ce;
+      --accent-rose: #e11d48;
+
+      --shadow-sm: 0 2px 6px rgba(15, 23, 42, 0.05);
+      --shadow-md: 0 8px 20px rgba(15, 23, 42, 0.08);
+      --shadow-lg: 0 16px 32px rgba(15, 23, 42, 0.12);
+      --shadow-glow: 0 0 20px rgba(5, 150, 105, 0.1);
+    }
+
+    /* --- Base & Reset --- */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     body {
       background-color: var(--bg-primary);
-      color: var(--text-main);
-      font-family: var(--font-sans);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 15px;
       line-height: 1.6;
-      overflow-x: hidden;
       min-height: 100vh;
-    }
-
-    /* Ambient background mesh */
-    .bg-grid {
-      position: fixed;
-      inset: 0;
+      overflow-x: hidden;
+      transition: background-color var(--transition-normal), color var(--transition-normal);
       background-image: 
-        radial-gradient(circle at 15% 20%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
-        radial-gradient(circle at 85% 75%, rgba(16, 185, 129, 0.06) 0%, transparent 40%),
-        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-      background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
-      pointer-events: none;
-      z-index: 0;
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(16, 185, 129, 0.08), transparent 70%),
+        radial-gradient(ellipse 60% 40% at 90% 80%, rgba(56, 189, 248, 0.04), transparent 60%);
+      background-attachment: fixed;
     }
 
-    /* Typography & Core Elements */
-    h1, h2, h3, h4 { color: #ffffff; font-weight: 700; line-height: 1.25; }
-    a { color: var(--accent-cyan); text-decoration: none; transition: all 0.2s ease; }
-    a:hover { color: #ffffff; text-decoration: underline; }
-    code, pre { font-family: var(--font-mono); }
+    a {
+      color: var(--accent-cyan);
+      text-decoration: none;
+      transition: color var(--transition-fast);
+    }
+    a:hover {
+      color: var(--accent-neon);
+      text-decoration: underline;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
     .mono { font-family: var(--font-mono); }
 
-    /* Sticky Navigation */
-    .navbar {
+    /* --- Navigation Bar --- */
+    .site-nav {
       position: sticky;
       top: 0;
-      z-index: 50;
-      backdrop-filter: blur(16px);
-      background: rgba(7, 11, 20, 0.85);
-      border-bottom: 1px solid var(--border-subtle);
-      padding: 0.85rem 2rem;
+      z-index: 100;
+      background: rgba(10, 14, 20, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 0;
+      transition: background-color var(--transition-normal), border-color var(--transition-normal);
+    }
+    [data-theme="light"] .site-nav {
+      background: rgba(255, 255, 255, 0.92);
+    }
+
+    .nav-wrapper {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 16px;
     }
 
-    .brand {
+    .brand-title {
+      font-family: var(--font-heading);
+      font-size: 24px;
+      letter-spacing: 0.06em;
+      color: var(--text-contrast);
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      font-size: 1.15rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
+      gap: 8px;
     }
-
-    .brand-chip {
-      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-emerald));
+    .brand-badge {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
       color: #000;
-      font-size: 0.7rem;
-      font-weight: 900;
-      padding: 0.2rem 0.5rem;
-      border-radius: 4px;
       font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
     }
 
     .nav-links {
       display: flex;
-      gap: 1.75rem;
+      gap: 20px;
       list-style: none;
-      font-size: 0.9rem;
-      font-weight: 500;
+      font-family: var(--font-mono);
+      font-size: 13px;
     }
-
-    .nav-links a { color: var(--text-muted); text-decoration: none; }
-    .nav-links a:hover { color: var(--accent-cyan); }
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color var(--transition-fast);
+    }
+    .nav-links a:hover {
+      color: var(--accent-neon);
+      text-decoration: none;
+    }
 
     .nav-actions {
       display: flex;
       align-items: center;
-      gap: 1rem;
+      gap: 10px;
     }
 
-    .btn {
+    .btn-pill {
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.55rem 1.15rem;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      border: 1px solid transparent;
-      text-decoration: none;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #0284c7, #0369a1);
-      color: #ffffff;
-      border-color: #38bdf8;
-      box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
-    }
-    .btn-primary:hover {
-      background: linear-gradient(135deg, #0369a1, #075985);
-      box-shadow: 0 0 25px rgba(56, 189, 248, 0.5);
-      transform: translateY(-1px);
-      text-decoration: none;
-    }
-
-    .btn-outline {
-      background: rgba(19, 31, 56, 0.6);
-      color: var(--text-main);
-      border: 1px solid var(--border-subtle);
-    }
-    .btn-outline:hover {
-      border-color: var(--accent-cyan);
-      background: var(--bg-card);
-      text-decoration: none;
-      transform: translateY(-1px);
-    }
-
-    .container {
-      max-width: 1240px;
-      margin: 0 auto;
-      padding: 2.5rem 2rem;
-      position: relative;
-      z-index: 1;
-    }
-
-    /* Hero Section */
-    .hero {
-      padding: 4rem 0 3.5rem;
-      text-align: center;
-    }
-
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.35rem 0.9rem;
-      background: rgba(56, 189, 248, 0.1);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      border-radius: 9999px;
-      font-size: 0.8rem;
-      color: var(--accent-cyan);
-      font-weight: 600;
-      margin-bottom: 1.5rem;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
       font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      user-select: none;
+      text-decoration: none;
+    }
+    .btn-pill:hover {
+      background: var(--bg-surface-hover);
+      border-color: var(--accent-primary);
+      color: var(--accent-neon);
+      transform: translateY(-1px);
+      text-decoration: none;
+    }
+    .btn-pill.primary {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+      color: #000;
+      font-weight: 700;
+      border: none;
+      box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+    }
+    .btn-pill.primary:hover {
+      box-shadow: 0 0 20px var(--accent-neon);
+      color: #000;
+      transform: translateY(-1px);
+    }
+
+    /* --- Hero Section --- */
+    .hero-section {
+      padding: 50px 0 30px;
+      position: relative;
+    }
+
+    .hero-eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .hero-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--accent-neon);
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
     }
 
     .pulse-dot {
-      width: 8px;
-      height: 8px;
-      background: var(--accent-emerald);
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
-      box-shadow: 0 0 10px var(--accent-emerald);
+      background-color: var(--accent-neon);
+      box-shadow: 0 0 8px var(--accent-neon);
       animation: pulse 2s infinite;
     }
-    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.85); } }
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.7; }
+      50% { transform: scale(1.3); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.7; }
+    }
 
-    .hero h1 {
-      font-size: 3.25rem;
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      margin-bottom: 1.25rem;
-      background: linear-gradient(180deg, #ffffff 40%, #94a3b8 100%);
+    .hero-title {
+      font-family: var(--font-heading);
+      font-size: clamp(48px, 6vw, 76px);
+      line-height: 0.95;
+      letter-spacing: 0.03em;
+      background: linear-gradient(135deg, var(--text-contrast) 0%, var(--accent-neon) 50%, var(--accent-primary) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-    }
-
-    .hero p {
-      font-size: 1.2rem;
-      color: var(--text-muted);
-      max-width: 840px;
-      margin: 0 auto 2.25rem;
-      line-height: 1.7;
-    }
-
-    .hero-cta {
-      display: flex;
-      justify-content: center;
-      gap: 1.25rem;
-      margin-bottom: 3.5rem;
-    }
-
-    /* KPI Metrics Bar */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 1.25rem;
-      margin-bottom: 4rem;
-    }
-
-    .kpi-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      border-radius: 12px;
-      padding: 1.5rem 1.25rem;
-      text-align: center;
-      transition: all 0.25s ease;
-      box-shadow: var(--shadow-card);
-    }
-
-    .kpi-card:hover {
-      border-color: var(--accent-cyan);
-      transform: translateY(-3px);
-      box-shadow: var(--shadow-glow);
-    }
-
-    .kpi-val {
-      font-size: 2.25rem;
-      font-weight: 800;
-      font-family: var(--font-mono);
-      margin-bottom: 0.25rem;
-      background: linear-gradient(135deg, #ffffff, var(--accent-cyan));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .kpi-label {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--text-subtle);
+      background-clip: text;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      margin-bottom: 12px;
     }
 
-    /* Audience Lens Switcher */
-    .lens-section {
+    .hero-subtitle {
+      font-family: var(--font-mono);
+      color: var(--accent-primary);
+      font-size: 14px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .hero-desc {
+      font-family: var(--font-body);
+      font-size: clamp(15px, 1.4vw, 17px);
+      font-weight: 300;
+      color: var(--text-secondary);
+      max-width: 860px;
+      line-height: 1.7;
+      margin-bottom: 22px;
+    }
+
+    .contact-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .contact-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-secondary);
+      transition: all var(--transition-fast);
+      text-decoration: none;
+    }
+    .contact-item:hover {
+      border-color: var(--accent-primary);
+      color: var(--accent-neon);
       background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      border-radius: 16px;
-      padding: 2rem;
-      margin-bottom: 4.5rem;
-      box-shadow: var(--shadow-card);
+      text-decoration: none;
     }
 
-    .lens-header {
+    /* Executive Stat Strip */
+    .hero-stat-strip {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      padding: 8px 20px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+      box-shadow: var(--shadow-sm);
+    }
+    .stat-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .stat-highlight {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--accent-neon);
+    }
+    .stat-detail {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    .stat-sep {
+      color: var(--border-color);
+      font-size: 13px;
+      user-select: none;
+    }
+
+    /* --- Section Headers --- */
+    .section-block {
+      padding: 40px 0;
+      position: relative;
+    }
+
+    .section-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--accent-primary);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .section-heading {
+      font-family: var(--font-heading);
+      font-size: clamp(32px, 4vw, 44px);
+      letter-spacing: 0.04em;
+      color: var(--text-contrast);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .section-subtext {
+      color: var(--text-muted);
+      font-size: 15px;
+      margin-bottom: 26px;
+    }
+
+    /* --- Perspectives Card Switcher --- */
+    .perspectives-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 20px;
+    }
+
+    .perspectives-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 1.75rem;
       flex-wrap: wrap;
-      gap: 1rem;
+      gap: 16px;
+      margin-bottom: 22px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-subtle);
     }
 
-    .lens-header h2 { font-size: 1.5rem; }
-
-    .lens-tabs {
+    .tab-pills {
       display: flex;
-      gap: 0.5rem;
+      gap: 8px;
       background: var(--bg-primary);
-      padding: 0.35rem;
-      border-radius: 8px;
-      border: 1px solid var(--border-subtle);
+      padding: 4px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-color);
     }
 
-    .lens-tab {
-      padding: 0.5rem 1.15rem;
-      border-radius: 6px;
+    .tab-btn {
+      padding: 6px 16px;
+      border-radius: var(--radius-full);
       border: none;
       background: transparent;
       color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 12px;
       font-weight: 600;
-      font-size: 0.85rem;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all var(--transition-fast);
+    }
+    .tab-btn.active {
+      background: var(--bg-surface);
+      color: var(--accent-neon);
+      border: 1px solid var(--accent-primary);
+      box-shadow: 0 0 10px rgba(0, 255, 136, 0.15);
     }
 
-    .lens-tab.active {
-      background: var(--bg-card);
-      color: #ffffff;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-    }
-
-    .lens-content {
+    .perspective-pane {
       display: none;
       animation: fadeIn 0.3s ease;
     }
-    .lens-content.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .perspective-pane.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-    .lens-grid {
+    .perspective-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 18px;
     }
 
-    .lens-box {
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      border-radius: 10px;
-      padding: 1.5rem;
+    .perspective-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      transition: all var(--transition-fast);
     }
-    .lens-box h3 {
-      font-size: 1.15rem;
-      margin-bottom: 0.75rem;
+    .perspective-box:hover {
+      border-color: var(--accent-primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+    .perspective-box h4 {
+      font-family: var(--font-heading);
+      font-size: 20px;
+      letter-spacing: 0.04em;
+      color: var(--text-contrast);
+      margin-bottom: 8px;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      color: var(--accent-cyan);
+      gap: 8px;
     }
-    .lens-box p { font-size: 0.925rem; color: var(--text-muted); line-height: 1.6; }
-
-    /* Architecture Dual-OS Matrix */
-    .section-title {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-      text-align: center;
-    }
-    .section-subtitle {
-      text-align: center;
-      color: var(--text-subtle);
-      margin-bottom: 2.5rem;
-      font-size: 1.05rem;
+    .perspective-box p {
+      font-size: 13.5px;
+      color: var(--text-secondary);
+      line-height: 1.65;
     }
 
+    /* --- Architecture Grid --- */
     .arch-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 2rem;
-      margin-bottom: 4.5rem;
+      gap: 20px;
+      margin-top: 10px;
     }
-    @media (max-width: 860px) { .arch-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 820px) { .arch-grid { grid-template-columns: 1fr; } }
 
-    .arch-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      border-radius: 14px;
-      padding: 2rem;
+    .arch-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 26px;
+      box-shadow: var(--shadow-md);
       position: relative;
       overflow: hidden;
-      box-shadow: var(--shadow-card);
     }
+    .arch-box::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+    }
+    .arch-box.idf::before { background: linear-gradient(90deg, var(--accent-primary), var(--accent-neon)); }
+    .arch-box.zephyr::before { background: linear-gradient(90deg, var(--accent-cyan), var(--accent-violet)); }
 
-    .arch-card.idf { border-top: 4px solid var(--accent-emerald); }
-    .arch-card.zephyr { border-top: 4px solid var(--accent-cyan); }
-
-    .arch-badge {
+    .arch-chip {
       display: inline-block;
-      font-size: 0.75rem;
-      font-weight: 700;
       font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 12px;
       text-transform: uppercase;
-      padding: 0.25rem 0.6rem;
-      border-radius: 4px;
-      margin-bottom: 1rem;
     }
-    .arch-card.idf .arch-badge { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); border: 1px solid var(--accent-emerald); }
-    .arch-card.zephyr .arch-badge { background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); }
+    .arch-box.idf .arch-chip { background: rgba(16, 185, 129, 0.15); color: var(--accent-neon); border: 1px solid var(--accent-primary); }
+    .arch-box.zephyr .arch-chip { background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); }
 
-    .arch-card h3 { font-size: 1.6rem; margin-bottom: 1rem; }
-    .arch-list { list-style: none; margin: 1.25rem 0; }
-    .arch-list li {
-      padding: 0.5rem 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      font-size: 0.95rem;
-      color: var(--text-muted);
+    .arch-title {
+      font-family: var(--font-heading);
+      font-size: 28px;
+      letter-spacing: 0.04em;
+      color: var(--text-contrast);
+      margin-bottom: 8px;
+    }
+
+    .feature-list {
+      list-style: none;
+      margin-top: 16px;
+    }
+    .feature-list li {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 13.5px;
       display: flex;
       justify-content: space-between;
+      color: var(--text-secondary);
     }
-    .arch-list li strong { color: var(--text-main); }
+    .feature-list li strong {
+      color: var(--text-contrast);
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+    }
 
-    /* The 6 Engineering Challenges */
+    /* --- 6 Challenges (War Stories) --- */
     .challenges-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 4.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 18px;
+      margin-top: 10px;
     }
 
     .challenge-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      border-radius: 12px;
-      padding: 1.75rem;
-      transition: all 0.25s ease;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 22px;
       cursor: pointer;
-      position: relative;
+      transition: all var(--transition-fast);
+      box-shadow: var(--shadow-sm);
     }
-
     .challenge-card:hover {
-      border-color: var(--accent-cyan);
-      transform: translateY(-3px);
+      border-color: var(--accent-primary);
+      transform: translateY(-2px);
       box-shadow: var(--shadow-glow);
     }
+    .challenge-card.expanded {
+      border-color: var(--accent-neon);
+      background: var(--bg-surface);
+    }
 
-    .challenge-tag {
+    .card-trap-tag {
       font-family: var(--font-mono);
-      font-size: 0.75rem;
+      font-size: 11px;
       font-weight: 700;
       color: var(--accent-amber);
-      margin-bottom: 0.6rem;
+      margin-bottom: 6px;
       display: block;
+      letter-spacing: 0.05em;
     }
 
-    .challenge-card h3 {
-      font-size: 1.2rem;
-      margin-bottom: 0.75rem;
+    .card-title {
+      font-family: var(--font-heading);
+      font-size: 22px;
+      letter-spacing: 0.03em;
+      color: var(--text-contrast);
+      margin-bottom: 8px;
     }
 
-    .challenge-summary {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      margin-bottom: 1rem;
-      line-height: 1.5;
+    .card-snippet {
+      font-size: 13.5px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 12px;
     }
 
-    .challenge-details {
-      display: none;
-      border-top: 1px solid var(--border-subtle);
-      padding-top: 1rem;
-      margin-top: 1rem;
-      font-size: 0.875rem;
-      color: var(--text-subtle);
-    }
-    .challenge-card.expanded .challenge-details { display: block; }
-    .challenge-card.expanded { border-color: var(--accent-cyan); background: var(--bg-card); }
-
-    .toggle-text {
-      font-size: 0.8rem;
+    .expand-cta {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
       font-weight: 600;
       color: var(--accent-cyan);
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      gap: 0.35rem;
+      gap: 4px;
     }
 
-    /* Lessons Learned Table */
-    .table-container {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      border-radius: 14px;
+    .card-deepdive {
+      display: none;
+      border-top: 1px solid var(--border-color);
+      padding-top: 14px;
+      margin-top: 14px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.65;
+    }
+    .challenge-card.expanded .card-deepdive { display: block; }
+    .card-deepdive strong { color: var(--accent-primary); }
+
+    /* --- Retrospective Table --- */
+    .table-shell {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
       overflow-x: auto;
-      margin-bottom: 4.5rem;
-      box-shadow: var(--shadow-card);
+      box-shadow: var(--shadow-md);
+      margin-top: 10px;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
       text-align: left;
-      font-size: 0.9rem;
+      font-size: 13.5px;
     }
 
     th {
-      background: rgba(7, 11, 20, 0.9);
-      padding: 1rem 1.25rem;
+      background: var(--bg-surface);
+      padding: 12px 18px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
       font-weight: 700;
-      text-transform: uppercase;
-      font-size: 0.75rem;
+      color: var(--text-muted);
       letter-spacing: 0.05em;
-      color: var(--text-subtle);
-      border-bottom: 1px solid var(--border-subtle);
+      border-bottom: 1px solid var(--border-color);
+      text-transform: uppercase;
     }
 
     td {
-      padding: 1.15rem 1.25rem;
+      padding: 14px 18px;
       border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--bg-surface-hover); }
+
+    .tag-pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .tag-pass { background: rgba(16, 185, 129, 0.15); color: var(--accent-neon); border: 1px solid var(--accent-primary); }
+    .tag-warn { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); border: 1px solid var(--accent-amber); }
+
+    /* --- Footer --- */
+    footer {
+      border-top: 1px solid var(--border-color);
+      padding: 40px 0;
+      margin-top: 50px;
+      text-align: center;
+      background: var(--bg-secondary);
+    }
+    .footer-brand {
+      font-family: var(--font-heading);
+      font-size: 24px;
+      letter-spacing: 0.05em;
+      color: var(--text-contrast);
+      margin-bottom: 6px;
+    }
+    .footer-note {
+      font-size: 13px;
       color: var(--text-muted);
     }
 
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: rgba(255, 255, 255, 0.02); }
-
-    .badge-status {
-      display: inline-block;
-      padding: 0.2rem 0.5rem;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      font-family: var(--font-mono);
-      font-weight: 700;
-    }
-    .badge-pass { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); border: 1px solid var(--accent-emerald); }
-    .badge-warn { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); border: 1px solid var(--accent-amber); }
-
-    /* Footer */
-    footer {
-      border-top: 1px solid var(--border-subtle);
-      padding: 3rem 0;
-      background: var(--bg-surface);
-      text-align: center;
-      font-size: 0.9rem;
-      color: var(--text-subtle);
-    }
-
-    /* ===================================================================== */
-    /* FULLSCREEN PRESENTATION DECK MODE                                     */
-    /* ===================================================================== */
+    /* =========================================================================
+       Fullscreen Presentation Deck (Overlay Engine)
+       ========================================================================= */
     #deck-overlay {
       position: fixed;
       inset: 0;
       background: var(--bg-primary);
-      z-index: 100;
+      z-index: 1000;
       display: none;
       flex-direction: column;
       height: 100vh;
@@ -532,69 +721,42 @@
     #deck-overlay.active { display: flex; }
 
     .deck-topbar {
-      padding: 0.75rem 2rem;
+      padding: 10px 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: rgba(13, 21, 39, 0.9);
-      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
     }
 
-    .deck-title {
-      font-size: 0.95rem;
-      font-weight: 700;
-      font-family: var(--font-mono);
-      color: var(--accent-cyan);
+    .deck-brand {
+      font-family: var(--font-heading);
+      font-size: 20px;
+      letter-spacing: 0.06em;
+      color: var(--accent-neon);
     }
 
-    .deck-controls {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .deck-btn {
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-main);
-      padding: 0.4rem 0.85rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .deck-btn:hover {
-      border-color: var(--accent-cyan);
-      background: var(--bg-card-hover);
-    }
-    .deck-btn.active {
-      background: var(--accent-cyan);
-      color: #000;
-      border-color: var(--accent-cyan);
-    }
-
-    .deck-slide-container {
+    .deck-body {
       flex: 1;
-      position: relative;
-      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 2.5rem 4rem;
+      position: relative;
+      padding: 30px 40px;
+      overflow: hidden;
     }
 
     .slide {
       position: absolute;
       width: 90%;
-      max-width: 1100px;
+      max-width: 1040px;
       opacity: 0;
       visibility: hidden;
-      transform: translateY(20px);
-      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: translateY(18px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       flex-direction: column;
-      gap: 1.25rem;
+      gap: 16px;
     }
     .slide.current {
       opacity: 1;
@@ -605,92 +767,106 @@
 
     .slide-badge {
       align-self: flex-start;
-      padding: 0.25rem 0.75rem;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      font-weight: 700;
       font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-neon);
+      border: 1px solid var(--accent-primary);
       text-transform: uppercase;
-      background: rgba(56, 189, 248, 0.15);
-      color: var(--accent-cyan);
-      border: 1px solid var(--accent-cyan);
     }
 
-    .slide h2 {
-      font-size: 2.5rem;
-      letter-spacing: -0.02em;
+    .slide-title {
+      font-family: var(--font-heading);
+      font-size: clamp(38px, 5vw, 60px);
+      line-height: 1;
+      letter-spacing: 0.03em;
+      color: var(--text-contrast);
     }
 
-    .slide-body {
-      font-size: 1.2rem;
+    .slide-summary {
+      font-size: 16px;
+      color: var(--text-secondary);
       line-height: 1.7;
-      color: var(--text-muted);
     }
 
-    .slide-grid {
+    .slide-cards-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-      margin-top: 1rem;
+      gap: 16px;
+      margin-top: 10px;
+    }
+    @media (max-width: 760px) { .slide-cards-grid { grid-template-columns: 1fr; } }
+
+    .slide-subcard {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 20px;
+    }
+    .slide-subcard h5 {
+      font-family: var(--font-heading);
+      font-size: 20px;
+      letter-spacing: 0.04em;
+      color: var(--text-contrast);
+      margin-bottom: 6px;
+    }
+    .slide-subcard p {
+      font-size: 13.5px;
+      color: var(--text-secondary);
+      line-height: 1.6;
     }
 
-    .slide-box {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      border-radius: 10px;
-      padding: 1.5rem;
-    }
-    .slide-box h3 { font-size: 1.15rem; margin-bottom: 0.5rem; color: #ffffff; }
-    .slide-box p { font-size: 0.95rem; color: var(--text-muted); }
-
-    /* Speaker Notes Drawer */
-    .speaker-notes {
+    /* Notes Drawer */
+    .speaker-drawer {
       position: absolute;
-      bottom: 60px;
+      bottom: 64px;
       left: 50%;
       transform: translateX(-50%);
       width: 85%;
-      max-width: 960px;
-      background: #111827;
+      max-width: 900px;
+      background: #111822;
       border: 1px solid var(--accent-amber);
-      border-radius: 8px;
-      padding: 1rem 1.5rem;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-      font-size: 0.9rem;
-      color: #fcd34d;
+      border-radius: var(--radius-md);
+      padding: 14px 20px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.9);
+      font-size: 13px;
+      color: #fde68a;
       display: none;
-      z-index: 30;
+      z-index: 50;
     }
-    .speaker-notes.visible { display: block; }
-    .speaker-notes strong { color: #ffffff; display: block; margin-bottom: 0.25rem; }
+    .speaker-drawer.visible { display: block; }
+    .speaker-drawer strong { color: #ffffff; display: block; margin-bottom: 4px; font-family: var(--font-mono); }
 
     .deck-bottombar {
-      padding: 0.75rem 2rem;
+      padding: 10px 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: rgba(13, 21, 39, 0.9);
-      border-top: 1px solid var(--border-subtle);
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border-color);
     }
 
     .slide-counter {
       font-family: var(--font-mono);
-      font-size: 0.85rem;
-      color: var(--text-subtle);
+      font-size: 12px;
+      color: var(--text-muted);
     }
 
-    .deck-progress-track {
+    .progress-bar-track {
       flex: 1;
       max-width: 300px;
       height: 4px;
-      background: var(--border-subtle);
-      border-radius: 999px;
+      background: var(--border-color);
+      border-radius: var(--radius-full);
       overflow: hidden;
-      margin: 0 1.5rem;
+      margin: 0 20px;
     }
-    .deck-progress-fill {
+    .progress-bar-fill {
       height: 100%;
-      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-emerald));
+      background: linear-gradient(90deg, var(--accent-primary), var(--accent-neon));
       width: 0%;
       transition: width 0.3s ease;
     }
@@ -698,167 +874,189 @@
 </head>
 <body>
 
-  <div class="bg-grid"></div>
+  <!-- Top Sticky Site Nav -->
+  <header class="site-nav">
+    <div class="container nav-wrapper">
+      <div class="brand-title">
+        <span>bootlab-esp</span>
+        <span class="brand-badge">DUAL-OS OTA</span>
+      </div>
 
-  <!-- NAVIGATION BAR -->
-  <header class="navbar">
-    <div class="brand">
-      <span class="brand-chip">EMBEDDED OS</span>
-      <span>bootlab-esp</span>
-    </div>
-    <nav>
-      <ul class="nav-links">
-        <li><a href="#overview">Overview</a></li>
-        <li><a href="#perspectives">Perspectives</a></li>
-        <li><a href="#architecture">Architecture</a></li>
-        <li><a href="#challenges">Challenges</a></li>
-        <li><a href="#lessons">Lessons Learned</a></li>
-        <li><a href="https://github.com/mohamed-soubhi/bootlab-esp" target="_blank" rel="noopener">GitHub</a></li>
-      </ul>
-    </nav>
-    <div class="nav-actions">
-      <button class="btn btn-primary" onclick="launchDeck()" title="Press 'P' to open presentation deck">
-        <span>▶ Launch Presentation Deck</span>
-        <span class="mono" style="font-size:0.75rem; opacity:0.8;">[P]</span>
-      </button>
+      <nav>
+        <ul class="nav-links">
+          <li><a href="#overview">Overview</a></li>
+          <li><a href="#perspectives">Perspectives</a></li>
+          <li><a href="#architecture">Architecture</a></li>
+          <li><a href="#challenges">War Stories</a></li>
+          <li><a href="#retrospective">Retrospective</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="https://mohamed-soubhi.github.io/" target="_blank" class="contact-item" title="Mohamed Soubhi's Portfolio">
+          <span>👤</span> Portfolio
+        </a>
+
+        <button id="themeToggle" class="btn-pill" title="Toggle Theme">
+          <span class="theme-icon">☀️</span>
+          <span class="theme-text">Light</span>
+        </button>
+
+        <button class="btn-pill primary" onclick="launchDeck()" title="Start Fullscreen Presentation Deck">
+          <span>▶</span> Presentation [P]
+        </button>
+      </div>
     </div>
   </header>
 
   <main class="container">
 
     <!-- HERO SECTION -->
-    <section class="hero" id="overview">
-      <div class="hero-badge">
-        <span class="pulse-dot"></span>
-        <span>PRODUCTION HARDWARE TESTBED & VERIFIED ON ESP32-S3 SILICON</span>
+    <section class="hero-section" id="overview">
+      <div class="hero-eyebrow">
+        <div class="hero-status-pill">
+          <span class="pulse-dot"></span>
+          <span>Target Silicon Verified &bull; ESP32-S3</span>
+        </div>
       </div>
-      <h1>Dual-OS Bootloader & Resilient OTA Testbed</h1>
-      <p>
-        An enterprise-grade firmware delivery platform proving fail-safe over-the-air updates, 
+
+      <div class="hero-subtitle">Fail-Safe Firmware Delivery Engine</div>
+      <h1 class="hero-title">Dual-OS Bootloader & Resilient OTA Testbed</h1>
+
+      <p class="hero-desc">
+        A production-proven embedded architecture demonstrating fail-safe over-the-air updates, 
         automatic rollback, and zero-allocation telemetry across <strong>ESP-IDF (FreeRTOS)</strong> 
-        and <strong>Zephyr RTOS</strong> on physical hardware.
+        and <strong>Zephyr RTOS</strong> on physical ESP32-S3 hardware.
       </p>
-      <div class="hero-cta">
-        <button class="btn btn-primary" style="padding: 0.75rem 1.6rem; font-size: 1rem;" onclick="launchDeck()">
-          Start Presentation [P]
+
+      <div class="contact-bar">
+        <button class="btn-pill primary" style="padding: 8px 20px; font-size: 13px;" onclick="launchDeck()">
+          ▶ Start Presentation Deck [P]
         </button>
-        <a href="#challenges" class="btn btn-outline" style="padding: 0.75rem 1.6rem; font-size: 1rem;">
-          Explore War Stories
+        <a href="#challenges" class="btn-pill">
+          Read Engineering War Stories &darr;
+        </a>
+        <a href="https://github.com/mohamed-soubhi/bootlab-esp" target="_blank" class="btn-pill">
+          GitHub Repository &rarr;
         </a>
       </div>
 
-      <!-- KPI METRIC STRIP -->
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <div class="kpi-val">39 / 56</div>
-          <div class="kpi-label">Tickets Target-Verified</div>
+      <!-- Executive Stat Strip -->
+      <div class="hero-stat-strip">
+        <div class="stat-item">
+          <span class="stat-highlight">39 / 56</span>
+          <span class="stat-detail">Tickets Target-Verified</span>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-val">0</div>
-          <div class="kpi-label">eFuses Burned (Zero Risk)</div>
+        <span class="stat-sep">/</span>
+        <div class="stat-item">
+          <span class="stat-highlight">0</span>
+          <span class="stat-detail">eFuses Burned (100% Safe)</span>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-val">Dual OS</div>
-          <div class="kpi-label">ESP-IDF & Zephyr RTOS</div>
+        <span class="stat-sep">/</span>
+        <div class="stat-item">
+          <span class="stat-highlight">Dual-OS</span>
+          <span class="stat-detail">ESP-IDF + Zephyr RTOS</span>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-val">2 Radios</div>
-          <div class="kpi-label">Bluetooth LE & WiFi OTA</div>
+        <span class="stat-sep">/</span>
+        <div class="stat-item">
+          <span class="stat-highlight">2 Radios</span>
+          <span class="stat-detail">Bluetooth LE &amp; Wi-Fi OTA</span>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-val">91%</div>
-          <div class="kpi-label">Host CLI Unit Coverage</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-val">100%</div>
-          <div class="kpi-label">Rollback Resilience</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- PROJECT PERSPECTIVES -->
-    <section class="lens-section" id="perspectives">
-      <div class="lens-header">
-        <div>
-          <h2>Project Perspectives</h2>
-          <p style="color:var(--text-subtle); font-size:0.9rem;">Explore the platform through product reliability, business value, and systems architecture</p>
-        </div>
-        <div class="lens-tabs">
-          <button class="lens-tab active" onclick="switchLens('customer')">🛡️ Product & Reliability</button>
-          <button class="lens-tab" onclick="switchLens('ceo')">📈 Business Value & ROI</button>
-          <button class="lens-tab" onclick="switchLens('tech')">⚙️ Under the Hood</button>
-        </div>
-      </div>
-
-      <!-- Customer View -->
-      <div class="lens-content active" id="lens-customer">
-        <div class="lens-grid">
-          <div class="lens-box">
-            <h3>Zero Field-Bricking Guarantee</h3>
-            <p>Every OTA binary is cryptographically signed (RSA-3072 / ECDSA P-256). If an image fails to boot, panics on a watchdog, or corrupts mid-air, the hardware autonomously rolls back to the proven factory slot in &le; 17 seconds.</p>
-          </div>
-          <div class="lens-box">
-            <h3>Multi-Transport Redundancy</h3>
-            <p>Update over local Wi-Fi / HTTPS for rapid broadband delivery, or fall back to Bluetooth Low Energy (NimBLE / SMP) when devices are isolated in closed field enclosures without LAN access.</p>
-          </div>
-          <div class="lens-box">
-            <h3>Vendor Independence</h3>
-            <p>Proven support for both Espressif's native ESP-IDF ecosystem and the Linux Foundation's vendor-neutral Zephyr RTOS, eliminating vendor lock-in for future hardware migrations.</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- CEO / Executive View -->
-      <div class="lens-content" id="lens-ceo">
-        <div class="lens-grid">
-          <div class="lens-box">
-            <h3>Massive Warranty Cost Reduction</h3>
-            <p>Field recalls of bricked IoT devices average $150–$300 per unit in logistics and engineering time. Our dual-partition rollback and automated recovery guarantee 100% survivability during field updates.</p>
-          </div>
-          <div class="lens-box">
-            <h3>Rigorous Engineering Governance</h3>
-            <p>39 out of 56 tickets completed with strict evidence gates. No ticket was marked done without on-target serial and network captures, ensuring complete auditable compliance for enterprise clients.</p>
-          </div>
-          <div class="lens-box">
-            <h3>Zero Silicon Lock-in & eFuse Safety</h3>
-            <p>We achieved bank-grade software signature verification without burning irreversible hardware eFuses, keeping prototyping inventory reusable and cutting hardware experimentation waste.</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tech Lead View -->
-      <div class="lens-content" id="lens-tech">
-        <div class="lens-grid">
-          <div class="lens-box">
-            <h3>Deep Systems Architecture</h3>
-            <p>Dual-OS implementation comparing FreeRTOS task prioritization with Zephyr's cooperative/preemptive threads. Hardware watchdog integration (`task_wdt`) trigger automatic MCUboot slot rollback.</p>
-          </div>
-          <div class="lens-box">
-            <h3>Zero-Allocation LABID Wire Protocol</h3>
-            <p>Engineered an ASCII wire protocol (`$LAB,CMD*CS\n`) implemented identically in C99 firmware and Python host tools, featuring one-fputs atomic frame writes to prevent log interleaving.</p>
-          </div>
-          <div class="lens-box">
-            <h3>Automated HIL Rig & Serial Multiplexing</h3>
-            <p>Created `SharedConsolePort` to stream console logs continuously while servicing LABID queries over exclusive Windows COM handles, plus self-hosted runner integration on Raspberry Pi 4.</p>
-          </div>
+        <span class="stat-sep">/</span>
+        <div class="stat-item">
+          <span class="stat-highlight">91%</span>
+          <span class="stat-detail">Host CLI Test Coverage</span>
         </div>
       </div>
     </section>
 
-    <!-- ARCHITECTURE MATRIX -->
-    <section id="architecture" style="margin-bottom: 4rem;">
-      <h2 class="section-title">Dual-OS Architecture Matrix</h2>
-      <p class="section-subtitle">Side-by-side comparison of the two production firmware stacks tested on target</p>
+    <!-- SECTION 1: PERSPECTIVES -->
+    <section class="section-block" id="perspectives">
+      <div class="section-eyebrow">Strategic Value & Pillars</div>
+      <h2 class="section-heading">Project Perspectives</h2>
+      <p class="section-subtext">Explore the system through product reliability, business impact, and deep systems engineering</p>
+
+      <div class="perspectives-card">
+        <div class="perspectives-header">
+          <div style="font-family: var(--font-heading); font-size: 22px; color: var(--text-contrast);">Select Focus Area</div>
+          <div class="tab-pills">
+            <button class="tab-btn active" onclick="switchLens('reliability')">🛡️ Product &amp; Reliability</button>
+            <button class="tab-btn" onclick="switchLens('business')">📈 Business Value &amp; ROI</button>
+            <button class="tab-btn" onclick="switchLens('technical')">⚙️ Under the Hood</button>
+          </div>
+        </div>
+
+        <!-- 1. Reliability -->
+        <div class="perspective-pane active" id="pane-reliability">
+          <div class="perspective-grid">
+            <div class="perspective-box">
+              <h4>Zero Field-Bricking Guarantee</h4>
+              <p>Every OTA binary is cryptographically verified (RSA-3072 / ECDSA P-256). If an image fails to boot or panics on a watchdog, the hardware autonomously rolls back to the proven factory slot in &le; 17 seconds.</p>
+            </div>
+            <div class="perspective-box">
+              <h4>Multi-Transport Redundancy</h4>
+              <p>Update over local Wi-Fi / HTTPS for rapid broadband delivery, or fall back to Bluetooth Low Energy (NimBLE / SMP) when devices are sealed in closed field enclosures without Wi-Fi access.</p>
+            </div>
+            <div class="perspective-box">
+              <h4>Vendor-Neutral Portability</h4>
+              <p>Proves firmware deployment on both Espressif's native ESP-IDF and the Linux Foundation's Zephyr RTOS, protecting hardware roadmaps from single-vendor lock-in.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Business Value -->
+        <div class="perspective-pane" id="pane-business">
+          <div class="perspective-grid">
+            <div class="perspective-box">
+              <h4>Eliminating Warranty Recall Costs</h4>
+              <p>Field returns of bricked IoT units average $150–$300 per device in shipping and support. Dual-partition rollback with watchdog timeouts ensures 100% survivability during field updates.</p>
+            </div>
+            <div class="perspective-box">
+              <h4>Auditable Engineering Rigor</h4>
+              <p>39 out of 56 tickets completed with strict empirical evidence gates. No claim was verified without live target serial and network telemetry captures, guaranteeing auditable compliance.</p>
+            </div>
+            <div class="perspective-box">
+              <h4>Zero Silicon Waste (0 eFuses Burned)</h4>
+              <p>Achieved enterprise-grade software signature verification without burning irreversible hardware security bits, keeping prototyping inventory completely reusable.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Technical -->
+        <div class="perspective-pane" id="pane-technical">
+          <div class="perspective-grid">
+            <div class="perspective-box">
+              <h4>Deep Systems Architecture</h4>
+              <p>Dual-OS implementation comparing FreeRTOS task prioritization with Zephyr's cooperative/preemptive threads. Hardware watchdog integration (`task_wdt`) triggers automatic MCUboot slot rollback.</p>
+            </div>
+            <div class="perspective-box">
+              <h4>Zero-Allocation LABID Wire Protocol</h4>
+              <p>Engineered an ASCII wire protocol (`$LAB,CMD*CS\n`) implemented identically in C99 firmware and Python host tools, featuring one-fputs atomic frame writes to prevent log interleaving.</p>
+            </div>
+            <div class="perspective-box">
+              <h4>Automated HIL Rig &amp; Serial Multiplexing</h4>
+              <p>Created `SharedConsolePort` to stream console logs continuously while servicing LABID queries over exclusive Windows COM handles, plus self-hosted runner integration on Raspberry Pi 4.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: DUAL-OS ARCHITECTURE -->
+    <section class="section-block" id="architecture">
+      <div class="section-eyebrow">Firmware Engineering</div>
+      <h2 class="section-heading">Dual-OS Architecture Matrix</h2>
+      <p class="section-subtext">Side-by-side comparison of the two production firmware stacks tested on target silicon</p>
 
       <div class="arch-grid">
-        <!-- IDF CARD -->
-        <div class="arch-card idf">
-          <span class="arch-badge">Track 1: ESP-IDF v5.4</span>
-          <h3>FreeRTOS & Native Bootloader</h3>
-          <p style="color:var(--text-muted); font-size:0.95rem;">
+        <!-- IDF BOX -->
+        <div class="arch-box idf">
+          <span class="arch-chip">Track 1: ESP-IDF v5.4</span>
+          <h3 class="arch-title">FreeRTOS &amp; Native Bootloader</h3>
+          <p style="font-size: 13.5px; color: var(--text-secondary); margin-bottom: 12px;">
             Native Espressif 2-stage bootloader with anti-rollback version security, dual 2.5 MB application partitions, and 8 MB Octal PSRAM.
           </p>
-          <ul class="arch-list">
+          <ul class="feature-list">
             <li><span>Bootloader</span> <strong>2-Stage ESP-IDF (Slot 0/1)</strong></li>
             <li><span>Signatures</span> <strong>RSA-3072 Software Verification</strong></li>
             <li><span>WiFi OTA</span> <strong>esp_https_ota (Pull from LAN)</strong></li>
@@ -868,118 +1066,120 @@
           </ul>
         </div>
 
-        <!-- ZEPHYR CARD -->
-        <div class="arch-card zephyr">
-          <span class="arch-badge">Track 2: Zephyr RTOS v4.0</span>
-          <h3>MCUboot & MCUmgr SMP</h3>
-          <p style="color:var(--text-muted); font-size:0.95rem;">
+        <!-- ZEPHYR BOX -->
+        <div class="arch-box zephyr">
+          <span class="arch-chip">Track 2: Zephyr RTOS v4.0</span>
+          <h3 class="arch-title">MCUboot &amp; MCUmgr SMP</h3>
+          <p style="font-size: 13.5px; color: var(--text-secondary); margin-bottom: 12px;">
             Linux Foundation open-source RTOS with MCUboot swap-with-revert orchestration, MCUmgr SMP management over BLE and UDP port 1337.
           </p>
-          <ul class="arch-list">
+          <ul class="feature-list">
             <li><span>Bootloader</span> <strong>MCUboot (Swap with Revert)</strong></li>
             <li><span>Signatures</span> <strong>ECDSA P-256 (imgtool verified)</strong></li>
             <li><span>WiFi OTA</span> <strong>MCUmgr SMP over UDP (Port 1337)</strong></li>
             <li><span>BLE OTA</span> <strong>MCUmgr SMP over Bluetooth LE</strong></li>
             <li><span>Coexistence</span> <strong>Unified Single Binary (Internal SRAM)</strong></li>
-            <li><span>Rollback</span> <strong>mcumgr image test & confirm handshake</strong></li>
+            <li><span>Rollback</span> <strong>mcumgr image test &amp; confirm handshake</strong></li>
           </ul>
         </div>
       </div>
     </section>
 
-    <!-- 6 ENGINEERING CHALLENGES (WAR STORIES) -->
-    <section id="challenges" style="margin-bottom: 4rem;">
-      <h2 class="section-title">The 6 Great Engineering Challenges</h2>
-      <p class="section-subtitle">Real hardware traps, diagnostic breakthroughs, and permanent architectural defenses</p>
+    <!-- SECTION 3: 6 WAR STORIES -->
+    <section class="section-block" id="challenges">
+      <div class="section-eyebrow">Real Diagnostic Breakthroughs</div>
+      <h2 class="section-heading">The 6 Great Engineering War Stories</h2>
+      <p class="section-subtext">Real hardware traps, low-level bugs, and permanent architectural defenses</p>
 
       <div class="challenges-grid">
-        <!-- CHALLENGE 1 -->
+        <!-- TRAP 1 -->
         <div class="challenge-card" onclick="toggleCard(this)">
-          <span class="challenge-tag">TRAP 01 &bull; WINDOWS BLE</span>
-          <h3>The WinRT GATT Caching Quirk</h3>
-          <p class="challenge-summary">Windows WinRT aggressively caches GATT services across reboots, causing BLE OTA reconnects to fail after partition swaps.</p>
-          <span class="toggle-text">Read War Story &rarr;</span>
-          <div class="challenge-details">
+          <span class="card-trap-tag">TRAP 01 &bull; WINDOWS BLE</span>
+          <h3 class="card-title">The WinRT GATT Caching Trap</h3>
+          <p class="card-snippet">Windows WinRT aggressively caches GATT services across reboots, causing BLE OTA reconnects to fail after partition swaps.</p>
+          <div class="expand-cta">Read War Story &rarr;</div>
+          <div class="card-deepdive">
             <p><strong>The Trap:</strong> WinRT caches GATT services by MAC address. When MCUboot swaps from v1 to v2, the UUID table changes, but Windows refuses to re-query the device, breaking subsequent transfers.</p>
-            <p style="margin-top:0.5rem;"><strong>The Fix:</strong> Injected <code>winrt={"use_cached_services": False}</code> into our <code>BleakClient</code> and <code>SMPBLETransport</code> wrapper, forcing fresh service resolution on every connection.</p>
+            <p style="margin-top:8px;"><strong>The Fix:</strong> Injected <code>winrt={"use_cached_services": False}</code> into our <code>BleakClient</code> and <code>SMPBLETransport</code> wrapper, forcing fresh service resolution on every connection.</p>
           </div>
         </div>
 
-        <!-- CHALLENGE 2 -->
+        <!-- TRAP 2 -->
         <div class="challenge-card" onclick="toggleCard(this)">
-          <span class="challenge-tag">TRAP 02 &bull; SERIAL MULTIPLEXING</span>
-          <h3>COM Port Concurrency (`SharedConsolePort`)</h3>
-          <p class="challenge-summary">Windows opens COM ports exclusively (`Access is denied`), preventing background loggers from running alongside LABID queries.</p>
-          <span class="toggle-text">Read War Story &rarr;</span>
-          <div class="challenge-details">
+          <span class="card-trap-tag">TRAP 02 &bull; SERIAL CONCURRENCY</span>
+          <h3 class="card-title">COM Port Locking (`SharedConsolePort`)</h3>
+          <p class="card-snippet">Windows opens COM ports exclusively (`Access is denied`), preventing background loggers from running alongside LABID queries.</p>
+          <div class="expand-cta">Read War Story &rarr;</div>
+          <div class="card-deepdive">
             <p><strong>The Trap:</strong> Every telemetry query opened and closed the COM port per call. In-between queries, logs were lost—specifically during the crucial <code>esp_ota_end</code> reboot window.</p>
-            <p style="margin-top:0.5rem;"><strong>The Fix:</strong> Engineered <code>SharedConsolePort</code>: opens the port once, keeps it open, and runs a background thread that tees raw lines to <code>console.log</code> while passing bytes to query handles without collisions.</p>
+            <p style="margin-top:8px;"><strong>The Fix:</strong> Engineered <code>SharedConsolePort</code>: opens the port once, keeps it open, and runs a background thread that tees raw lines to <code>console.log</code> while passing bytes to query handles without collisions.</p>
           </div>
         </div>
 
-        <!-- CHALLENGE 3 -->
+        <!-- TRAP 3 -->
         <div class="challenge-card" onclick="toggleCard(this)">
-          <span class="challenge-tag">TRAP 03 &bull; HARDWARE MECHANICS</span>
-          <h3>Software Reset vs. Hardware Reset Behavior</h3>
-          <p class="challenge-summary">Host test scripts waiting for USB port disconnections hung forever because software reboots don't drop the USB bus.</p>
-          <span class="toggle-text">Read War Story &rarr;</span>
-          <div class="challenge-details">
+          <span class="card-trap-tag">TRAP 03 &bull; HARDWARE MECHANICS</span>
+          <h3 class="card-title">Software vs. Hardware Reset Behavior</h3>
+          <p class="card-snippet">Host test scripts waiting for USB port disconnections hung forever because software reboots don't drop the USB bus.</p>
+          <div class="expand-cta">Read War Story &rarr;</div>
+          <div class="card-deepdive">
             <p><strong>The Trap:</strong> On ESP32-S3 USB-Serial-JTAG, <code>esp_restart()</code> preserves USB enumeration. Only physical reset buttons drop the bus (~600 ms).</p>
-            <p style="margin-top:0.5rem;"><strong>The Fix:</strong> Redesigned host detection: tools stop waiting for port drops and instead listen for the atomic <code>$LAB,ANNOUNCE</code> boot frame or poll the HTTPS version endpoint.</p>
+            <p style="margin-top:8px;"><strong>The Fix:</strong> Redesigned host detection: tools stop waiting for port drops and instead listen for the atomic <code>$LAB,ANNOUNCE</code> boot frame or poll the HTTPS version endpoint.</p>
           </div>
         </div>
 
-        <!-- CHALLENGE 4 -->
+        <!-- TRAP 4 -->
         <div class="challenge-card" onclick="toggleCard(this)">
-          <span class="challenge-tag">TRAP 04 &bull; POWER STABILITY</span>
-          <h3>RPi4 Brownouts & Architectural Boundary</h3>
-          <p class="challenge-summary">RPi4 auxiliary runner recorded 7 under-voltage events in 10 minutes (`0x50000`), risking flash block corruption.</p>
-          <span class="toggle-text">Read War Story &rarr;</span>
-          <div class="challenge-details">
+          <span class="card-trap-tag">TRAP 04 &bull; POWER STABILITY</span>
+          <h3 class="card-title">RPi4 Power Brownouts (`0x50000`)</h3>
+          <p class="card-snippet">RPi4 auxiliary runner recorded 7 under-voltage events in 10 minutes (`0x50000`), risking flash block corruption.</p>
+          <div class="expand-cta">Read War Story &rarr;</div>
+          <div class="card-deepdive">
             <p><strong>The Trap:</strong> Flash memory write peaks during USB flashing cause voltage dips on unpowered RPi4 USB buses, corrupting bootloaders.</p>
-            <p style="margin-top:0.5rem;"><strong>The Fix:</strong> Strict operational boundary codified in <code>docs/rpi4_limitations.md</code>: heavy builds and USB flashing stay on workstation; RPi4 acts strictly as an OTA network dispatcher over LAN.</p>
+            <p style="margin-top:8px;"><strong>The Fix:</strong> Strict operational boundary codified in <code>docs/rpi4_limitations.md</code>: heavy builds and USB flashing stay on workstation; RPi4 acts strictly as an OTA network dispatcher over LAN.</p>
           </div>
         </div>
 
-        <!-- CHALLENGE 5 -->
+        <!-- TRAP 5 -->
         <div class="challenge-card" onclick="toggleCard(this)">
-          <span class="challenge-tag">TRAP 05 &bull; RADIO COEXISTENCE</span>
-          <h3>Zephyr Coexistence & UART RX Deadlock (BL-064)</h3>
-          <p class="challenge-summary">Coexistence firmware ran fine, but host writes hung: the board's LABID UART RX interrupt never fired (`irq=0, rx=0`).</p>
-          <span class="toggle-text">Read War Story &rarr;</span>
-          <div class="challenge-details">
-            <p><strong>The Trap:</strong> In Zephyr <code>build_v2</code>, concurrent WiFi STA and BLE controllers competed for interrupt matrix allocations, starving the USB-CDC UART RX IRQ.</p>
-            <p style="margin-top:0.5rem;"><strong>The Fix:</strong> Documented full repro in <code>bl064_zephyr_labid_rx_irq_dead.md</code>, safely reflashed target back to verified <code>v1</code>, and isolated IRQ registration order in <code>main.c</code>.</p>
+          <span class="card-trap-tag">TRAP 05 &bull; RADIO COEXISTENCE</span>
+          <h3 class="card-title">Zephyr Radio Coexistence IRQ (BL-064)</h3>
+          <p class="card-snippet">Coexistence firmware ran fine, but host writes hung: the board's LABID UART RX interrupt never fired (`irq=0, rx=0`).</p>
+          <div class="expand-cta">Read War Story &rarr;</div>
+          <div class="card-deepdive">
+            <p><strong>The Trap:</strong> In Zephyr <code>build_v2</code>, concurrent Wi-Fi STA and BLE controllers competed for interrupt matrix allocations, starving the USB-CDC UART RX IRQ.</p>
+            <p style="margin-top:8px;"><strong>The Fix:</strong> Documented full repro in <code>bl064_zephyr_labid_rx_irq_dead.md</code>, safely reflashed target back to verified <code>v1</code>, and isolated IRQ registration order in <code>main.c</code>.</p>
           </div>
         </div>
 
-        <!-- CHALLENGE 6 -->
+        <!-- TRAP 6 -->
         <div class="challenge-card" onclick="toggleCard(this)">
-          <span class="challenge-tag">TRAP 06 &bull; TEST INTEGRITY</span>
-          <h3>The "Vacuous Evidence" Trap</h3>
-          <p class="challenge-summary">Host image servers reported "all bytes served" during corrupted image tests, creating false proof of firmware rejection.</p>
-          <span class="toggle-text">Read War Story &rarr;</span>
-          <div class="challenge-details">
+          <span class="card-trap-tag">TRAP 06 &bull; TEST RIGOR</span>
+          <h3 class="card-title">The "Vacuous Evidence" Trap</h3>
+          <p class="card-snippet">Host image servers reported "all bytes served" during corrupted image tests, creating false proof of firmware rejection.</p>
+          <div class="expand-cta">Read War Story &rarr;</div>
+          <div class="card-deepdive">
             <p><strong>The Trap:</strong> TCP RST truncation occurred mid-transfer; the board never even parsed the header, but the server counter reported success.</p>
-            <p style="margin-top:0.5rem;"><strong>The Fix:</strong> Banned server-side counters as acceptance evidence. Every rejection must be proven directly by on-target firmware logs (e.g. <code>Secure boot signature failed</code>) and verified slot stability.</p>
+            <p style="margin-top:8px;"><strong>The Fix:</strong> Banned server-side counters as acceptance evidence. Every rejection must be proven directly by on-target firmware logs (e.g. <code>Secure boot signature failed</code>) and verified slot stability.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- LESSONS LEARNED TABLE (R1–R15) -->
-    <section id="lessons" style="margin-bottom: 4rem;">
-      <h2 class="section-title">Strategic Lessons Learned (R1–R15 Retrospective)</h2>
-      <p class="section-subtitle">Audit of initial project assumptions versus real physical hardware behavior</p>
+    <!-- SECTION 4: LESSONS LEARNED TABLE -->
+    <section class="section-block" id="retrospective">
+      <div class="section-eyebrow">Risk Governance</div>
+      <h2 class="section-heading">Strategic Lessons Learned (R1–R15)</h2>
+      <p class="section-subtext">Audit of initial project assumptions versus verified physical hardware behavior</p>
 
-      <div class="table-container">
+      <div class="table-shell">
         <table>
           <thead>
             <tr>
               <th>Risk ID</th>
-              <th>Technical Domain</th>
-              <th>Initial Risk & Assumption</th>
-              <th>On-Target Hardware Reality</th>
+              <th>Domain</th>
+              <th>Initial Risk &amp; Assumption</th>
+              <th>Hardware Reality</th>
               <th>Architectural Defense</th>
             </tr>
           </thead>
@@ -989,42 +1189,42 @@
               <td>Bootloader</td>
               <td>MCUboot lacks swap-with-revert on ESP32-S3</td>
               <td>Verified revert-capable swap mode boots and reverts cleanly on hardware.</td>
-              <td><span class="badge-status badge-pass">P2 Gate Verified</span></td>
+              <td><span class="tag-pill tag-pass">Gate Verified</span></td>
             </tr>
             <tr>
               <td class="mono"><strong>R2</strong></td>
               <td>Memory / Coex</td>
               <td>BLE + WiFi memory exhaustion on single binary</td>
               <td>NimBLE + WiFi + HTTPS fit within 8MB Octal PSRAM; Zephyr fits in SRAM.</td>
-              <td><span class="badge-status badge-pass">Budget Enforced</span></td>
+              <td><span class="tag-pill tag-pass">Budget Enforced</span></td>
             </tr>
             <tr>
-              <td class="mono"><strong>R3 & R4</strong></td>
+              <td class="mono"><strong>R3 &amp; R4</strong></td>
               <td>Security</td>
               <td>Risk of burning permanent eFuses during testing</td>
-              <td>Zero eFuses burned. Identical SHA-256 eFuse summaries verified before & after.</td>
-              <td><span class="badge-status badge-pass">CI Filter Guard</span></td>
+              <td>Zero eFuses burned. Identical SHA-256 eFuse summaries verified before &amp; after.</td>
+              <td><span class="tag-pill tag-pass">CI Filter Guard</span></td>
             </tr>
             <tr>
               <td class="mono"><strong>R7</strong></td>
               <td>Power</td>
               <td>RPi4 can power and flash ESP32-S3 USB</td>
               <td>RPi4 suffered 7 brownout UV events / 10 min (throttled 0x50000).</td>
-              <td><span class="badge-status badge-warn">Network-Only Host</span></td>
+              <td><span class="tag-pill tag-warn">Network-Only Host</span></td>
             </tr>
             <tr>
               <td class="mono"><strong>R9</strong></td>
               <td>Protocol</td>
               <td>Console debug logs interleave with LABID frames</td>
               <td>Atomic one-fputs frame writes under lock prevent interleaving across 1,000 queries.</td>
-              <td><span class="badge-status badge-pass">C99 Framing Lock</span></td>
+              <td><span class="tag-pill tag-pass">C99 Framing Lock</span></td>
             </tr>
             <tr>
               <td class="mono"><strong>R14</strong></td>
               <td>Platform Bridge</td>
               <td>WSL2 resets ESP32-S3 on serial port open</td>
               <td>usbipd / WSL2 drops DTR/RTS during attach; native Windows serial does not.</td>
-              <td><span class="badge-status badge-pass">Native Windows Port</span></td>
+              <td><span class="tag-pill tag-pass">Native Windows Port</span></td>
             </tr>
           </tbody>
         </table>
@@ -1036,43 +1236,40 @@
   <!-- FOOTER -->
   <footer>
     <div class="container">
-      <p style="margin-bottom:0.75rem;"><strong>bootlab-esp</strong> — Engineered by Mohamed Soubhi & AI Pair Programming Agent</p>
-      <p style="font-size:0.8rem; color:var(--text-subtle);">
+      <div class="footer-brand">Mohamed Soubhi &bull; bootlab-esp</div>
+      <p class="footer-note">
         ESP32-S3 Dual-OS Architecture &bull; ESP-IDF v5.4 &bull; Zephyr RTOS v4.0 &bull; MCUboot &bull; Python labflash CLI &bull; Pytest HIL Rig
       </p>
     </div>
   </footer>
 
-  <!-- ===================================================================== -->
-  <!-- FULLSCREEN PRESENTATION DECK OVERLAY                                  -->
-  <!-- ===================================================================== -->
+  <!-- =========================================================================
+       Fullscreen Presentation Deck (Overlay Engine)
+       ========================================================================= -->
   <div id="deck-overlay">
-    <!-- DECK TOP BAR -->
     <div class="deck-topbar">
-      <div class="deck-title">bootlab-esp // EXECUTIVE PRESENTATION DECK</div>
-      <div class="deck-controls">
-        <button class="deck-btn" id="btn-notes" onclick="toggleNotes()">Speaker Notes [S]</button>
-        <button class="deck-btn" onclick="exitDeck()">Exit Deck [Esc]</button>
+      <div class="deck-brand">bootlab-esp // EXECUTIVE PRESENTATION DECK</div>
+      <div class="nav-actions">
+        <button class="btn-pill" id="btn-notes" onclick="toggleNotes()">Speaker Notes [S]</button>
+        <button class="btn-pill primary" onclick="exitDeck()">Exit Deck [Esc]</button>
       </div>
     </div>
 
-    <!-- SLIDE CONTAINER -->
-    <div class="deck-slide-container">
-      
+    <div class="deck-body">
       <!-- SLIDE 1 -->
       <div class="slide current" data-notes="Opening slide. Set the stage: This project proves dual-OS embedded bootloader architecture and production OTA resilience on physical ESP32-S3 silicon without vendor lock-in.">
-        <span class="slide-badge">SLIDE 01 &bull; EXECUTIVE OVERVIEW</span>
-        <h2>Dual-OS Bootloader & Resilient OTA Testbed</h2>
-        <p class="slide-body">
+        <span class="slide-badge">Slide 01 &bull; Executive Overview</span>
+        <h2 class="slide-title">Dual-OS Bootloader &amp; Resilient OTA Testbed</h2>
+        <p class="slide-summary">
           A production-proven firmware architecture demonstrating fail-safe updates, automated rollbacks, and zero-allocation telemetry across <strong>ESP-IDF (FreeRTOS)</strong> and <strong>Zephyr RTOS</strong> on ESP32-S3 silicon.
         </p>
-        <div class="slide-grid">
-          <div class="slide-box">
-            <h3>The Mission</h3>
-            <p>Eliminate field-bricking risks, achieve multi-transport OTA redundancy (WiFi + BLE), and guarantee 100% reversible software testing.</p>
+        <div class="slide-cards-grid">
+          <div class="slide-subcard">
+            <h5>The Core Mission</h5>
+            <p>Eliminate field-bricking risks, achieve multi-transport OTA redundancy (Wi-Fi + BLE), and guarantee 100% reversible software testing.</p>
           </div>
-          <div class="slide-box">
-            <h3>Verified Results</h3>
+          <div class="slide-subcard">
+            <h5>Verified Results</h5>
             <p>39 tickets verified on target hardware, 0 eFuses burned, 91% unit test coverage, and 3x consecutive green live HIL stability gate.</p>
           </div>
         </div>
@@ -1080,18 +1277,18 @@
 
       <!-- SLIDE 2 -->
       <div class="slide" data-notes="Explain the business problem: Why do IoT devices brick in the field? Power dips, bad radio transfers, corrupted partitions. How we solve it with dual-partitioning and fail-safe bootloader handshakes.">
-        <span class="slide-badge">SLIDE 02 &bull; PROBLEM & ROI</span>
-        <h2>The Cost of Field Bricking in Embedded IoT</h2>
-        <p class="slide-body">
+        <span class="slide-badge">Slide 02 &bull; Problem &amp; ROI</span>
+        <h2 class="slide-title">The Cost of Field Bricking in Embedded IoT</h2>
+        <p class="slide-summary">
           Every failed firmware update in production results in truck rolls, warranty claims, or permanent hardware loss costing $150–$300+ per device.
         </p>
-        <div class="slide-grid">
-          <div class="slide-box">
-            <h3>Common Industry Traps</h3>
+        <div class="slide-cards-grid">
+          <div class="slide-subcard">
+            <h5>Common Industry Traps</h5>
             <p>&bull; Overwrite-only single slot bootloaders.<br>&bull; Server-side counters giving false proof of upload.<br>&bull; Broken fallbacks when optional radios fail on boot.</p>
           </div>
-          <div class="slide-box">
-            <h3>The bootlab-esp Standard</h3>
+          <div class="slide-subcard">
+            <h5>The bootlab-esp Standard</h5>
             <p>&bull; Dual active/passive partition slots.<br>&bull; Cryptographic RSA/ECDSA verification before activation.<br>&bull; Autonomous watchdog fallback in &le; 17s if new firmware hangs.</p>
           </div>
         </div>
@@ -1099,18 +1296,18 @@
 
       <!-- SLIDE 3 -->
       <div class="slide" data-notes="Showcase the silicon: ESP32-S3 Dual-Core Xtensa LX7 @ 240 MHz. Emphasize that we proved 8MB Octal PSRAM timing and USB-Serial-JTAG enumeration without hardware lock-in.">
-        <span class="slide-badge">SLIDE 03 &bull; HARDWARE TOPOLOGY</span>
-        <h2>Target Silicon: Physical ESP32-S3 Rig</h2>
-        <p class="slide-body">
+        <span class="slide-badge">Slide 03 &bull; Hardware Topology</span>
+        <h2 class="slide-title">Target Silicon: Physical ESP32-S3 Rig</h2>
+        <p class="slide-summary">
           Tested on actual ESP32-S3 hardware (`lab-esp-idf` and `lab-esp-zephyr`) featuring high-speed Octal PSRAM and native USB-Serial-JTAG.
         </p>
-        <div class="slide-grid">
-          <div class="slide-box">
-            <h3>Silicon Specifications</h3>
+        <div class="slide-cards-grid">
+          <div class="slide-subcard">
+            <h5>Silicon Specifications</h5>
             <p>&bull; Dual-Core Xtensa LX7 @ 240 MHz.<br>&bull; 8 MB Octal PSRAM (AP_3v3 vendor chip verified).<br>&bull; Built-in USB-Serial-JTAG controller presenting persistent chip MAC.</p>
           </div>
-          <div class="slide-box">
-            <h3>Safe Prototyping Policy</h3>
+          <div class="slide-subcard">
+            <h5>Safe Prototyping Policy</h5>
             <p>&bull; 0 eFuses burned throughout 50+ flash cycles.<br>&bull; Bit-for-bit SHA-256 eFuse parity verified.<br>&bull; Hardware inventory remains completely reusable.</p>
           </div>
         </div>
@@ -1118,18 +1315,18 @@
 
       <!-- SLIDE 4 -->
       <div class="slide" data-notes="ESP-IDF track deep dive: FreeRTOS architecture, dual 2.5MB application partitions, esp_https_ota pull over WiFi, NimBLE BLE OTA, and hardware watchdog panic verification.">
-        <span class="slide-badge">SLIDE 04 &bull; TRACK 1: ESP-IDF</span>
-        <h2>ESP-IDF: FreeRTOS Dual-Slot Rollback</h2>
-        <p class="slide-body">
+        <span class="slide-badge">Slide 04 &bull; Track 1: ESP-IDF</span>
+        <h2 class="slide-title">ESP-IDF: FreeRTOS Dual-Slot Rollback</h2>
+        <p class="slide-summary">
           Production 2-stage bootloader architecture with anti-rollback protection, dual 2.5 MB app slots, and simultaneous WiFi + BLE radio stacks.
         </p>
-        <div class="slide-grid">
-          <div class="slide-box">
-            <h3>Transport Flexibility</h3>
+        <div class="slide-cards-grid">
+          <div class="slide-subcard">
+            <h5>Transport Flexibility</h5>
             <p>&bull; <strong>WiFi OTA:</strong> Pulls image from LAN HTTPS server via `esp_https_ota`.<br>&bull; <strong>BLE OTA:</strong> NimBLE peripheral stack accepts chunks over GATT with CRC validation.</p>
           </div>
-          <div class="slide-box">
-            <h3>Verified Rollback Scenarios</h3>
+          <div class="slide-subcard">
+            <h5>Verified Rollback Scenarios</h5>
             <p>&bull; <strong>Hang Variant:</strong> Task WDT triggers panic at 5.1s; reboot loads safe slot in 17s.<br>&bull; <strong>Bad Signature:</strong> RSA-3072 signature rejection refuses slot activation.</p>
           </div>
         </div>
@@ -1137,18 +1334,18 @@
 
       <!-- SLIDE 5 -->
       <div class="slide" data-notes="Zephyr RTOS track: MCUboot swap-with-revert. Emphasize that we verified both Bluetooth LE SMP and WiFi UDP SMP running concurrently on internal SRAM.">
-        <span class="slide-badge">SLIDE 05 &bull; TRACK 2: ZEPHYR RTOS</span>
-        <h2>Zephyr RTOS: MCUboot & MCUmgr SMP</h2>
-        <p class="slide-body">
+        <span class="slide-badge">Slide 05 &bull; Track 2: Zephyr RTOS</span>
+        <h2 class="slide-title">Zephyr RTOS: MCUboot &amp; MCUmgr SMP</h2>
+        <p class="slide-summary">
           Open-source RTOS standard leveraging MCUboot swap-with-revert mechanics, MCUmgr SMP management over BLE and UDP port 1337.
         </p>
-        <div class="slide-grid">
-          <div class="slide-box">
-            <h3>MCUboot Swap Mechanics</h3>
+        <div class="slide-cards-grid">
+          <div class="slide-subcard">
+            <h5>MCUboot Swap Mechanics</h5>
             <p>&bull; Upgrades staged in slot 1 and marked for test boot.<br>&bull; Automatic rollback to slot 0 if not confirmed post-boot.<br>&bull; Overwrite-only mode strictly avoided to prevent bricking.</p>
           </div>
-          <div class="slide-box">
-            <h3>Coexistence Achievement</h3>
+          <div class="slide-subcard">
+            <h5>Coexistence Achievement</h5>
             <p>&bull; Unified single binary running both BLE and WiFi STA on internal SRAM.<br>&bull; MCUmgr SMP Echo, ImageStatesRead, and OTA verified on target.</p>
           </div>
         </div>
@@ -1156,18 +1353,18 @@
 
       <!-- SLIDE 6 -->
       <div class="slide" data-notes="Explain LABID protocol: Why did we build our own ASCII framing? Zero memory allocations, deterministic timing, identical C99 and Python implementations, hardware toggle frequency measurement.">
-        <span class="slide-badge">SLIDE 06 &bull; WIRE PROTOCOL</span>
-        <h2>The LABID Zero-Allocation Wire Protocol</h2>
-        <p class="slide-body">
+        <span class="slide-badge">Slide 06 &bull; Wire Protocol</span>
+        <h2 class="slide-title">The LABID Zero-Allocation Protocol</h2>
+        <p class="slide-summary">
           Deterministic C99 ASCII framing wire protocol (`$LAB,CMD*CS\n`) shared identically between embedded firmware and host Python CLI.
         </p>
-        <div class="slide-grid">
-          <div class="slide-box">
-            <h3>Zero-Allocation Architecture</h3>
+        <div class="slide-cards-grid">
+          <div class="slide-subcard">
+            <h5>Zero-Allocation Architecture</h5>
             <p>&bull; Static buffers only; zero heap allocation on the microcontroller.<br>&bull; Atomic one-fputs frame writes under console mutex lock.<br>&bull; Prevents debug printk/ESP_LOG interleaving across 1,000+ queries.</p>
           </div>
-          <div class="slide-box">
-            <h3>Hardware Telemetry Commands</h3>
+          <div class="slide-subcard">
+            <h5>Hardware Telemetry Commands</h5>
             <p>&bull; <code>ID?</code>: Resolves chip MAC and hardware UID.<br>&bull; <code>VER?</code>: Queries app version, active partition slot, and confirm state.<br>&bull; <code>MEASURE</code>: Measures physical LED toggle rate directly from timer ISR.</p>
           </div>
         </div>
@@ -1175,18 +1372,18 @@
 
       <!-- SLIDE 7 -->
       <div class="slide" data-notes="Host CLI labflash: Library-first design, 173 tests, 91% coverage. Highlight SharedConsolePort invention to bypass Windows exclusive COM locks.">
-        <span class="slide-badge">SLIDE 07 &bull; HOST TOOLING</span>
-        <h2>`labflash`: Unified Host CLI & Automation</h2>
-        <p class="slide-body">
+        <span class="slide-badge">Slide 07 &bull; Host Tooling</span>
+        <h2 class="slide-title">`labflash`: Unified Host Automation</h2>
+        <p class="slide-summary">
           A library-first Python orchestration suite with 115+ unit tests, 91% test coverage, and production-grade Windows COM concurrency.
         </p>
-        <div class="slide-grid">
-          <div class="slide-box">
-            <h3>Core CLI Commands</h3>
-            <p>&bull; <code>labflash doctor</code>: Environment & USB topology auditor.<br>&bull; <code>labflash identify</code>: Auto-maps boards by LABID UID query.<br>&bull; <code>labflash update</code>: Unified OTA dispatcher across WiFi, BLE, and UDP.</p>
+        <div class="slide-cards-grid">
+          <div class="slide-subcard">
+            <h5>Core CLI Commands</h5>
+            <p>&bull; <code>labflash doctor</code>: Environment &amp; USB topology auditor.<br>&bull; <code>labflash identify</code>: Auto-maps boards by LABID UID query.<br>&bull; <code>labflash update</code>: Unified OTA dispatcher across WiFi, BLE, and UDP.</p>
           </div>
-          <div class="slide-box">
-            <h3>The `SharedConsolePort` Seam</h3>
+          <div class="slide-subcard">
+            <h5>The `SharedConsolePort` Seam</h5>
             <p>&bull; Windows COM ports are strictly exclusive (`Access is denied`).<br>&bull; Opens port once; background thread tees raw lines to `console.log`.<br>&bull; Simultaneously feeds LABID query handles without collisions.</p>
           </div>
         </div>
@@ -1194,18 +1391,18 @@
 
       <!-- SLIDE 8 -->
       <div class="slide" data-notes="HIL Rig & Testing Pyramid: Unit tests -> Mock Rig -> Real Hardware -> 3x Green Stability Gate -> Overnight Soak. RPi4 runner role.">
-        <span class="slide-badge">SLIDE 08 &bull; HIL RIG & CI/CD</span>
-        <h2>Automated Hardware-in-the-Loop Rig</h2>
-        <p class="slide-body">
+        <span class="slide-badge">Slide 08 &bull; HIL Rig &amp; CI/CD</span>
+        <h2 class="slide-title">Automated Hardware-in-the-Loop Rig</h2>
+        <p class="slide-summary">
           Rigorous test pyramid bridging mocked unit tests, fast simulated rigs, and automated live hardware execution on the real workbench.
         </p>
-        <div class="slide-grid">
-          <div class="slide-box">
-            <h3>Live Test Pyramid</h3>
+        <div class="slide-cards-grid">
+          <div class="slide-subcard">
+            <h5>Live Test Pyramid</h5>
             <p>&bull; <strong>Unit Tests:</strong> 173 mocked tests in host suite (ruff/mypy clean).<br>&bull; <strong>HIL Tests:</strong> T01–T15 test suites executing real resets, rollbacks, and OTAs.<br>&bull; <strong>Stability Gate:</strong> 3x consecutive green whole-suite live runs (BL-057a).</p>
           </div>
-          <div class="slide-box">
-            <h3>RPi4 Self-Hosted Runner</h3>
+          <div class="slide-subcard">
+            <h5>RPi4 Self-Hosted Runner</h5>
             <p>&bull; Registered runner `rpi4-hil` on Raspberry Pi 4 (`msa-linuxRPi4`).<br>&bull; Strictly isolated: no passwordless sudo, zero private signing keys.<br>&bull; Acts as autonomous network OTA test coordinator over LAN.</p>
           </div>
         </div>
@@ -1213,18 +1410,18 @@
 
       <!-- SLIDE 9 -->
       <div class="slide" data-notes="Challenge deep dive: WinRT GATT caching & COM exclusivity. These are real engineering war stories that interviewers and clients love hearing.">
-        <span class="slide-badge">SLIDE 09 &bull; ENGINEERING WAR STORIES 1</span>
-        <h2>Bluetooth Caching & Serial Concurrency</h2>
-        <p class="slide-body">
+        <span class="slide-badge">Slide 09 &bull; Engineering War Stories 1</span>
+        <h2 class="slide-title">Bluetooth Caching &amp; Serial Concurrency</h2>
+        <p class="slide-summary">
           Solving real OS-level integration challenges between modern Windows hosts and low-level embedded hardware.
         </p>
-        <div class="slide-grid">
-          <div class="slide-box">
-            <h3>The WinRT GATT Caching Bug</h3>
+        <div class="slide-cards-grid">
+          <div class="slide-subcard">
+            <h5>The WinRT GATT Caching Bug</h5>
             <p>Windows WinRT caches BLE GATT tables by MAC address. When MCUboot swaps firmware slots, Windows fails to see the new GATT table.<br><strong>Solution:</strong> Bypassed WinRT cache with <code>use_cached_services=False</code>.</p>
           </div>
-          <div class="slide-box">
-            <h3>The Exclusive COM Port Trap</h3>
+          <div class="slide-subcard">
+            <h5>The Exclusive COM Port Trap</h5>
             <p>Opening a second serial logger while running a test caused hard permission crashes on Windows.<br><strong>Solution:</strong> Multiplexed console capture and telemetry through a unified thread-safe port seam.</p>
           </div>
         </div>
@@ -1232,18 +1429,18 @@
 
       <!-- SLIDE 10 -->
       <div class="slide" data-notes="Challenge deep dive 2: Power stability on RPi4 (0x50000 under-voltage) and Zephyr coexistence UART RX deadlock (BL-064).">
-        <span class="slide-badge">SLIDE 10 &bull; ENGINEERING WAR STORIES 2</span>
-        <h2>Power Brownouts & Radio Coexistence</h2>
-        <p class="slide-body">
+        <span class="slide-badge">Slide 10 &bull; Engineering War Stories 2</span>
+        <h2 class="slide-title">Power Brownouts &amp; Radio Coexistence</h2>
+        <p class="slide-summary">
           Overcoming hardware power limits and complex multi-radio interrupt conflicts on physical silicon.
         </p>
-        <div class="slide-grid">
-          <div class="slide-box">
-            <h3>RPi4 Power Brownouts (`0x50000`)</h3>
+        <div class="slide-cards-grid">
+          <div class="slide-subcard">
+            <h5>RPi4 Power Brownouts (`0x50000`)</h5>
             <p>RPi4 auxiliary host logged persistent under-voltage drops during flash writes.<br><strong>Solution:</strong> Established clear separation: heavy builds/flashes stay on dev workstation; RPi4 handles network OTA only.</p>
           </div>
-          <div class="slide-box">
-            <h3>Zephyr Radio Coexistence IRQ (BL-064)</h3>
+          <div class="slide-subcard">
+            <h5>Zephyr Radio Coexistence IRQ (BL-064)</h5>
             <p>On WiFi+BLE coexistence builds, UART RX interrupt never fired (`irq=0, rx=0`).<br><strong>Solution:</strong> Traced interrupt vector conflict, protected board state back to confirmed v1, and isolated driver init ordering.</p>
           </div>
         </div>
@@ -1251,18 +1448,18 @@
 
       <!-- SLIDE 11 -->
       <div class="slide" data-notes="Review the 15 risks (R1-R15). Emphasize our engineering discipline: no claims made without target evidence. Vacuous evidence trap avoided.">
-        <span class="slide-badge">SLIDE 11 &bull; LESSONS & GOVERNANCE</span>
-        <h2>Strategic Retrospective: R1–R15 Outcomes</h2>
-        <p class="slide-body">
+        <span class="slide-badge">Slide 11 &bull; Governance &amp; Risk</span>
+        <h2 class="slide-title">Strategic Retrospective: R1–R15 Outcomes</h2>
+        <p class="slide-summary">
           Transforming initial project assumptions into verified production realities through disciplined empirical auditing.
         </p>
-        <div class="slide-grid">
-          <div class="slide-box">
-            <h3>Rejecting Vacuous Evidence</h3>
+        <div class="slide-cards-grid">
+          <div class="slide-subcard">
+            <h5>Rejecting Vacuous Evidence</h5>
             <p>Server-side byte counters lie when TCP RST truncates transfers. We mandated that every acceptance pass be proven by on-target firmware logs and post-boot version verification.</p>
           </div>
-          <div class="slide-box">
-            <h3>The Non-Fatal Subsystem Rule</h3>
+          <div class="slide-subcard">
+            <h5>The Non-Fatal Subsystem Rule</h5>
             <p>Optional subsystems (BLE, secondary sensors) must never invoke fatal kernel panics on boot. If a radio fails, the primary recovery path (WiFi OTA) must remain fully alive.</p>
           </div>
         </div>
@@ -1270,140 +1467,143 @@
 
       <!-- SLIDE 12 -->
       <div class="slide" data-notes="Closing slide. Summarize achievements and open the floor for technical questions or client project discussion.">
-        <span class="slide-badge">SLIDE 12 &bull; CONCLUSION & NEXT STEPS</span>
-        <h2>Mission Accomplished & What's Ahead</h2>
-        <p class="slide-body">
+        <span class="slide-badge">Slide 12 &bull; Conclusion &amp; Next Steps</span>
+        <h2 class="slide-title">Mission Accomplished &amp; Next Frontiers</h2>
+        <p class="slide-summary">
           `bootlab-esp` demonstrates the pinnacle of embedded systems engineering: resilient, multi-OS, fully automated, and verified on real silicon.
         </p>
-        <div class="slide-grid">
-          <div class="slide-box">
-            <h3>Current State</h3>
-            <p>&bull; 39/56 tickets completed with evidence.<br>&bull; ESP-IDF track fully complete and 3x green.<br>&bull; Zephyr MCUboot BLE and UDP SMP verified.<br>&bull; RPi4 autonomous runner & plan deployed.</p>
+        <div class="slide-cards-grid">
+          <div class="slide-subcard">
+            <h5>Current Verified State</h5>
+            <p>&bull; 39/56 tickets completed with evidence.<br>&bull; ESP-IDF track fully complete and 3x green.<br>&bull; Zephyr MCUboot BLE and UDP SMP verified.<br>&bull; RPi4 autonomous runner &amp; plan deployed.</p>
           </div>
-          <div class="slide-box">
-            <h3>Next Frontiers</h3>
-            <p>&bull; Close BL-064 & BL-065 Zephyr coexistence nuances.<br>&bull; 100-cycle live overnight soak test.<br>&bull; Expand modular application components on RPi4.<br>&bull; Deploy to customer field pilot.</p>
+          <div class="slide-subcard">
+            <h5>Upcoming Milestones</h5>
+            <p>&bull; Close BL-064 &amp; BL-065 Zephyr coexistence nuances.<br>&bull; 100-cycle live overnight soak test.<br>&bull; Expand modular application components on RPi4.<br>&bull; Deploy to customer field pilot.</p>
           </div>
         </div>
       </div>
-
     </div>
 
-    <!-- SPEAKER NOTES DRAWER -->
-    <div class="speaker-notes" id="speaker-notes-box">
+    <!-- Notes Drawer -->
+    <div class="speaker-drawer" id="speaker-notes-box">
       <strong>SPEAKER TALKING POINTS:</strong>
       <span id="notes-content">Select a slide to view speaker notes.</span>
     </div>
 
-    <!-- DECK BOTTOM BAR -->
     <div class="deck-bottombar">
       <div class="slide-counter" id="slide-num">Slide 1 of 12</div>
-      <div class="deck-progress-track">
-        <div class="deck-progress-fill" id="progress-fill"></div>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progress-fill"></div>
       </div>
-      <div style="display:flex; gap:0.5rem;">
-        <button class="deck-btn" onclick="prevSlide()">&larr; Prev [Left]</button>
-        <button class="deck-btn" onclick="nextSlide()">Next [Right] &rarr;</button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-pill" onclick="prevSlide()">&larr; Prev</button>
+        <button class="btn-pill" onclick="nextSlide()">Next &rarr;</button>
       </div>
     </div>
   </div>
 
   <script>
-    // Tab Switcher for Audience Lenses
-    function switchLens(lensId) {
-      document.querySelectorAll('.lens-tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.lens-content').forEach(c => c.classList.remove('active'));
-      event.target.classList.add('active');
-      document.getElementById('lens-' + lensId).classList.add('active');
-    }
+    // Theme Management (Synced with mohamed-soubhi.github.io)
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = themeToggle.querySelector('.theme-icon');
+    const themeText = themeToggle.querySelector('.theme-text');
 
-    // Interactive Challenge Card Expander
-    function toggleCard(card) {
-      card.classList.toggle('expanded');
-      const toggleText = card.querySelector('.toggle-text');
-      if (card.classList.contains('expanded')) {
-        toggleText.innerHTML = "Close Deep Dive &uarr;";
+    function setTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('theme', theme);
+      if (theme === 'light') {
+        themeIcon.textContent = '🌙';
+        themeText.textContent = 'Dark';
       } else {
-        toggleText.innerHTML = "Read War Story &rarr;";
+        themeIcon.textContent = '☀️';
+        themeText.textContent = 'Light';
       }
     }
 
-    // =========================================================================
-    // SLIDE DECK ENGINE
-    // =========================================================================
-    let currentSlideIdx = 0;
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    setTheme(savedTheme);
+
+    themeToggle.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      setTheme(current === 'dark' ? 'light' : 'dark');
+    });
+
+    // Perspective Tab Switcher
+    function switchLens(lensId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.perspective-pane').forEach(p => p.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('pane-' + lensId).classList.add('active');
+    }
+
+    // Challenge Card Expander
+    function toggleCard(card) {
+      card.classList.toggle('expanded');
+      const cta = card.querySelector('.expand-cta');
+      if (card.classList.contains('expanded')) {
+        cta.innerHTML = 'Close Deep Dive &uarr;';
+      } else {
+        cta.innerHTML = 'Read War Story &rarr;';
+      }
+    }
+
+    // Slide Deck Engine
+    let currentSlide = 0;
     const slides = document.querySelectorAll('.slide');
     const totalSlides = slides.length;
-    const deckOverlay = document.getElementById('deck-overlay');
-    const slideNumLabel = document.getElementById('slide-num');
+    const deck = document.getElementById('deck-overlay');
+    const slideNum = document.getElementById('slide-num');
     const progressFill = document.getElementById('progress-fill');
     const notesBox = document.getElementById('speaker-notes-box');
     const notesContent = document.getElementById('notes-content');
     const btnNotes = document.getElementById('btn-notes');
 
     function launchDeck() {
-      deckOverlay.classList.add('active');
+      deck.classList.add('active');
       document.body.style.overflow = 'hidden';
-      showSlide(currentSlideIdx);
+      showSlide(currentSlide);
     }
 
     function exitDeck() {
-      deckOverlay.classList.remove('active');
+      deck.classList.remove('active');
       document.body.style.overflow = 'auto';
     }
 
     function showSlide(idx) {
       if (idx < 0) idx = 0;
       if (idx >= totalSlides) idx = totalSlides - 1;
-      currentSlideIdx = idx;
+      currentSlide = idx;
 
-      slides.forEach((s, i) => {
-        s.classList.toggle('current', i === idx);
-      });
-
-      slideNumLabel.innerText = `Slide ${idx + 1} of ${totalSlides}`;
+      slides.forEach((s, i) => s.classList.toggle('current', i === idx));
+      slideNum.innerText = `Slide ${idx + 1} of ${totalSlides}`;
       progressFill.style.width = `${((idx + 1) / totalSlides) * 100}%`;
 
-      // Update notes
-      const notes = slides[idx].getAttribute('data-notes') || "No speaker notes for this slide.";
+      const notes = slides[idx].getAttribute('data-notes') || 'No speaker notes for this slide.';
       notesContent.innerText = notes;
     }
 
     function nextSlide() {
-      if (currentSlideIdx < totalSlides - 1) {
-        showSlide(currentSlideIdx + 1);
-      }
+      if (currentSlide < totalSlides - 1) showSlide(currentSlide + 1);
     }
 
     function prevSlide() {
-      if (currentSlideIdx > 0) {
-        showSlide(currentSlideIdx - 1);
-      }
+      if (currentSlide > 0) showSlide(currentSlide - 1);
     }
 
     function toggleNotes() {
       notesBox.classList.toggle('visible');
-      btnNotes.classList.toggle('active');
+      btnNotes.classList.toggle('primary');
     }
 
-    // Keyboard Navigation
     window.addEventListener('keydown', (e) => {
-      // If deck is active
-      if (deckOverlay.classList.contains('active')) {
-        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
-          nextSlide();
-        } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
-          prevSlide();
-        } else if (e.key === 'Escape') {
-          exitDeck();
-        } else if (e.key === 's' || e.key === 'S') {
-          toggleNotes();
-        }
+      if (deck.classList.contains('active')) {
+        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') nextSlide();
+        else if (e.key === 'ArrowLeft' || e.key === 'PageUp') prevSlide();
+        else if (e.key === 'Escape') exitDeck();
+        else if (e.key === 's' || e.key === 'S') toggleNotes();
       } else {
-        // If not active, pressing 'P' opens the deck
-        if (e.key === 'p' || e.key === 'P') {
-          launchDeck();
-        }
+        if (e.key === 'p' || e.key === 'P') launchDeck();
       }
     });
   </script>
