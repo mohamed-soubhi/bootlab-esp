@@ -81,6 +81,9 @@ def test_recovery_reset_failure_does_not_crash_the_run(tmp_path):
     b.reset_to_v1 = flaky_reset
     rep = run(tmp_path, b, cycles=3)
     assert rep["total_cycles"] == 3 and rep["failures"] == 1
+    lines = (tmp_path / "cycles.jsonl").read_text().splitlines()
+    assert all("ok" in json.loads(line) for line in lines), "a non-cycle record broke the uniform jsonl format"
+    assert "recovery reset raised" in (tmp_path / "update.log").read_text()
 
 
 def test_wrong_version_after_ok_update_is_a_failure(tmp_path):
