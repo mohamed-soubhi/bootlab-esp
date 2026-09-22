@@ -108,6 +108,48 @@ best evidence so far that the reorder helps. However:
 Board reflashed back to the known-good confirmed `build_v1` (pre-fix baseline, since the reorder is
 still unconfirmed) via esptool from WSL2 to leave it healthy for whoever continues this.
 
-**Next step for whoever continues:** with the board on a build carrying the reorder fix, force it to
-v1 directly via esptool (bypassing the broken UDP swap from BL-065) so a v1->v2 **BLE** OTA (the actual
-original trigger) can be tested end-to-end, watching for the write-timeout freeze specifically.
+## Fix attempt 1 tested against the real trigger: DISPROVEN
+
+Forced the board to v1 directly (esptool), then ran `test_t02_update_v1_to_v2_ble_zephyr` for real --
+a genuine v1 -> v2 BLE OTA, the actual original trigger. Result: **same exact failure recurred**.
+`ERROR: the board never answered after the transfer`, then `SerialTimeoutException: Write timeout` in
+teardown, same as before the reorder fix. The init-order hypothesis is disproven, not just unconfirmed.
+
+## New data point: it's not "BLE enabled", and it's not tied to how v2 got there
+
+`console.log` from this same run shows the RX IRQ working perfectly on **v1**, mid-test, with BLE
+actively advertising:
+
+```
+Heartbeat: variant=v1, toggles=2710, confirmed=1, uptime=1358042 ms, irq=130, rx=1260
+```
+
+130 interrupts, 1260 bytes received -- LABID's own pre-test queries were landing fine. Then, after the
+BLE OTA swaps the board into v2, `irq` resets to 0 and never increments again for the rest of the test
+(5+ minutes of uptime, confirmed by tailing the same log). And this isn't specific to *how* v2 was
+reached: a fresh **direct esptool flash** of build_v2 (no OTA at all, see the top of this file) showed
+the identical `irq=0, rx=0` symptom from first boot. So the differentiator is genuinely "is this
+`APP_VARIANT_V2`", not "was there a BLE connection" or "was there an OTA swap" or "which order did
+init run in".
+
+The only other variant-specific code (checked, ruled out as an obvious cause): `app_blink_half_period_ms`
+just computes a `k_msleep` interval (125ms at 4Hz vs 500ms at 1Hz) for the same WS2812 LED strip driver
+call -- no separate timer/interrupt resource, so unlikely to be silently claiming the UART's interrupt
+vector, but this was reasoned from source, not proven on hardware.
+
+## Not yet tried
+
+- Binary-search the actual trigger: build a variant that's identical to v1 except `blink_hz=4` (isolate
+  the blink-rate difference specifically), and one identical to v2 except `blink_hz=1`, to see if the
+  bug follows the LED rate or the `app=2.0.0`/`variant` label itself.
+- Instrument `uart_irq_rx_enable()`'s return value and re-check it periodically (not just at boot) --
+  if something disables RX IRQ later, the return value of a later re-enable call might reveal a
+  driver-level rejection.
+- Check the ESP32-S3 Zephyr HAL/driver changelog or issue tracker for known USB-Serial-JTAG RX
+  interrupt erratum interactions with BLE controller or with build variant/Kconfig differences.
+
+## Board state
+
+Left on the known-good confirmed `build_v1` (esptool, identity verified) after this round of testing.
+Session stopped here given the cost of each rebuild+flash+live-BLE-test cycle (~10 minutes, real board
+time); the bug is real, reproducible, and now well-characterized, but root cause is still open.
