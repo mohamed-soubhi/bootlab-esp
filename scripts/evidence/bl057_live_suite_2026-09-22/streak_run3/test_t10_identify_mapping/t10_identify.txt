@@ -1,0 +1,2 @@
+mode: live
+T10 identify mapped idf to E072A1AA2390

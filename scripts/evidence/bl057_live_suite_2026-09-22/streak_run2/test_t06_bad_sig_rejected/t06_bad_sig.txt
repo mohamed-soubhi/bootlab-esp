@@ -1,0 +1,2 @@
+mode: live
+T06 bad_sig foreign key rejection verified

@@ -1,0 +1,2 @@
+mode: live
+T05 LIVE: {'app': '1.0.0', 'slot': 1, 'confirmed': True, 'uid': 'E072A1AA2390'} -> hang image sent -> WDT -> {'app': '1.0.0', 'slot': 1, 'confirmed': True}

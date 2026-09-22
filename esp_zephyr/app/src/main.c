@@ -12,6 +12,7 @@
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/sys/atomic.h>
 #include "app_blink_timing.h"
+#include "labid_port_zephyr.h"
 
 LOG_MODULE_REGISTER(bootlab_app, LOG_LEVEL_INF);
 
@@ -145,6 +146,18 @@ int main(void)
     int wdt_rc = init_watchdog();
     if (wdt_rc != 0) {
         LOG_WRN("Proceeding without hardware watchdog (%d)", wdt_rc);
+    }
+
+    struct labid_app_info info = {
+        .variant = app_variant_str(),
+        .version = (app_variant_id() == APP_VARIANT_V2) ? "2.0.0" : "1.0.0",
+        .blink_hz = (app_variant_id() == APP_VARIANT_V2) ? "4" : "1",
+        .get_toggle_count = app_get_toggle_count,
+        .is_confirmed = app_is_confirmed,
+    };
+    int labid_rc = labid_port_init(&info);
+    if (labid_rc != 0) {
+        LOG_WRN("Failed to initialize LABID port: %d", labid_rc);
     }
 
 #if defined(CONFIG_APP_VARIANT_HANG)

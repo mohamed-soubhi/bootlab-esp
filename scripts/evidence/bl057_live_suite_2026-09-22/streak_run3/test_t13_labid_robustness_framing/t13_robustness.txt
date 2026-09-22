@@ -1,0 +1,2 @@
+mode: live
+T13 LIVE: {'uptime_before': 14937, 'uptime_after': 16459, 'no_reset': True, 'err_codes': ['crc', 'len'], 'version_ok': True, 'uid': 'E072A1AA2390'}

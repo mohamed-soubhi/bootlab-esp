@@ -1,0 +1,7 @@
+mode: live
+T01 Factory Boot Report
+Board: idf
+App Version: 1.0.0
+Slot: 1
+Confirmed: True
+Blink Rate: 1.00 Hz

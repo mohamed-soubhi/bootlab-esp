@@ -1,0 +1,55 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\MSoubhi\AppData\Local\Programs\Python\Python312\python.exe
+rootdir: C:\MSA\embedded-OS\bootlab-esp
+configfile: pytest.ini
+plugins: anyio-4.10.0, dash-2.17.1, typeguard-4.4.4
+collecting ... collected 45 items / 2 deselected / 43 selected
+
+tests_hil/test_dummy_hil.py::test_dummy_hil_idf_board PASSED             [  2%]
+tests_hil/test_dummy_hil.py::test_dummy_hil_zephyr_board SKIPPED (Ze...) [  4%]
+tests_hil/test_live_backend_unit.py::test_update_passes_real_image_and_no_hardcoded_token PASSED [  6%]
+tests_hil/test_live_backend_unit.py::test_update_false_when_cli_fails PASSED [  9%]
+tests_hil/test_live_backend_unit.py::test_update_false_when_rc0_but_no_ok_marker PASSED [ 11%]
+tests_hil/test_live_backend_unit.py::test_missing_image_is_an_error_not_a_silent_false PASSED [ 13%]
+tests_hil/test_live_backend_unit.py::test_unknown_variant PASSED         [ 16%]
+tests_hil/test_live_backend_unit.py::test_reset_noop_when_confirmed_v1 PASSED [ 18%]
+tests_hil/test_live_backend_unit.py::test_reset_updates_when_on_v2_and_verifies PASSED [ 20%]
+tests_hil/test_live_backend_unit.py::test_reset_fails_if_still_not_v1 PASSED [ 23%]
+tests_hil/test_live_backend_unit.py::test_wsl_refused PASSED             [ 25%]
+tests_hil/test_live_backend_unit.py::test_hard_reset_esptool_sequence_lines_inactive_before_open PASSED [ 27%]
+tests_hil/test_live_backend_unit.py::test_wait_snapshot_tolerates_reboot_and_times_out PASSED [ 30%]
+tests_hil/test_live_backend_unit.py::test_stress_counts_good_answers PASSED [ 32%]
+tests_hil/test_live_backend_unit.py::test_abuse_framing_reports_no_reset_and_sane PASSED [ 34%]
+tests_hil/test_soak_unit.py::test_plan_alternates_variant_and_mixes_transports PASSED [ 37%]
+tests_hil/test_soak_unit.py::test_all_pass_report_labelled_live_and_ends_on_v1 PASSED [ 39%]
+tests_hil/test_soak_unit.py::test_failure_recorded_with_cause_and_run_continues PASSED [ 41%]
+tests_hil/test_soak_unit.py::test_aborts_after_consecutive_failures PASSED [ 44%]
+tests_hil/test_soak_unit.py::test_resume_skips_completed_cycles PASSED   [ 46%]
+tests_hil/test_soak_unit.py::test_wrong_version_after_ok_update_is_a_failure PASSED [ 48%]
+tests_hil/test_t01_t03_boot_update.py::test_t01_factory_v1_boot PASSED   [ 51%]
+tests_hil/test_t01_t03_boot_update.py::test_t02_update_v1_to_v2_wifi PASSED [ 53%]
+tests_hil/test_t01_t03_boot_update.py::test_t03_downgrade_v2_to_v1_wifi PASSED [ 55%]
+tests_hil/test_t01_t03_boot_update.py::test_t02_update_v1_to_v2_ble PASSED [ 58%]
+tests_hil/test_t01_t03_boot_update.py::test_t03_downgrade_v2_to_v1_ble PASSED [ 60%]
+tests_hil/test_t01_t03_boot_update.py::test_t01_t03_zephyr_gated SKIPPED [ 62%]
+tests_hil/test_t04_t09_rollback_security.py::test_t04_no_confirm_rollback_simulation PASSED [ 65%]
+tests_hil/test_t04_t09_rollback_security.py::test_t05_hang_watchdog_rollback_simulation PASSED [ 67%]
+tests_hil/test_t04_t09_rollback_security.py::test_t06_bad_sig_rejected PASSED [ 69%]
+tests_hil/test_t04_t09_rollback_security.py::test_t07_corrupted_truncated_rejected PASSED [ 72%]
+tests_hil/test_t04_t09_rollback_security.py::test_t08_interrupted_transfer_retry PASSED [ 74%]
+tests_hil/test_t04_t09_rollback_security.py::test_t09_wrong_token_401 PASSED [ 76%]
+tests_hil/test_t04_t09_rollback_security.py::test_t04_t09_zephyr_gated SKIPPED [ 79%]
+tests_hil/test_t10_t15_labid_usb.py::test_t10_identify_mapping PASSED    [ 81%]
+tests_hil/test_t10_t15_labid_usb.py::test_t11_id_fields_and_uid_stability PASSED [ 83%]
+tests_hil/test_t10_t15_labid_usb.py::test_t12_version_consistency PASSED [ 86%]
+tests_hil/test_t10_t15_labid_usb.py::test_t13_labid_robustness_framing PASSED [ 88%]
+tests_hil/test_t10_t15_labid_usb.py::test_t14_labid_query_stress PASSED  [ 90%]
+tests_hil/test_t10_t15_labid_usb.py::test_t15_port_resolution_speed PASSED [ 93%]
+tests_hil/test_t10_t15_labid_usb.py::test_t10_t15_zephyr_gated SKIPPED   [ 95%]
+tests_hil/test_t17_power_cut.py::test_t17_power_cut_recovery SKIPPED     [ 97%]
+tests_hil/test_t17_power_cut.py::test_t17_zephyr_gated SKIPPED (Zeph...) [100%]
+
+=========================== short test summary info ===========================
+SKIPPED [5] tests_hil\conftest.py:110: Zephyr track is on hold pending BL-063b per replan (2026-09-21)
+SKIPPED [1] tests_hil\conftest.py:115: No switchable USB power hub (uhubctl) detected; skipping power-cut test
+=========== 37 passed, 6 skipped, 2 deselected in 842.42s (0:14:02) ===========
