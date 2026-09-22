@@ -11,9 +11,10 @@ Covers:
 from __future__ import annotations
 
 from pathlib import Path
-import pytest
 
+import pytest
 from labflash.update import UpdateError, check_image
+
 from tests_hil.conftest import HilRig
 
 REPO_ROOT = Path(__file__).resolve().parents[1]

@@ -10,9 +10,9 @@ import contextlib
 import io
 import time
 from argparse import Namespace
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 from labflash.update import Snapshot, read_app_version
 
@@ -52,7 +52,8 @@ def _default_measure_fn(
     port: str, transport_factory: Callable[[], object] | None = None
 ) -> Callable[[float, float | None, int], tuple[int, float, bool]]:
     def measure(duration_s: float, expect_hz: float | None, tol: int) -> tuple[int, float, bool]:
-        from labflash.identify import SerialLineTransport, measure as _measure
+        from labflash.identify import SerialLineTransport
+        from labflash.identify import measure as _measure
         tr = transport_factory() if transport_factory else SerialLineTransport(port)
         try:
             return _measure(tr, duration_s, expect_hz, tol)
@@ -119,7 +120,9 @@ class LiveBackend:
             console_port = SharedConsolePort(port, console_log=console_log)
             def transport_factory() -> object:
                 return console_port
-        return cls(board=board, port=port, board_ip=board_ip, images_dir=images_dir or REPO / "esp_idf",
+        if images_dir is None:
+            images_dir = REPO / "esp_zephyr" / "app" if board == "zephyr" else REPO / "esp_idf"
+        return cls(board=board, port=port, board_ip=board_ip, images_dir=images_dir,
                    keys_dir=keys_dir, env_file=env_file, rig_path=rig_path,
                    snapshot_fn=_default_snapshot_fn(port, transport_factory), update_fn=run_update,
                    measure_fn=_default_measure_fn(port, transport_factory),
@@ -136,6 +139,16 @@ class LiveBackend:
         d = VARIANT_DIRS.get(variant)
         if d is None:
             raise LiveRigError(f"unknown variant {variant!r}")
+        if self.board == "zephyr":
+            candidates = [
+                self.images_dir / d / "app" / "zephyr" / "zephyr.signed.bin",
+                self.images_dir / d / "zephyr.signed.bin",
+                REPO / "esp_zephyr" / "app" / d / "app" / "zephyr" / "zephyr.signed.bin",
+            ]
+            for p in candidates:
+                if p.is_file():
+                    return p
+            raise LiveRigError(f"zephyr image for {variant} not found in candidates: {candidates}")
         p = self.images_dir / d / IMAGE_NAME
         if not p.is_file():
             raise LiveRigError(f"image for {variant} not found: {p}")
@@ -245,6 +258,7 @@ class LiveBackend:
         Returns what really happened; the caller asserts the board discarded the partial image."""
         import shutil
         import tempfile
+
         from labflash.idf_wifi_ota import OtaServer, WifiBoard
         from labflash.update_cli import DEFAULT_KEYS, guess_host_ip, read_token
         image = self.image_for(variant)
@@ -267,7 +281,9 @@ class LiveBackend:
             finally:
                 server.stop()
 
-    def reset_to_v1(self, log_path: Path, transport: str = "wifi") -> bool:
+    def reset_to_v1(self, log_path: Path, transport: str | None = None) -> bool:
+        if transport is None:
+            transport = "udp" if self.board == "zephyr" else "wifi"
         s = self.snapshot()
         if s.app.startswith("1.") and s.confirmed:
             return True

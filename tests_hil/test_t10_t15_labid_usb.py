@@ -11,10 +11,10 @@ Covers:
 from __future__ import annotations
 
 import time
-import pytest
 
+import pytest
 from labflash.core import load_rig_config, resolve_board
-from labflash.labid import build_frame
+
 from tests_hil.conftest import HilRig
 
 
@@ -72,7 +72,7 @@ def test_t12_version_consistency(hil_rig: HilRig) -> None:
 @pytest.mark.labid
 def test_t13_labid_robustness_framing(hil_rig: HilRig) -> None:
     """T13: LABID robustness: bad CRC, oversized frame, garbage handled cleanly."""
-    from labflash.labid import ERROR, FRAME, IGNORED, MAX_FRAME, Parser
+    from labflash.labid import ERROR, IGNORED, MAX_FRAME, Parser
 
     # 1. Bad CRC frame parsing
     bad_crc_frame = "$LAB,ANNOUNCE,board=idf*0000\n"

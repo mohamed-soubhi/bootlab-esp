@@ -8,6 +8,7 @@ Covers:
 from __future__ import annotations
 
 import pytest
+
 from tests_hil.conftest import HilRig
 
 

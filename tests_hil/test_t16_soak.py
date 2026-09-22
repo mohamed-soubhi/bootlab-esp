@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import time
+
 import pytest
 
 from tests_hil.conftest import HilRig
@@ -49,7 +50,7 @@ def test_t16_soak_alternating_updates(hil_rig: HilRig, request: pytest.FixtureRe
                     continue
 
             passes += 1
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             failures.append({"cycle": str(cycle), "cause": str(e)})
 
     elapsed = time.monotonic() - t_start

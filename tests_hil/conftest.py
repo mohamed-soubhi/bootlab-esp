@@ -16,31 +16,35 @@ Provides:
 """
 from __future__ import annotations
 
+import json
 import os
 import shutil
+import ssl
 import subprocess
-import time
+import urllib.request
+from collections.abc import Callable, Generator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Generator
+from typing import Any
 
 import pytest
-import urllib.request
-import json
-import ssl
+from labflash.core import (
+    DEFAULT_RIG_PATH,
+    load_rig_config,
+    resolve_board,
+)
 
 from tests_hil.live_backend import LiveBackend, LiveRigError
-from labflash.core import DEFAULT_RIG_PATH, BoardResolutionError, load_rig_config, resolve_board
 
 DEFAULT_REPORTS_DIR = Path(__file__).resolve().parent / "reports"
-ZEPHYR_GATED = True  # Blocked pending BL-063b per replan (2026-09-21)
+ZEPHYR_GATED = False  # Zephyr track unblocked and active (BL-020-046)
 
 
 def get_board_port(board_name: str, rig: dict[str, Any] | None = None) -> str | None:
     """Helper to resolve board port without raising if hardware not connected."""
     try:
         return resolve_board(board_name, rig=rig, wait_s=0.5)
-    except Exception:
+    except Exception:  # noqa: BLE001
         return None
 
 
@@ -105,14 +109,12 @@ def pytest_configure(config: pytest.Config) -> None:
 
 def pytest_runtest_setup(item: pytest.Item) -> None:
     # Enforce Zephyr gate per replan 2026-09-21
-    if item.get_closest_marker("zephyr"):
-        if ZEPHYR_GATED:
-            pytest.skip("Zephyr track is on hold pending BL-063b per replan (2026-09-21)")
+    if item.get_closest_marker("zephyr") and ZEPHYR_GATED:
+        pytest.skip("Zephyr track is on hold pending BL-063b per replan (2026-09-21)")
 
     # Enforce power hub marker skip if no uhubctl detected
-    if item.get_closest_marker("power"):
-        if not shutil.which("uhubctl"):
-            pytest.skip("No switchable USB power hub (uhubctl) detected; skipping power-cut test")
+    if item.get_closest_marker("power") and not shutil.which("uhubctl"):
+        pytest.skip("No switchable USB power hub (uhubctl) detected; skipping power-cut test")
 
 
 @pytest.fixture(scope="session")
@@ -191,7 +193,7 @@ def btmon_capture(artifacts_dir: Path) -> Generator[Path, None, None]:
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             with open(log_file, "w", encoding="utf-8") as f:
                 f.write(f"Failed to start btmon: {e}\n")
     else:
@@ -217,7 +219,7 @@ class HilRig:
     is_mock: bool
     mock_version: str = "1.0.0"
     mock_slot: int = 0
-    backend: "LiveBackend | None" = None
+    backend: LiveBackend | None = None
     board_ip: str = "192.168.1.152"
 
     @property
@@ -232,7 +234,7 @@ class HilRig:
                 "app": self.mock_version,
                 "slot": self.mock_slot,
                 "confirmed": True,
-                "board": "idf",
+                "board": self.board,
             }
         url = f"https://{ip or self.board_ip}/version"
         ctx = ssl.create_default_context()
@@ -243,7 +245,7 @@ class HilRig:
             with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
                 if resp.status == 200:
                     return json.loads(resp.read().decode("utf-8"))
-        except Exception:
+        except Exception:  # noqa: BLE001
             return None
         return None
 
@@ -279,13 +281,14 @@ class HilRig:
                 return resp.status
         except urllib.error.HTTPError as e:
             return e.code
-        except Exception:
+        except Exception:  # noqa: BLE001
             return -1
 
     def query_labid_info(self) -> dict[str, str] | None:
         """Query board identity and version via LABID framing."""
         if self.is_mock:
-            return {"board": "idf", "v": "1.0.0", "app": "bootlab_idf_blink", "slot": "0"}
+            app_name = "bootlab_zephyr_blink" if self.board == "zephyr" else "bootlab_idf_blink"
+            return {"board": self.board, "v": self.mock_version, "app": app_name, "slot": str(self.mock_slot)}
         assert self.backend is not None
         return self.backend.labid_info()
 
@@ -308,8 +311,10 @@ class HilRig:
         assert self.backend is not None
         return self.backend.measure(duration_s, expect_hz, tolerance)
 
-    def ensure_variant(self, variant: str, transport: str = "wifi") -> bool:
+    def ensure_variant(self, variant: str, transport: str | None = None) -> bool:
         """Precondition helper: make sure the board runs `variant` (v1/v2), updating over `transport` if not."""
+        if transport is None:
+            transport = "udp" if self.board == "zephyr" else "wifi"
         want = "2.0.0" if variant == "v2" else "1.0.0"
         current = self.mock_version if self.is_mock else (self.query_labid_info() or {}).get("v")
         return current == want or self.update_ota(variant, transport)
@@ -324,7 +329,8 @@ class HilRig:
 
     def identify_fields(self) -> dict[str, str]:
         if self.is_mock:
-            return {"uid": "E072A1AA2390", "hw": "esp32s3_devkitc", "mcu": "esp32s3"}
+            mac = str(self.config.get("usb_serial", "E072A1AA2390")).replace(":", "")
+            return {"uid": mac, "hw": "esp32s3_devkitc", "mcu": "esp32s3"}
         assert self.backend is not None
         return self.backend.identify_fields()
 
@@ -340,12 +346,14 @@ class HilRig:
             lambda s: wanted({"app": s.app, "slot": s.slot, "confirmed": s.confirmed}), timeout_s)
         return None if snap is None else {"app": snap.app, "slot": snap.slot, "confirmed": snap.confirmed}
 
-    def update_ota(self, variant: str, transport: str = "wifi", timeout_s: float | None = None) -> bool:
+    def update_ota(self, variant: str, transport: str | None = None, timeout_s: float | None = None) -> bool:
         """Perform an OTA update to a specified variant (e.g. 'v1' or 'v2')."""
+        if transport is None:
+            transport = "udp" if self.board == "zephyr" else "wifi"
         if self.is_mock:
             if variant == "v2":
                 self.mock_version = "2.0.0"
-                self.mock_slot = 1
+                self.mock_slot = 0 if self.board == "zephyr" else 1
             else:
                 self.mock_version = "1.0.0"
                 self.mock_slot = 0
@@ -369,9 +377,12 @@ def live_backend(
     if not port:
         pytest.fail("live HIL: board serial port not found (pass --port COMx, or use --mock-rig for a simulation)")
     opt = request.config.getoption
+    target_board = board_cfg.get("board_name", "idf").replace("lab-esp-", "")
+    board_ip = board_cfg.get("ip", opt("--board-ip"))
     try:
         backend = LiveBackend.create(
-            port=port, board_ip=opt("--board-ip"),
+            board=target_board,
+            port=port, board_ip=board_ip,
             images_dir=Path(opt("--images-dir")) if opt("--images-dir") else None,
             keys_dir=Path(opt("--keys-dir")) if opt("--keys-dir") else None,
             env_file=opt("--env-file"), rig_path=opt("--rig-config"), console_log=artifacts_dir / "console.log")

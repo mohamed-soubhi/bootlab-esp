@@ -4,9 +4,14 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from labflash.update import Snapshot
-from tests_hil.live_backend import LiveBackend, LiveRigError, assert_native_host, VARIANT_DIRS
+
+from tests_hil.live_backend import (
+    VARIANT_DIRS,
+    LiveBackend,
+    LiveRigError,
+    assert_native_host,
+)
 
 
 def snap(app="1.0.0", slot=0, confirmed=True):
