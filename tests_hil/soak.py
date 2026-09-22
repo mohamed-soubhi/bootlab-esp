@@ -81,7 +81,11 @@ def run_soak(backend, cycles: int, out_dir: Path, pause_s: float = 5.0, max_cons
             aborted = True
             break
         if not ok:
-            backend.reset_to_v1(log_path)   # best-effort recovery so one failure does not cascade
+            try:
+                backend.reset_to_v1(log_path)   # best-effort recovery; a failure here must not kill the run
+            except Exception as err:  # noqa: BLE001 - recorded, run continues
+                with jsonl.open("a", encoding="utf-8") as f:
+                    f.write(json.dumps({"cycle": cycle, "note": f"recovery reset raised {type(err).__name__}: {err}"}) + "\n")
         sleep_fn(pause_s)
 
     try:

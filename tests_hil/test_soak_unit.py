@@ -69,6 +69,20 @@ def test_resume_skips_completed_cycles(tmp_path):
     assert len(b2.calls) == 4 and rep["total_cycles"] == 8 and rep["resumed_from"] == 4
 
 
+def test_recovery_reset_failure_does_not_crash_the_run(tmp_path):
+    b = FakeBackend(fail_cycles={1})
+    precondition_done = []
+
+    def flaky_reset(log_path, transport="wifi"):
+        if not precondition_done:
+            precondition_done.append(1)
+            return True   # precondition OK; the recovery call (after cycle 1 fails) is the flaky one
+        raise TimeoutError("board unreachable")
+    b.reset_to_v1 = flaky_reset
+    rep = run(tmp_path, b, cycles=3)
+    assert rep["total_cycles"] == 3 and rep["failures"] == 1
+
+
 def test_wrong_version_after_ok_update_is_a_failure(tmp_path):
     b = FakeBackend()
     orig = b.update
