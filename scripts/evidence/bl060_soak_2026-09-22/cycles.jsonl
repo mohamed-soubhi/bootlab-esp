@@ -1,0 +1,8 @@
+{"cycle": 1, "variant": "v2", "transport": "wifi", "ok": true, "cause": "", "duration_s": 33.6}
+{"cycle": 2, "variant": "v1", "transport": "wifi", "ok": true, "cause": "", "duration_s": 32.8}
+{"cycle": 3, "variant": "v2", "transport": "ble", "ok": true, "cause": "", "duration_s": 347.2}
+{"cycle": 4, "variant": "v1", "transport": "ble", "ok": true, "cause": "", "duration_s": 312.4}
+{"cycle": 5, "variant": "v2", "transport": "wifi", "ok": true, "cause": "", "duration_s": 32.3}
+{"cycle": 6, "variant": "v1", "transport": "wifi", "ok": true, "cause": "", "duration_s": 32.5}
+{"cycle": 7, "variant": "v2", "transport": "ble", "ok": true, "cause": "", "duration_s": 312.4}
+{"cycle": 8, "variant": "v1", "transport": "ble", "ok": true, "cause": "", "duration_s": 288.0}
