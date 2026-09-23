@@ -169,15 +169,18 @@ jobs:
         run: |
           pip install -r "$ZEPHYR_BASE/scripts/requirements.txt"
 
-      - name: Fetch the Espressif Xtensa toolchain + HAL blobs (hal_espressif)
+      - name: Fetch HAL blobs (hal_espressif) and the Xtensa toolchain directly from crosstool-NG
         run: |
           west blobs fetch hal_espressif
-          HAL_ESP="$(dirname "$ZEPHYR_BASE")/modules/hal/espressif"
-          # hal_espressif ships its own toolchain installer; installs under ESPRESSIF_TOOLS_PATH.
-          python3 "$HAL_ESP/tools/toolchain_install.py" --path "$ESPRESSIF_TOOLS_PATH" \
-            --xtensa-only 2>/dev/null || \
-          python3 "$HAL_ESP/tools/install_all.py" --path "$ESPRESSIF_TOOLS_PATH" 2>/dev/null || \
-          echo "WARN: no known hal_espressif toolchain installer script found at this pinned revision -- see docs/LESSONS_LEARNED.md if this step needs updating"
+          # hal_espressif has no bundled installer script (checked: modules/hal/espressif/tools/
+          # only has ci/idf_monitor/sync, no toolchain installer) -- the xtensa-esp-elf toolchain
+          # is Espressif's crosstool-NG release, downloaded directly by version tag.
+          TC_VER="esp-15.2.0_20251204"
+          mkdir -p "$ESPRESSIF_TOOLS_PATH/tools/xtensa-esp-elf/$TC_VER"
+          wget -q "https://github.com/espressif/crosstool-NG/releases/download/${TC_VER}/xtensa-esp-elf-15.2.0_20251204-x86_64-linux-gnu.tar.xz" \
+            -O /tmp/xtensa-esp-elf.tar.xz
+          tar xf /tmp/xtensa-esp-elf.tar.xz -C "$ESPRESSIF_TOOLS_PATH/tools/xtensa-esp-elf/$TC_VER" --strip-components=1
+          test -x "${CROSS_COMPILE}gcc"
 
       - name: Generate CI test keys (ECDSA-P256, Zephyr/MCUboot)
         run: |
