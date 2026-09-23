@@ -19,6 +19,6 @@ def run_gui(host: str = "127.0.0.1", port: int = 8080, open_browser: bool = True
 
         run_server(host=host, port=port, open_browser=open_browser)
         return 0
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"[ERROR] Failed to start Operations Console: {e}", file=sys.stderr)
         return 1

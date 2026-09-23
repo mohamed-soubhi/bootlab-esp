@@ -5,13 +5,14 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
+
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "host"))
 
-from tools.dashboard.server import make_server, GLOBAL_RUNNER
+from tools.dashboard.server import GLOBAL_RUNNER, make_server
 
 
 @pytest.fixture(scope="module")

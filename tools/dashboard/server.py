@@ -46,7 +46,7 @@ class DashboardServer(http.server.ThreadingHTTPServer):
         super().__init__(server_address, RequestHandlerClass, bind_and_activate)
 
     def handle_error(self, request: Any, client_address: Any) -> None:
-        exc_type, exc_val, _ = sys.exc_info()
+        _exc_type, exc_val, _ = sys.exc_info()
         if exc_val and isinstance(exc_val, (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError)):
             return
         super().handle_error(request, client_address)
@@ -70,8 +70,8 @@ class DashboardRequestHandler(http.server.SimpleHTTPRequestHandler):
 
     @property
     def runner(self) -> ProcessRunner:
-        if hasattr(self.server, "runner") and getattr(self.server, "runner") is not None:
-            return getattr(self.server, "runner")
+        if hasattr(self.server, "runner") and self.server.runner is not None:
+            return self.server.runner
         return GLOBAL_RUNNER
 
     def do_OPTIONS(self) -> None:
@@ -148,7 +148,7 @@ class DashboardRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return self._send_error_json(str(e), 409)
             except ValueError as e:
                 return self._send_error_json(str(e), 400)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 return self._send_error_json(str(e), 500)
 
         elif parsed_path == "/api/abort":
@@ -213,7 +213,7 @@ class DashboardRequestHandler(http.server.SimpleHTTPRequestHandler):
                     payload = event_queue.get(timeout=1.0)
                     evt = payload.get("event", "message")
                     data = json.dumps(payload.get("data", {}))
-                    msg = f"event: {evt}\ndata: {data}\n\n".encode("utf-8")
+                    msg = f"event: {evt}\ndata: {data}\n\n".encode()
                     self.wfile.write(msg)
                     self.wfile.flush()
                 except queue.Empty:
@@ -238,16 +238,16 @@ def make_server(
 def run_server(host: str = "127.0.0.1", port: int = 8080, open_browser: bool = True) -> None:
     server = make_server(host=host, port=port)
     url = f"http://{host}:{port}"
-    print(f"\n=======================================================")
-    print(f" ⚡ bootlab-esp Operations Console")
+    print("\n=======================================================")
+    print(" ⚡ bootlab-esp Operations Console")
     print(f" Listening on: {url}")
-    print(f" Press Ctrl+C to stop.")
-    print(f"=======================================================\n")
+    print(" Press Ctrl+C to stop.")
+    print("=======================================================\n")
 
     if open_browser:
         try:
             webbrowser.open(url)
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             pass
 
     try:

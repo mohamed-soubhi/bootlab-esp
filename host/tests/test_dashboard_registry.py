@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+
 import pytest
 
 # Ensure repo root and host are in PYTHONPATH
@@ -8,11 +9,10 @@ sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "host"))
 
 from tools.dashboard.tools_registry import (
-    TOOLS,
     TOOL_CATEGORIES,
-    get_tool,
     build_command,
     detect_boards,
+    get_tool,
 )
 
 

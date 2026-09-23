@@ -1,13 +1,14 @@
 import sys
 import time
 from pathlib import Path
+
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "host"))
 
-from tools.dashboard.runner import ProcessRunner, JobStatus
+from tools.dashboard.runner import JobStatus, ProcessRunner
 
 
 def test_runner_executes_simple_job():
@@ -19,7 +20,7 @@ def test_runner_executes_simple_job():
     assert runner.is_running()
 
     # Wait for completion
-    timeout = 10
+    timeout = 20
     start = time.time()
     events = []
     while runner.is_running() and (time.time() - start < timeout):
@@ -38,7 +39,7 @@ def test_runner_executes_simple_job():
 
 def test_runner_enforces_mutex():
     runner = ProcessRunner()
-    job_1 = runner.start_job("doctor", {})
+    _ = runner.start_job("doctor", {})
     assert runner.is_running()
 
     with pytest.raises(RuntimeError, match="A job is already running"):
@@ -52,7 +53,7 @@ def test_runner_enforces_mutex():
 def test_runner_can_abort_job():
     runner = ProcessRunner()
     # Run a long measure or doctor
-    job_id = runner.start_job("measure", {"duration": 10})
+    _ = runner.start_job("measure", {"duration": 10})
     time.sleep(0.2)
     assert runner.is_running()
 

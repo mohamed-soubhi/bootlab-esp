@@ -169,7 +169,7 @@ class ProcessRunner:
                         "line": line,
                         "elapsed": elapsed,
                     })
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             pass
         finally:
             exit_code = proc.wait()
@@ -214,10 +214,10 @@ class ProcessRunner:
                 os.killpg(os.getpgid(proc.pid), signal.SIGINT)
             else:
                 proc.send_signal(signal.CTRL_BREAK_EVENT)  # type: ignore[attr-defined]
-        except Exception:
+        except Exception:  # noqa: BLE001
             try:
                 proc.terminate()
-            except Exception:
+            except Exception:  # noqa: BLE001, S110
                 pass
 
         # Give it up to 2 seconds to release port before killing
@@ -226,7 +226,7 @@ class ProcessRunner:
             if proc.poll() is None:
                 try:
                     proc.kill()
-                except Exception:
+                except Exception:  # noqa: BLE001, S110
                     pass
 
         threading.Thread(target=_force_kill, daemon=True).start()
