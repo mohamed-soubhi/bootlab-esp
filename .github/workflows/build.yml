@@ -206,9 +206,12 @@ jobs:
             # sysbuild.conf hardcodes an absolute dev-machine path that doesn't exist in CI
             # (see docs/LESSONS_LEARNED.md Trap 16-style issue: don't edit the file used by the
             # live board workflow, override per-invocation instead).
+            # Kconfig STRING options need literal embedded quotes in the -D value, or the
+            # generated extra_kconfig_options.conf line is unquoted and Kconfig rejects it
+            # ("malformed string literal") -- verified against a real CI run.
             west build -b esp32s3_devkitc/esp32s3/procpu . -d "build_ci_${variant}" --sysbuild -p always -- \
               -Dapp_EXTRA_CONF_FILE="${OVERLAYS[$variant]}" \
-              -DSB_CONFIG_BOOT_SIGNATURE_KEY_FILE="${KEY_FILES[$variant]}"
+              -DSB_CONFIG_BOOT_SIGNATURE_KEY_FILE=\"${KEY_FILES[$variant]}\"
             test -s "build_ci_${variant}/app/zephyr/zephyr.signed.bin"
             echo "::endgroup::"
           done
