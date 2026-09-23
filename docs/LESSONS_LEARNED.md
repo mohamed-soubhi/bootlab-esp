@@ -76,6 +76,17 @@ Every project risk defined in PLAN §9 was evaluated and verified against real t
 - **Symptom:** ESP32-S3 boards ship with differing PSRAM interfaces (Quad vs Octal). Specifying Quad PSRAM on an Octal board causes silent memory corruption or initialization failure.
 - **Resolution:** Verified via hardware detection that `lab-esp-idf` features 8 MB Octal PSRAM (AP_3v3 vendor chip). Enabled octal PSRAM mode with memory self-test in early bootloader.
 
+### Trap 8a: `keys/` private material never synced to the Windows mirror, so WiFi OTA fails instantly (BL-060)
+- **Symptom:** BL-060's live soak on Windows aborted after 3 consecutive failures. The first two (WiFi transport, `variant=v2`) failed in 0.0-0.2 s with `update raised FileNotFoundError: [Errno 2] No such file or directory` -- no output at all, not even the "Updating ... over wifi" print.
+- **Root cause:** `keys/` holds two classes of file: public certs (`ca.pem`, `server_cert.pem`, ...) that get `cp`'d to the Windows mirror piecemeal, and private keys (`server_key.pem`, `ca.key`, ...) that never did, because syncing has always been "copy the files I just fixed", not "copy the whole dir". `OtaServer.start()` (`host/labflash/idf_wifi_ota.py`) calls `ssl.SSLContext.load_cert_chain(certfile, keyfile)` before any progress output is printed, so a missing `server_key.pem` on Windows raised `FileNotFoundError` immediately, before the HTTPS OTA server ever started listening. BLE cycles don't build an `OtaServer` at all, so they were unaffected -- which is why only the WiFi cycles died and did so instantly.
+- **Resolution:** `cp` the missing private keys (`server_key.pem`, `ca.key`) from the WSL repo's `keys/` to the Windows mirror's `keys/`. These are self-signed test-only keys (not a real secret), so a plain copy is safe.
+- **Prevention:** When syncing "just the fixed files" to the Windows mirror, remember `keys/` is a directory whose *entire* contents (including files with restrictive `.rw-------` perms) matter to the live rig -- a partial sync there fails silently and only surfaces as an opaque `FileNotFoundError` deep inside `ssl`.
+
+### Trap 8b: A clean OTA swap can still get reported as "FAILED" if the host's post-update poll loses the race (BL-060, unconfirmed root cause)
+- **Symptom:** BL-060's soak cycle 3 (BLE, `v2`) ran the full 656 s of real hardware time -- all 305 sectors sent, board verified and rebooted -- and `update.log` still recorded `before: app=1.0.0 slot=0; after: app=1.0.0 slot=0` -> `UPDATE FAILED`. But `console.log`'s raw serial capture shows the board's own LABID `$LAB,VER` frames going `app=2.0.0,confirmed=0` at `22:25:36` and `app=2.0.0,confirmed=1` by `22:25:40` -- i.e. the swap succeeded and was confirmed within 6 s of reboot, while the host's `_poll()` (`host/labflash/update.py`) kept reading stale `app=1.0.0` for its entire 240 s timeout budget.
+- **Leading suspect (not yet confirmed):** `labid_snapshot_fn` (`host/labflash/update_cli.py`) goes through `get_version`/`identify` in `labflash/identify.py` on top of the BL-060-era `SharedConsolePort` (Trap 13), which multiplexes one persistently-open serial handle between the raw console-log tap and on-demand LABID queries via a single `queue.Queue`. The live wire data was correct and prompt; the disconnect is somewhere in that query/response layer, not the device. Needs one more read of `identify.py`'s query/response framing to pin down before attempting a fix.
+- **Do not** treat this as an IDF-firmware bug -- the on-target evidence (`console.log`) clears the board. Any fix belongs in the host-side polling/parsing path.
+
 ---
 
 ## 4. Zephyr Track Traps (added 2026-09-23, live HIL work on lab-esp-zephyr)
@@ -146,35 +157,23 @@ Every project risk defined in PLAN §9 was evaluated and verified against real t
   boot log shows `Swap type: test` -> `Starting swap using move algorithm` -> genuine boot into the new
   image, self-test PASSED, confirmed. This is BL-065.
 
-### Trap 15: A completed MCUboot swap boot can permanently break the LABID UART RX interrupt (UNRESOLVED)
+### Trap 15: An MCUboot swap boot traps unread USB FIFO bytes and starves edge-triggered RX interrupts
 - **Symptom:** After Trap 14 was fixed and a real swap genuinely completes, the newly-booted image's
   LABID console UART RX interrupt never fires (`irq=0, rx=0` in the app's own instrumented heartbeat
   log, indefinitely). Reads (device -> host) still work; only writes (host -> device) are affected,
   timing out at the Windows serial driver level.
-- **Investigation, in order:**
-  1. First suspected BLE connection events reprogramming ESP32's interrupt matrix -- disproven by
-     reordering radio init before LABID init and testing against a real BLE OTA (no change).
-  2. Then isolated to the 4Hz blink rate -- a diagnostic build with the version label unchanged but
-     blink forced to 1Hz worked fine, narrowing it to blink/LED call frequency.
-  3. Root-caused to Zephyr's `ws2812_i2s` driver: a hardcoded 2-block DMA buffer pool (not exposed via
-     devicetree) exhausts under sustained LED update calls, and that exhaustion state ALSO kills the
-     UART RX interrupt (mechanism linking the two not traced further). Confirmed by patching the pool
-     to 8 blocks in the shared Zephyr SDK checkout -- fixed, stayed fixed 60+s. Mitigated at the app
-     level instead (rate-limit the actual LED hardware call to 1 Hz, independent of the logical toggle
-     rate the tests measure).
-  4. **The mitigation held up in isolated direct-flash testing but NOT during a real live OTA.**
-     Decisive follow-up: a diagnostic build with the LED hardware call disabled ENTIRELY (zero calls,
-     ever) still failed identically when reached via a real OTA swap, while the exact same binary
-     worked fine via direct flash. **This rules out the LED/mem_slab mechanism as the cause of this
-     specific failure** -- it's a real, separate, already-fixed bug (item 3 above), not what's actually
-     still blocking things.
-- **Status: UNRESOLVED.** Every direct-flash boot observed in this investigation has worked; every real
-  MCUboot swap boot has failed, regardless of LED activity, rate limit, or build variant content. Some
-  interaction between MCUboot's move-swap algorithm and the LABID UART RX interrupt is the real, still
-  open bug (BL-064). Static/log-based debugging is likely exhausted; next steps need either a
-  partition/flash-cache layout comparison between a fresh flash and a post-swap boot, inspection of
-  whether MCUboot's own bootloader stage touches UART/USB-Serial-JTAG clock or pin config differently
-  than a cold boot, or JTAG-level debugging.
+- **Investigation & Root Cause:**
+  1. Isolated the `ws2812_i2s` DMA pool exhaustion under 4Hz calls (Trap 15a: mitigated via 1000ms LED hardware rate limit).
+  2. Isolated the remaining post-swap failure to the USB-Serial-JTAG hardware and MCUboot boot sequence:
+     - In Zephyr's `serial_esp32_usb.c`, `SERIAL_OUT_RECV_PKT` is an **edge-triggered packet reception interrupt**, not a level-sensitive FIFO non-empty interrupt.
+     - During the 10-15s MCUboot move-swap, host polling (`VER?\r\n`) fills the 64-byte hardware RX FIFO.
+     - MCUboot jumps to Zephyr (`((void (*)(void))entry_addr)()`) without resetting peripherals.
+     - When Zephyr starts, `serial_esp32_usb_irq_rx_enable()` runs `clr_intsts_mask(SERIAL_OUT_RECV_PKT)`, clearing the interrupt status while unread bytes remain in the FIFO.
+     - With data in the FIFO, the USB controller NAKs subsequent host packets. With no new packets arriving, the edge interrupt never triggers, leaving the RX loop starved forever. Direct flash worked only because `esptool` asserts DTR/RTS, issuing a hardware reset with an empty FIFO right before boot.
+- **Resolution:** In `labid_port_zephyr.c`:
+  1. Drain and flush pre-boot FIFO data during `labid_port_init()` before and after interrupt enable.
+  2. Implement hybrid 20ms fallback polling under `irq_lock()` in `labid_thread_entry()` to guarantee unserviced bytes are drained and USB endpoints are freed even if an edge interrupt is missed.
+  3. Start servicing RX immediately from boot, decoupling the 1.5s ANNOUNCE window. This is BL-064.
 
 ### Trap 16: `LiveBackend`'s hand-built test `Namespace` silently drifted from the real CLI
 - **Symptom:** Every live zephyr OTA attempt through the test harness crashed with
@@ -225,7 +224,7 @@ Every project risk defined in PLAN §9 was evaluated and verified against real t
 | BL-050 (HIL dummy test, both boards) | Done |
 | BL-051 (T01-T03 boot/update) | idf done; zephyr blocked on Trap 14 |
 | BL-056 (RPi4 self-hosted runner) | idf done (runner registered, verified); zephyr n/a until a board is attached to the RPi4 |
-| BL-064 (LABID dies after v2 build) | Two bugs: mem_slab exhaustion fixed; MCUboot-swap-vs-LABID open |
+| BL-064 (LABID dies after v2 build) | Two bugs: mem_slab exhaustion fixed; MCUboot-swap-vs-LABID fixed |
 | BL-065 (MCUboot never swaps) | Fixed and verified live |
 
 Full per-ticket evidence for the Zephyr track's HIL work: `scripts/evidence/bl050_zephyr_dummy_hil_2026-09-22/`,
