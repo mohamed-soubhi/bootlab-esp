@@ -160,6 +160,7 @@ def main(argv: list[str] | None = None) -> int:
     a = ap.parse_args(argv)
 
     out_dir = Path(a.out)
+    out_dir.mkdir(parents=True, exist_ok=True)   # must exist before console_log is opened below
     console_log = None if a.no_console_log else Path(a.console_log) if a.console_log else out_dir / "console.log"
 
     from tests_hil.live_backend import LiveBackend, LiveRigError
