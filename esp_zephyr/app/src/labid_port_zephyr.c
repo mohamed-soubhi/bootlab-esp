@@ -35,7 +35,7 @@ static struct labid_app_info s_app;
 static const struct device *s_uart_dev;
 
 RING_BUF_DECLARE(s_rx_ring, LABID_RING_BUF_SIZE);
-K_SEM_DEFINE(s_rx_sem, 0, LABID_RING_BUF_SIZE);
+K_SEM_DEFINE(s_rx_sem, 0, 1);
 K_MUTEX_DEFINE(s_tx_mutex);
 
 K_THREAD_STACK_DEFINE(s_labid_stack, LABID_THREAD_STACK_SIZE);
@@ -219,22 +219,48 @@ static void labid_thread_entry(void *p1, void *p2, void *p3)
     ARG_UNUSED(p3);
 
     char out[LABID_MAX_FRAME + 8];
-
-    /* Wait for announce window (<= 2 s per PLAN §7.3.2) */
-    k_msleep(LABID_ANNOUNCE_DELAY_MS);
-    int alen = labid_announce(&s_ctx, out, sizeof(out));
-    if (alen > 0) {
-        send_frame(out);
-    }
+    int64_t announce_at = k_uptime_get() + LABID_ANNOUNCE_DELAY_MS;
+    bool announced = false;
 
     for (;;) {
-        k_sem_take(&s_rx_sem, K_FOREVER);
+        /* Wait up to 20ms for an RX interrupt or poll timeout */
+        k_sem_take(&s_rx_sem, K_MSEC(20));
+
+        /* BL-064: Check and drain hardware FIFO under irq_lock().
+         * On ESP32-S3 USB-Serial-JTAG, SERIAL_OUT_RECV_PKT is edge-triggered.
+         * If bytes arrived before interrupts were enabled (e.g. during an MCUboot swap)
+         * or if an interrupt edge was missed, polling the FIFO ensures bytes are never
+         * trapped, keeping the hardware USB endpoint responsive to subsequent OUT packets. */
+        if (s_uart_dev) {
+            unsigned int key = irq_lock();
+            while (uart_irq_rx_ready(s_uart_dev)) {
+                uint8_t byte;
+                int ret = uart_fifo_read(s_uart_dev, &byte, 1);
+                if (ret > 0) {
+                    g_rx_bytes++;
+                    ring_buf_put(&s_rx_ring, &byte, 1);
+                } else {
+                    break;
+                }
+            }
+            irq_unlock(key);
+        }
+
         uint8_t byte;
         while (ring_buf_get(&s_rx_ring, &byte, 1) > 0) {
             int len = labid_ctx_feed(&s_ctx, byte, out, sizeof(out));
             if (len > 0) {
                 send_frame(out);
             }
+        }
+
+        /* Send ANNOUNCE after initial delay window has elapsed (PLAN §7.3.2) */
+        if (!announced && k_uptime_get() >= announce_at) {
+            int alen = labid_announce(&s_ctx, out, sizeof(out));
+            if (alen > 0) {
+                send_frame(out);
+            }
+            announced = true;
         }
     }
 }
@@ -254,8 +280,24 @@ int labid_port_init(const struct labid_app_info *app)
     }
     s_uart_dev = uart_dev;
 
+    /* BL-064: Flush any stale pre-boot data in the hardware FIFO (e.g. from MCUboot swap) */
+    while (uart_irq_rx_ready(uart_dev)) {
+        uint8_t dummy;
+        if (uart_fifo_read(uart_dev, &dummy, 1) <= 0) {
+            break;
+        }
+    }
+
     uart_irq_callback_user_data_set(uart_dev, uart_irq_cb, NULL);
     uart_irq_rx_enable(uart_dev);
+
+    /* Drain again right after interrupt enable in case new bytes arrived during init */
+    while (uart_irq_rx_ready(uart_dev)) {
+        uint8_t dummy;
+        if (uart_fifo_read(uart_dev, &dummy, 1) <= 0) {
+            break;
+        }
+    }
 
     k_thread_create(&s_labid_thread_data, s_labid_stack,
                     K_THREAD_STACK_SIZEOF(s_labid_stack),
@@ -263,6 +305,6 @@ int labid_port_init(const struct labid_app_info *app)
                     LABID_THREAD_PRIO, 0, K_NO_WAIT);
     k_thread_name_set(&s_labid_thread_data, "labid");
 
-    LOG_INF("LABID initialized on console (irq RX, ANNOUNCE in %d ms)", LABID_ANNOUNCE_DELAY_MS);
+    LOG_INF("LABID initialized on console (irq+polled RX, ANNOUNCE in %d ms)", LABID_ANNOUNCE_DELAY_MS);
     return 0;
 }

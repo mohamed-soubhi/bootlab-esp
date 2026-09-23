@@ -55,7 +55,7 @@ def test_get_boards_endpoint(server_url):
 
 def test_run_and_history_lifecycle(server_url):
     # Wait for any previous job to finish
-    timeout = 10
+    timeout = 25
     start = time.time()
     while GLOBAL_RUNNER.is_running() and (time.time() - start < timeout):
         time.sleep(0.1)

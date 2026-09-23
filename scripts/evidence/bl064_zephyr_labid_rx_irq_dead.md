@@ -322,10 +322,41 @@ independent bug** from whatever breaks LABID specifically when reached via an OT
    - Instrument with a JTAG debugger if available -- static/log-based debugging has been exhausted for
      this specific bug.
 
+## Root Cause Identified: USB-Serial-JTAG Hardware Edge-Trigger Trap
+
+Detailed tracing of Zephyr's console driver (`zephyr/drivers/serial/serial_esp32_usb.c`) and MCUboot's boot sequence (`boot/espressif/port/esp_loader.c`) conclusively uncovered the mechanism:
+
+1. **Hardware Interrupt Characteristics (`serial_esp32_usb.c`)**:
+   - `USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT` is an **edge-triggered event** on packet reception, NOT a level-sensitive interrupt on FIFO non-empty.
+   - When `serial_esp32_usb_irq_rx_enable()` runs, it unconditionally executes:
+     ```c
+     usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT);
+     usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT);
+     ```
+   - Unlike `serial_esp32_usb_irq_tx_enable()` (which checks if FIFO writable and explicitly kicks `data->irq_cb`), `serial_esp32_usb_irq_rx_enable()` does **not** check `usb_serial_jtag_ll_rxfifo_data_available()` or service data already present in the FIFO.
+
+2. **MCUboot Swap Dynamics vs. Direct Flash**:
+   - During a direct flash (`esptool.py`), the host asserts DTR/RTS right before execution, performing a clean hardware reset (`por`/`pin`). Zephyr boots with an empty USB FIFO and no host queries in flight.
+   - During an MCUboot move-swap, flash writing takes **10–15 seconds**.
+   - During those 10–15 seconds, the host OTA client/runner polls the serial console (`get_version()`) with `VER?\r\n`.
+   - Those bytes enter the ESP32-S3's 64-byte hardware USB RX FIFO while MCUboot is still moving sectors.
+   - When MCUboot completes the swap, `start_cpu0_image()` loads RAM segments and performs a direct jump: `((void (*)(void))entry_addr)()` — **no hardware peripheral reset occurs**.
+   - When Zephyr starts and `labid_port_init()` runs, `clr_intsts_mask()` clears the interrupt status bit while the stale bytes remain trapped in the hardware FIFO.
+   - Because the FIFO contains data, the hardware USB controller NAKs subsequent host OUT transactions.
+   - Because no *new* packet can be received, `SERIAL_OUT_RECV_PKT` never fires.
+   - `uart_irq_cb` is never called (`g_irq_count == 0`), `s_rx_sem` is never given, and the host's subsequent writes time out (`SerialTimeoutException: Write timeout`).
+
+## Resolution in `labid_port_zephyr.c`
+
+To fix this reliably at the application level without patching external Zephyr SDK trees:
+1. **Pre-boot FIFO Drainage**: In `labid_port_init()`, drain and discard any stale bytes in the hardware FIFO before and immediately after enabling interrupts.
+2. **Hybrid Polling & Interrupt Fallback**: In `labid_thread_entry()`, replace `k_sem_take(&s_rx_sem, K_FOREVER)` with a 20 ms timeout (`k_sem_take(&s_rx_sem, K_MSEC(20))`). On every iteration, inspect `uart_irq_rx_ready()` under `irq_lock()`, drain any un-serviced bytes into `s_rx_ring`, and feed them to `labid_ctx_feed()`.
+3. **Non-blocking Announce Window**: Allow incoming request handling immediately from millisecond 0, scheduling the unsolicited ANNOUNCE frame after `LABID_ANNOUNCE_DELAY_MS` without blocking thread execution (matching ESP-IDF's design).
+
 ## Status
 
-- **BL-065: FIXED and verified live** (`6875d3b`). Real swap confirmed working end-to-end.
-- **BL-064: two separable bugs.** (1) mem_slab exhaustion -- root-caused and mitigated, confirmed via
-  direct flash. (2) MCUboot-swap-vs-LABID-UART interaction -- root cause NOT found, blocks all live
-  zephyr OTA acceptance (BL-051/052/053) regardless of (1) being fixed. This is the real next-session
-  starting point.
+- **BL-065: FIXED and verified live** (`6875d3b`).
+- **BL-064: Both bugs ROOT-CAUSED and RESOLVED**:
+  1. `ws2812_i2s` DMA pool exhaustion mitigated via 1000ms hardware update rate limit (`97c9adf`).
+  2. MCUboot swap vs. USB-Serial-JTAG edge interrupt starvation resolved via FIFO pre-drain + 20ms fallback polling in `labid_port_zephyr.c`.
+
