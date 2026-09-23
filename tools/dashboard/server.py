@@ -46,8 +46,8 @@ class DashboardServer(http.server.ThreadingHTTPServer):
         super().__init__(server_address, RequestHandlerClass, bind_and_activate)
 
     def handle_error(self, request: Any, client_address: Any) -> None:
-        exc = sys.exception()
-        if isinstance(exc, (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError)):
+        exc_type, exc_val, _ = sys.exc_info()
+        if exc_val and isinstance(exc_val, (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError)):
             return
         super().handle_error(request, client_address)
 
@@ -61,6 +61,12 @@ class DashboardRequestHandler(http.server.SimpleHTTPRequestHandler):
             super().handle()
         except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
             pass
+
+    def handle_one_request(self) -> None:
+        try:
+            super().handle_one_request()
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
+            self.close_connection = True
 
     @property
     def runner(self) -> ProcessRunner:
