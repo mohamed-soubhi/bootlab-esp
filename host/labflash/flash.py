@@ -47,11 +47,18 @@ def find_esptool_cmd(repo_root: Path | None = None) -> list[str]:
     # Candidate paths in priority order
     candidates: list[Path] = []
     if on_windows:
+        # sys.prefix is the Python installation root (e.g. C:\Python312 or a venv root)
+        # Scripts\ is the Windows equivalent of bin/
+        scripts_dir = Path(sys.prefix) / "Scripts"
         candidates += [
             root / ".venv" / "Scripts" / "esptool.exe",
             root / ".venv" / "Scripts" / "esptool",
+            scripts_dir / "esptool.exe",
+            scripts_dir / "esptool",
+            # labflash itself lives in Scripts/ — esptool.exe is a sibling
+            Path(__file__).resolve().parent.parent.parent / "Scripts" / "esptool.exe",
+            Path(sys.executable).parent / "Scripts" / "esptool.exe",
             Path(sys.executable).parent / "esptool.exe",
-            Path(sys.executable).parent / "esptool",
         ]
     else:
         candidates += [
@@ -79,7 +86,6 @@ def find_esptool_cmd(repo_root: Path | None = None) -> list[str]:
 
     # Last resort: always works since esptool is a Python package
     return [sys.executable, "-m", "esptool"]
-
 
 
 def normalize_mac(mac: str) -> str:
