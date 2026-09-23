@@ -121,6 +121,10 @@ class WifiBoard:
         self._token = token
         self._ctx = ssl.create_default_context(cafile=str(ca_cert))
         self._ctx.check_hostname = False     # the firmware's cert is pinned to the CA, not to an IP
+        # Python >= 3.13 defaults to VERIFY_X509_STRICT, which rejects the lab Root CA (it has no keyUsage
+        # extension). The chain is still verified against the pinned CA (CERT_REQUIRED); only the strict
+        # RFC 5280 profile checks are dropped.
+        self._ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
 
     def version(self, timeout: float = VERSION_TIMEOUT_S) -> dict | None:
         """{'app','git','slot','confirmed'} or None if the board does not answer (rebooting, busy)."""

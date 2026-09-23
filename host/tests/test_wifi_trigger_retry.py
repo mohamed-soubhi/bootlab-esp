@@ -49,6 +49,20 @@ def test_trigger_returns_minus_one_after_exhausting_retries(tmp_path, monkeypatc
     assert m.call_count == TRIGGER_RETRIES
 
 
+def test_tls_context_does_not_require_ca_key_usage_extension(tmp_path):
+    """Python >= 3.13 sets VERIFY_X509_STRICT by default, which rejects a CA cert without a keyUsage extension
+    ("CA cert does not include key usage extension"). The lab Root CA has none, so every WiFi OTA from a 3.13 host
+    (the RPi4) failed as URLError -> "board never answered". The pinned-CA chain check itself must stay on."""
+    import ssl
+    (tmp_path / "ca.pem").write_bytes(b"")
+    strict = ssl.create_default_context()
+    strict.verify_flags |= ssl.VERIFY_X509_STRICT       # what 3.13's create_default_context() does
+    with patch.object(ssl, "create_default_context", return_value=strict):
+        b = WifiBoard("192.168.1.152", "tok", tmp_path / "ca.pem")
+    assert not (b._ctx.verify_flags & ssl.VERIFY_X509_STRICT)
+    assert b._ctx.verify_mode == ssl.CERT_REQUIRED
+
+
 def test_trigger_http_error_returns_code_without_retry(tmp_path):
     b = _board(tmp_path)
     with patch("urllib.request.urlopen", side_effect=urllib.error.HTTPError("u", 401, "no", {}, None)) as m:
