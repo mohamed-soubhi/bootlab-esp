@@ -35,19 +35,51 @@ class ZephyrGatedError(FlashError):
 
 
 def find_esptool_cmd(repo_root: Path | None = None) -> list[str]:
-    """Find esptool executable, prioritizing repo virtual environment."""
+    """Find esptool executable, prioritizing repo virtual environment.
+
+    Works on Windows (.venv/Scripts/esptool.exe) and Linux (.venv/bin/esptool).
+    Falls back to `sys.executable -m esptool` which always works on any platform.
+    """
+    import platform
     root = (repo_root or DEFAULT_REPO_ROOT).resolve()
-    venv_esptool = root / ".venv" / "bin" / "esptool"
-    sys_esptool = Path(sys.executable).parent / "esptool"
-    if venv_esptool.is_file() and os.access(venv_esptool, os.X_OK):
-        return [str(venv_esptool)]
-    if sys_esptool.is_file() and os.access(sys_esptool, os.X_OK):
-        return [str(sys_esptool)]
-    if shutil.which("esptool"):
-        return ["esptool"]
-    if shutil.which("esptool.py"):
-        return ["esptool.py"]
+    on_windows = platform.system() == "Windows"
+
+    # Candidate paths in priority order
+    candidates: list[Path] = []
+    if on_windows:
+        candidates += [
+            root / ".venv" / "Scripts" / "esptool.exe",
+            root / ".venv" / "Scripts" / "esptool",
+            Path(sys.executable).parent / "esptool.exe",
+            Path(sys.executable).parent / "esptool",
+        ]
+    else:
+        candidates += [
+            root / ".venv" / "bin" / "esptool",
+            Path(sys.executable).parent / "esptool",
+        ]
+
+    for candidate in candidates:
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            # On Windows, skip ELF/shell-script wrappers (WinError 193 guard)
+            if on_windows:
+                try:
+                    with open(candidate, "rb") as f:
+                        magic = f.read(2)
+                    if magic != b"MZ":  # not a Windows PE binary
+                        continue
+                except OSError:
+                    continue
+            return [str(candidate)]
+
+    # shutil.which respects PATHEXT on Windows so .exe/.cmd/.bat are found
+    found = shutil.which("esptool") or shutil.which("esptool.py")
+    if found:
+        return [found]
+
+    # Last resort: always works since esptool is a Python package
     return [sys.executable, "-m", "esptool"]
+
 
 
 def normalize_mac(mac: str) -> str:
