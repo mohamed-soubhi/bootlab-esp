@@ -45,10 +45,22 @@ class DashboardServer(http.server.ThreadingHTTPServer):
         self.runner = runner or GLOBAL_RUNNER
         super().__init__(server_address, RequestHandlerClass, bind_and_activate)
 
+    def handle_error(self, request: Any, client_address: Any) -> None:
+        exc = sys.exception()
+        if isinstance(exc, (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError)):
+            return
+        super().handle_error(request, client_address)
+
 
 class DashboardRequestHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, directory=str(STATIC_DIR), **kwargs)
+
+    def handle(self) -> None:
+        try:
+            super().handle()
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
+            pass
 
     @property
     def runner(self) -> ProcessRunner:
@@ -67,6 +79,10 @@ class DashboardRequestHandler(http.server.SimpleHTTPRequestHandler):
         parsed_path = urllib.parse.urlparse(self.path).path
         if parsed_path in ("/", "/index.html"):
             return self._serve_file(STATIC_DIR / "index.html", "text/html; charset=utf-8")
+        elif parsed_path == "/favicon.ico":
+            self.send_response(204)
+            self.end_headers()
+            return
         elif parsed_path == "/style.css":
             return self._serve_file(STATIC_DIR / "style.css", "text/css; charset=utf-8")
         elif parsed_path == "/app.js":
