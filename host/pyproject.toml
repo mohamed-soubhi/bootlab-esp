@@ -11,10 +11,12 @@ requires-python = ">=3.11"
 dependencies = [
     "pyyaml>=6.0",
     "pyserial>=3.5",
+    "esptool>=4.0",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
+zephyr = ["smpclient>=0.16"]
 
 [project.scripts]
 labflash = "labflash.__main__:main"

@@ -271,9 +271,18 @@ def factory_flash_zephyr(
 
     # use_idf_env=False: esptool is already resolved by find_esptool_cmd(); Zephyr
     # flashing does not need the IDF environment (no idf.py, no export.sh required).
+    esptool_path = esptool_cmd[0] if len(esptool_cmd) == 1 else " ".join(esptool_cmd)
     res = run_command(cmd, cwd=build_dir, use_idf_env=False, runner=runner)
     if res.returncode != 0:
-        raise FlashError(f"Zephyr factory flash failed on {port}:\n{res.stderr or res.stdout}")
+        err = res.stderr or res.stdout or ""
+        if "No module named esptool" in err:
+            raise FlashError(
+                f"esptool is not installed in this Python environment.\n"
+                f"  Run:  pip install esptool\n"
+                f"  (Python used: {sys.executable})"
+            )
+        raise FlashError(f"Zephyr factory flash failed on {port} (esptool: {esptool_path}):\n{err}")
+
 
 
 def erase_flash(
