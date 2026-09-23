@@ -284,12 +284,48 @@ Left on the known-good confirmed `build_v1` (esptool, identity verified). The `w
 patch used earlier to confirm the root cause was reverted (shared SDK checkout, not this repo's to
 modify permanently without a proper patch mechanism).
 
+## Decisive isolation test: LED/mem_slab is NOT the cause of the OTA-swap failure
+
+Built a diagnostic `build_v2` with the LED hardware call disabled entirely (`if (0 && ...)`, literally
+zero `led_strip_update_rgb()` calls ever made -- `s_toggle_count`/self-test/heartbeat still run at full
+rate). Two tests with this exact binary:
+
+1. **Direct esptool flash**: LABID responds immediately, `app=2.0.0, confirmed=1`. Works.
+2. **Real live BLE OTA** (v1 -> this binary): **same exact failure** -- `irq=0, rx=0`, `ERROR: the board
+   never answered after the transfer`.
+
+Same binary, zero LED activity either way. The only variable between pass and fail is **how the image
+reached slot 0** -- direct flash vs. a real MCUboot move-algorithm swap. This conclusively rules out
+the LED/mem_slab mechanism as the cause of *this* failure mode. The mem_slab root cause found earlier
+(pool exhaustion under sustained 4Hz calls) is real and reproducible on its own, but is a **separate,
+independent bug** from whatever breaks LABID specifically when reached via an OTA swap.
+
+**BL-064 is actually two bugs:**
+
+1. `ws2812_i2s` mem_slab exhaustion under high-frequency LED calls -- root-caused, mitigated at the app
+   level (rate limit), confirmed fixed for that specific mechanism via direct-flash testing.
+2. **An unexplained interaction between MCUboot's move-swap algorithm and the LABID UART RX interrupt**
+   -- every direct-flash boot of every build tested in this investigation has worked; every OTA-swap
+   boot of every build tested (regardless of LED activity, rate limit, or variant content) has failed.
+   This is the real, currently-blocking bug. Root cause NOT found. Candidate angles for next session,
+   roughly cheapest-to-check first:
+   - Compare `esp_zephyr/app/build_v1` and the OTA-delivered secondary-slot image's linker/partition
+     layout -- does the swap leave slot 0 at a different flash offset or with different cache
+     alignment than a fresh flash write does?
+   - Check whether MCUboot's own bootloader stage (which runs before Zephyr/the app) touches the
+     UART/USB-Serial-JTAG pins or clock config in a way a cold power-on boot doesn't (e.g., leaves a
+     peripheral clock gated, or a GPIO matrix entry pointed somewhere stale) -- diffable by comparing
+     `esptool` chip-id/`gpio` dumps immediately after each boot path.
+   - Try `swap_type=perm` (non-test) via `confirm=True` sent only AFTER a successful test-boot (a
+     proper two-phase confirm, instead of this session's single confirm=False call) -- rules out
+     whether the *test*-swap path specifically (vs. a plain permanent swap) is implicated.
+   - Instrument with a JTAG debugger if available -- static/log-based debugging has been exhausted for
+     this specific bug.
+
 ## Status
 
 - **BL-065: FIXED and verified live** (`6875d3b`). Real swap confirmed working end-to-end.
-- **BL-064: root cause confirmed, mitigation attempts (500ms and 1000ms LED rate limits) both
-  insufficient under real live-OTA conditions**, despite the 500ms version being stable for 60+s in an
-  isolated direct-flash test. Real differentiator not yet found -- strongest untested lead is
-  **OTA-swap vs. direct-flash** as the actual variable, not blink/call rate. Next session should design
-  a test that isolates this specifically (e.g., a real OTA swap to a variant that never blinks at all,
-  to see if the freeze still occurs with zero LED activity post-swap).
+- **BL-064: two separable bugs.** (1) mem_slab exhaustion -- root-caused and mitigated, confirmed via
+  direct flash. (2) MCUboot-swap-vs-LABID-UART interaction -- root cause NOT found, blocks all live
+  zephyr OTA acceptance (BL-051/052/053) regardless of (1) being fixed. This is the real next-session
+  starting point.
