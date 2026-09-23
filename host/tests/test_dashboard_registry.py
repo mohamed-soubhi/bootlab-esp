@@ -65,6 +65,14 @@ def test_build_command_unknown_tool_raises():
         build_command("invalid_xyz", {})
 
 
+def test_build_command_hil_with_mock_rig():
+    cmd = build_command("test_hil_all", {"mock_rig": True, "board": "zephyr"})
+    assert "--mock-rig" in cmd
+    assert "--board" in cmd
+    assert "zephyr" in cmd
+    assert "tests_hil/" in cmd
+
+
 def test_detect_boards():
     boards = detect_boards()
     assert isinstance(boards, list)

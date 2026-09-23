@@ -193,30 +193,93 @@ TOOLS: dict[str, ToolDefinition] = {
         ],
     ),
 
-    # 4. HIL Tests
+    # 4. HIL & Unit Tests
+    "test_host_units": ToolDefinition(
+        id="test_host_units",
+        name="Host Package Unit Tests (Mocked)",
+        category="tests",
+        description="Run the 207 fast mocked unit tests (core, CLI, dashboard, update, labid) — no hardware required.",
+        command_template=[sys.executable, "-m", "pytest", "host/tests/", "-v"],
+        parameters=[],
+    ),
     "test_hil_all": ToolDefinition(
         id="test_hil_all",
         name="Run Full HIL Acceptance Suite",
         category="tests",
         description="Execute complete hardware test matrix (T01–T15) with live reporting.",
         command_template=[sys.executable, "-m", "pytest", "tests_hil/", "-v"],
-        parameters=[],
+        parameters=[
+            Parameter(
+                name="mock_rig",
+                label="Simulated Rig (--mock-rig)",
+                param_type="boolean",
+                default=False,
+                description="Simulate hardware without physical ESP32 boards connected.",
+            ),
+            Parameter(
+                name="board",
+                label="Board Track",
+                param_type="select",
+                default="idf",
+                options=["idf", "zephyr", "all"],
+                description="Target firmware stack to test.",
+            ),
+            Parameter(
+                name="port",
+                label="Serial Port",
+                param_type="text",
+                default="",
+                description="Hardware serial COM port (e.g. COM14). Auto-detected if empty.",
+            ),
+        ],
     ),
     "test_hil_boot": ToolDefinition(
         id="test_hil_boot",
         name="HIL Boot & OTA Tests (T01–T03)",
         category="tests",
         description="Verify factory boot, WiFi update, and BLE update slot flips.",
-        command_template=[sys.executable, "-m", "pytest", "tests_hil/test_t01_t03_boot.py", "-v"],
-        parameters=[],
+        command_template=[sys.executable, "-m", "pytest", "tests_hil/test_t01_t03_boot_update.py", "-v"],
+        parameters=[
+            Parameter(
+                name="mock_rig",
+                label="Simulated Rig (--mock-rig)",
+                param_type="boolean",
+                default=False,
+                description="Simulate hardware without physical ESP32 boards connected.",
+            ),
+            Parameter(
+                name="board",
+                label="Board Track",
+                param_type="select",
+                default="idf",
+                options=["idf", "zephyr", "all"],
+            ),
+            Parameter(name="port", label="Serial Port", param_type="text", default=""),
+        ],
     ),
     "test_hil_security": ToolDefinition(
         id="test_hil_security",
         name="HIL Security & Rollback Tests (T04–T09)",
         category="tests",
         description="Verify bad signature rejection, watchdog rollback, and auth gates.",
-        command_template=[sys.executable, "-m", "pytest", "tests_hil/test_t04_t09_security.py", "-v"],
-        parameters=[],
+        command_template=[sys.executable, "-m", "pytest", "tests_hil/test_t04_t09_rollback_security.py", "-v"],
+        parameters=[
+            Parameter(
+                name="mock_rig",
+                label="Simulated Rig (--mock-rig)",
+                param_type="boolean",
+                default=False,
+                description="Simulate hardware without physical ESP32 boards connected.",
+            ),
+            Parameter(
+                name="board",
+                label="Board Track",
+                param_type="select",
+                default="idf",
+                options=["idf", "zephyr", "all"],
+            ),
+            Parameter(name="port", label="Serial Port", param_type="text", default=""),
+        ],
     ),
 }
 
@@ -237,7 +300,13 @@ def build_command(tool_id: str, params: dict[str, Any]) -> list[str]:
         if val is None or val == "":
             continue
 
-        if p.name == "port":
+        if p.name == "mock_rig":
+            if val is True or str(val).lower() in ("true", "1"):
+                cmd.append("--mock-rig")
+        elif p.name == "board":
+            if "--board" not in cmd:
+                cmd.extend(["--board", str(val)])
+        elif p.name == "port":
             cmd.extend(["--port", str(val)])
         elif p.name == "variant":
             if "--variant" not in cmd:
