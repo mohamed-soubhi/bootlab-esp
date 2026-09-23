@@ -13,6 +13,51 @@ directory on this machine AND the Windows mirror -- a commit made here can catch
 from the other session (happened at least once, see commit `d308248`'s history); check `git status`
 and `git log -3` before assuming a clean starting point.
 
+## BL-055[zephyr] — IN PROGRESS, handoff checkpoint (this instance, 2026-09-23)
+
+Added a `zephyr-build` job to `.github/workflows/build.yml` (mirrors the existing working
+`idf-build` job: west/toolchain setup, CI-only signing keys, build+sign all 5 variants, upload
+artifacts). Iterated against REAL CI runs (cheap, no hardware) fixing real bugs found along the way,
+in commit order (`git log --oneline -- .github/workflows/build.yml`):
+
+1. `ZEPHYR_BASE` path: `west init -l .` (this repo's `west.yml` has `self.path: "."`) makes west's
+   topdir the PARENT of the checkout, not a subdir -- `zephyr`/`modules`/`bootloader` land as SIBLINGS
+   of the repo (`/home/runner/work/bootlab-esp/zephyr`), same layout as this machine's local
+   `~/zephyrproject`. Fixed `ZEPHYR_BASE`/`CROSS_COMPILE`/`ESPRESSIF_TOOLS_PATH` and the two steps
+   that referenced `zephyr/`/`hal_espressif` paths directly.
+2. Kconfig STRING override quoting: a CMake `-D` override for a Kconfig string option needs literal
+   embedded double-quotes (`-DVAR=\"value\"`), or the generated config fragment is unquoted and
+   Kconfig aborts with "malformed string literal". Fixed the `SB_CONFIG_BOOT_SIGNATURE_KEY_FILE`
+   override (needed because the committed `esp_zephyr/app/sysbuild.conf` hardcodes an absolute
+   dev-machine path that doesn't exist in CI -- left that file untouched, override per-invocation).
+3. **Current failure, just pushed a fix for, NOT YET VERIFIED**: `hal_espressif` has no bundled
+   toolchain installer script (checked locally: `modules/hal/espressif/tools/` only has
+   `ci/idf_monitor/sync`) -- my two guessed installer script paths both failed silently, so
+   `CROSS_COMPILE` pointed at a path with nothing there and CMake correctly said "unable to find the
+   toolchain". Replaced with a direct download of Espressif's crosstool-NG release tarball
+   (`https://github.com/espressif/crosstool-NG/releases/download/esp-15.2.0_20251204/
+   xtensa-esp-elf-15.2.0_20251204-x86_64-linux-gnu.tar.xz`, matching this dev machine's cache dir name
+   exactly) -- **this exact URL/tarball-layout guess has not been confirmed against a real run yet**.
+
+**Next step for whoever continues**: check the latest `build.yml` run
+(`gh run list --workflow=build.yml --repo mohamed-soubhi/bootlab-esp --limit 5`) for the `zephyr-build`
+job's result. If it's still failing on the toolchain download/extract step, the URL or
+`--strip-components` count in that step is probably wrong -- inspect the actual tarball
+(`wget` it once locally/in a scratch shell and `tar tf` it) rather than guessing again blind. Every
+other part of the job (west/manifest setup, all 5 variant builds' Kconfig/CMake invocation) has been
+confirmed correct against real CI runs.
+
+**Unrelated, pre-existing CI failure on the SAME workflow** (not mine, don't fix): `Python Host Tool
+Unit Tests` fails on `ruff` lint errors in `host/tests/test_dashboard_server.py`/`test_gui_cli.py` --
+peer's `tools/dashboard/` work, unrelated to Zephyr.
+
+**Also note**: this shared repo has near-continuous peer-agent commit activity on `master` right now
+(pushes roughly every few minutes as of this checkpoint) -- `build.yml`'s `concurrency: cancel-in-
+progress: true` means a peer push can cancel an in-flight CI run before it finishes. If a run shows
+`cancelled` rather than a real pass/fail, that's why -- just retrigger
+(`gh workflow run build.yml --repo mohamed-soubhi/bootlab-esp --ref master`), don't assume it means
+anything about correctness.
+
 ## BL-065 — FIXED and verified live (this instance, 2026-09-23)
 
 Root cause: `make_zephyr_udp_send`/`make_zephyr_ble_send` sent `ImageStatesWrite(confirm=True)`
