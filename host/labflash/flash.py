@@ -73,11 +73,12 @@ def read_mac_with_esptool(
 
     esptool_cmd = find_esptool_cmd(repo_root)
     cmd = [*esptool_cmd, "--port", str(port), "read-mac"]
-    res = run_command(cmd, cwd=Path.cwd(), use_idf_env=True, runner=runner)
+    # use_idf_env=False: esptool is already resolved; read-mac does not need IDF.
+    res = run_command(cmd, cwd=Path.cwd(), use_idf_env=False, runner=runner)
     if res.returncode != 0:
         # Try read_mac (legacy syntax)
         cmd_legacy = [*esptool_cmd, "--port", str(port), "read_mac"]
-        res = run_command(cmd_legacy, cwd=Path.cwd(), use_idf_env=True, runner=runner)
+        res = run_command(cmd_legacy, cwd=Path.cwd(), use_idf_env=False, runner=runner)
 
     if res.returncode == 0:
         # Match 'MAC: xx:xx:xx:xx:xx:xx'
@@ -230,7 +231,9 @@ def factory_flash_zephyr(
     for offset, p in files.items():
         cmd.extend([offset, str(p)])
 
-    res = run_command(cmd, cwd=build_dir, use_idf_env=True, runner=runner)
+    # use_idf_env=False: esptool is already resolved by find_esptool_cmd(); Zephyr
+    # flashing does not need the IDF environment (no idf.py, no export.sh required).
+    res = run_command(cmd, cwd=build_dir, use_idf_env=False, runner=runner)
     if res.returncode != 0:
         raise FlashError(f"Zephyr factory flash failed on {port}:\n{res.stderr or res.stdout}")
 
@@ -245,7 +248,8 @@ def erase_flash(
 
     esptool_cmd = find_esptool_cmd(repo_root)
     cmd = [*esptool_cmd, "--chip", "esp32s3", "-p", str(port), "erase-flash"]
-    res = run_command(cmd, cwd=Path.cwd(), use_idf_env=True, runner=runner)
+    # use_idf_env=False: esptool is already resolved; erase does not need IDF.
+    res = run_command(cmd, cwd=Path.cwd(), use_idf_env=False, runner=runner)
     if res.returncode != 0:
         raise FlashError(f"Erase flash failed on {port}:\n{res.stderr or res.stdout}")
 
