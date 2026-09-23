@@ -125,3 +125,100 @@ jobs:
             esp_idf/build_hang/bootlab_idf_blink.bin
             esp_idf/build_bad_sig/bootlab_idf_blink.bin
           if-no-files-found: error
+
+  zephyr-build:
+    name: Zephyr Build & Sign (All Variants)
+    runs-on: ubuntu-latest
+    env:
+      # west.yml has self.path "." -- west init -l . makes THIS checkout the manifest repo, and
+      # `west update` fetches zephyr/modules as siblings of it (so ZEPHYR_BASE is a subdir of the
+      # checkout, not a separate workspace).
+      ZEPHYR_BASE: ${{ github.workspace }}/zephyr
+      ZEPHYR_TOOLCHAIN_VARIANT: cross-compile
+      CROSS_COMPILE: ${{ github.workspace }}/.espressif/tools/xtensa-esp-elf/esp-15.2.0_20251204/xtensa-esp-elf/bin/xtensa-esp32s3-elf-
+      ESPRESSIF_TOOLS_PATH: ${{ github.workspace }}/.espressif
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install host build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            ninja-build device-tree-compiler gperf ccache dfu-util \
+            file wget xz-utils make gcc g++
+
+      - name: Install west and Python Zephyr deps
+        run: |
+          pip install --upgrade pip
+          pip install west imgtool
+
+      - name: west init + update (pinned to west.yml's zephyr v4.4.2)
+        run: |
+          west init -l .
+          west update --narrow -o=--depth=1
+
+      - name: Install Zephyr's own Python requirements
+        run: |
+          pip install -r zephyr/scripts/requirements.txt
+
+      - name: Fetch the Espressif Xtensa toolchain + HAL blobs (hal_espressif)
+        run: |
+          west blobs fetch hal_espressif
+          # hal_espressif ships its own toolchain installer; installs under ESPRESSIF_TOOLS_PATH.
+          python3 modules/hal/espressif/tools/toolchain_install.py --path "$ESPRESSIF_TOOLS_PATH" \
+            --xtensa-only 2>/dev/null || \
+          python3 modules/hal/espressif/tools/install_all.py --path "$ESPRESSIF_TOOLS_PATH" 2>/dev/null || \
+          echo "WARN: no known hal_espressif toolchain installer script found at this pinned revision -- see docs/LESSONS_LEARNED.md Trap 20 if this step needs updating"
+
+      - name: Generate CI test keys (ECDSA-P256, Zephyr/MCUboot)
+        run: |
+          mkdir -p keys
+          chmod 700 keys
+          imgtool keygen -k keys/zephyr_p256.pem -t ecdsa-p256
+          imgtool keygen -k keys/zephyr_foreign.pem -t ecdsa-p256
+          chmod 600 keys/*.pem
+
+      - name: Build & verify all 5 Zephyr variants
+        working-directory: esp_zephyr/app
+        run: |
+          set -e
+          declare -A OVERLAYS=(
+            [v1]=overlay_v1.conf [v2]=overlay_v2.conf [hang]=overlay_hang.conf
+            [no_confirm]=overlay_no_confirm.conf [bad_sig]=overlay_bad_sig.conf
+          )
+          declare -A KEY_FILES=(
+            [v1]="$GITHUB_WORKSPACE/keys/zephyr_p256.pem" [v2]="$GITHUB_WORKSPACE/keys/zephyr_p256.pem"
+            [hang]="$GITHUB_WORKSPACE/keys/zephyr_p256.pem" [no_confirm]="$GITHUB_WORKSPACE/keys/zephyr_p256.pem"
+            [bad_sig]="$GITHUB_WORKSPACE/keys/zephyr_foreign.pem"
+          )
+          for variant in v1 v2 hang no_confirm bad_sig; do
+            echo "::group::Building $variant"
+            # Override SB_CONFIG_BOOT_SIGNATURE_KEY_FILE at the command line -- the committed
+            # sysbuild.conf hardcodes an absolute dev-machine path that doesn't exist in CI
+            # (see docs/LESSONS_LEARNED.md Trap 16-style issue: don't edit the file used by the
+            # live board workflow, override per-invocation instead).
+            west build -b esp32s3_devkitc/esp32s3/procpu . -d "build_ci_${variant}" --sysbuild -p always -- \
+              -Dapp_EXTRA_CONF_FILE="${OVERLAYS[$variant]}" \
+              -DSB_CONFIG_BOOT_SIGNATURE_KEY_FILE="${KEY_FILES[$variant]}"
+            test -s "build_ci_${variant}/app/zephyr/zephyr.signed.bin"
+            echo "::endgroup::"
+          done
+
+      - name: Upload signed Zephyr firmware artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: zephyr-firmware-variants
+          path: |
+            esp_zephyr/app/build_ci_v1/mcuboot/zephyr/zephyr.bin
+            esp_zephyr/app/build_ci_v1/app/zephyr/zephyr.signed.bin
+            esp_zephyr/app/build_ci_v2/app/zephyr/zephyr.signed.bin
+            esp_zephyr/app/build_ci_hang/app/zephyr/zephyr.signed.bin
+            esp_zephyr/app/build_ci_no_confirm/app/zephyr/zephyr.signed.bin
+            esp_zephyr/app/build_ci_bad_sig/app/zephyr/zephyr.signed.bin
+          if-no-files-found: error
