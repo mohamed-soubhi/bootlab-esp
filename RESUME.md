@@ -13,6 +13,21 @@ directory on this machine AND the Windows mirror -- a commit made here can catch
 from the other session (happened at least once, see commit `d308248`'s history); check `git status`
 and `git log -3` before assuming a clean starting point.
 
+## BL-060 live soak — WAITING ON OWNER RESULTS (checkpoint 2026-09-24)
+
+Owner is running `python -m tests_hil.soak ...` natively on Windows (COM14, board 192.168.1.152,
+`--cycles 100`, pattern wifi,wifi,ble,ble). Runbook + commands: `docs/BL060_SOAK_TEST.md`.
+The other agent's work is already on origin/master (nothing unpushed at this checkpoint).
+
+Last log (2026-09-23d): 3 HTTPS OTA cycles clean (~22 s each, signature OK, confirmed=1 ~6 s after boot,
+slots alternate). BLE OTA (1249280 B) was very slow (~3-5 KB/s, >4.6 min, unfinished when log ended); owner
+restarted the board and the test. Recurring benign `read error :-0x0050` on the first HTTPS probe.
+
+NEXT when owner pastes results: read `report.json` / `cycles.jsonl` / `console.log` from the `--out` dir,
+fill the Evidence table in `docs/BL060_SOAK_TEST.md`, check BLE duration + pass rate (target >= 99 %,
+final state v1), then update BL-060 in `tickets/TICKETS.md` and `docs/LESSONS_LEARNED.md` if warranted.
+Open question: is BLE throughput (conn interval flipping 48<->12) a real defect or just slow-by-design.
+
 ## BL-055[zephyr] — IN PROGRESS, handoff checkpoint (this instance, 2026-09-23)
 
 Added a `zephyr-build` job to `.github/workflows/build.yml` (mirrors the existing working
