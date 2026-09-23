@@ -145,3 +145,16 @@ def test_query_timeout():
     with pytest.raises(idf.LabidError, match="no response"):
         idf.query(t, "NOOP?", timeout=0.05)
 
+
+def test_query_skips_unsolicited_frame_of_a_different_type():
+    """BL-060 Trap 8b: on a shared persistently-open transport, the device's own periodic
+    broadcast chatter (e.g. an ID frame) can land ahead of the solicited reply in the byte
+    stream. query() must skip it and wait for a frame of the requested type, not return the
+    first frame it happens to see."""
+    t = MockTransport({"VER?": ("VER", {"app": "2.0.0", "git": "2.0.0", "slot": "1", "confirmed": "1"})})
+    stale = build_frame("ID", {"board": "idf", "uid": "e072a1aa2390"})
+    t.read_buf.extend(stale.encode())   # unsolicited frame already queued before the query is sent
+    fields = idf.get_version(t)
+    assert fields["app"] == "2.0.0"
+    assert fields["confirmed"] == "1"
+

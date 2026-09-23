@@ -112,17 +112,27 @@ def wait_for_announce(transport: Transport, timeout: float = ANNOUNCE_WINDOW_S) 
 def query(transport: Transport, request: str, timeout: float = QUERY_TIMEOUT_S) -> dict:
     """Send a host->device request (e.g. 'ID?') and return the response fields.
 
+    On a shared, persistently-open transport (BL-060's SharedConsolePort), unsolicited
+    periodic broadcasts from the device (e.g. its own idle VER/ID chatter) share the same
+    byte stream as the solicited reply -- so the next complete frame off the wire is not
+    guaranteed to be the answer to THIS request. Frames whose type doesn't match what was
+    asked for are stale/unsolicited noise and are skipped, not returned (see BL-060 Trap 8b).
+
     Raises LabidError on timeout or if the device responds with ERR.
     """
     transport.write(f"$LAB,{request}\n".encode())
+    expected_type = request[:-1] if request.endswith("?") else None
     deadline = time.monotonic() + timeout
-    result = _read_frame(transport, deadline)
-    if result is None:
-        raise LabidError(f"no response to {request!r} within {timeout:.1f}s")
-    frame_type, fields = result
-    if frame_type == "ERR":
-        raise LabidError(f"device returned ERR for {request!r}: {fields}")
-    return fields
+    while True:
+        result = _read_frame(transport, deadline)
+        if result is None:
+            raise LabidError(f"no response to {request!r} within {timeout:.1f}s")
+        frame_type, fields = result
+        if frame_type == "ERR":
+            raise LabidError(f"device returned ERR for {request!r}: {fields}")
+        if expected_type is None or frame_type == expected_type:
+            return fields
+        # else: an unsolicited/stale frame of a different type arrived first -- keep waiting
 
 
 def identify(transport: Transport) -> dict:
