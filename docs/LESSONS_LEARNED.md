@@ -1,10 +1,11 @@
-# Lessons Learned Retrospective — ESP-IDF Track
+# Lessons Learned Retrospective — ESP-IDF & Zephyr Tracks
 
 **Document:** `docs/LESSONS_LEARNED.md`  
-**Date:** 2026-09-21  
+**Date:** 2026-09-21 (ESP-IDF track), updated 2026-09-23 (Zephyr track, Sections 4-5)  
 **Author:** Pair Programming Agent & System Auditor  
-**Status:** Complete — Owner Reviewed  
-**Context:** BL-063a / Milestone gate between ESP-IDF Track and Zephyr Track
+**Status:** ESP-IDF track complete — Owner Reviewed. Zephyr track in progress.  
+**Context:** BL-063a / Milestone gate between ESP-IDF Track and Zephyr Track; Sections 4-5 added during
+live Zephyr HIL work (BL-050/051/064/065).
 
 ---
 
@@ -22,7 +23,7 @@ Every project risk defined in PLAN §9 was evaluated and verified against real t
 
 | Risk | Original Risk Description | IDF Track Outcome | Zephyr Track Implication | Concrete Action & Gate |
 |------|---------------------------|-------------------|--------------------------|------------------------|
-| **R1** | MCUboot lacks swap-with-revert on ESP32-S3 | N/A to IDF (IDF used native dual OTA partitions with anti-rollback). | **Highest risk for Zephyr.** Overwrite-only mode leaves boards unrecoverable if new firmware fails. | **Plan Action:** P2 Step 1 must explicitly verify swap-with-revert on hardware before writing app code. Escalate to owner if absent. |
+| **R1** | MCUboot lacks swap-with-revert on ESP32-S3 | N/A to IDF (IDF used native dual OTA partitions with anti-rollback). | **Materialized, but not as predicted.** Swap-with-revert IS supported (`move` algorithm, verified live: `Swap type: test` -> `Starting swap using move algorithm` -> real boot). The actual risk was different: a **host-side protocol bug** (`ImageStatesWrite(confirm=True)` sent before the new image ever booted, BL-065) made MCUboot silently skip the swap while its own bookkeeping claimed success. Fixed. A SEPARATE, still-open issue (BL-064) is that a completed swap boot breaks the LABID UART RX interrupt in a way a direct flash never does — root cause not found as of 2026-09-23. | **See Section 4/5** for the full BL-064/BL-065 writeup and current status. |
 | **R2** | BLE + WiFi memory / coexistence in one build | **PASS in IDF.** NimBLE + WiFi STA + HTTPS server run simultaneously within 8 MB Octal PSRAM. | Zephyr BT controller + native WiFi stack heap usage must be budgeted upfront. | **Checklist Item:** Verify Zephyr heap telemetry post-boot with both radios active. |
 | **R3** | Hardware Secure Boot vs software signing | **PASS in IDF.** `CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT=y` with RSA-3072 verified without touching eFuses. | MCUboot signature verification (`CONFIG_BOOT_SIGNATURE_TYPE_ECDSA_P256`) must verify in software without burning eFuses. | **Checklist Item:** Verify `sysbuild.conf` ECDSA key verification without hardware crypto eFuse flags. |
 | **R4** | Accidental eFuse burn | **ZERO eFuses burned.** Bit-for-bit identical eFuse summaries verified before and after all flashing (BL-021, BL-028). | Must maintain strict prohibition of burning commands. | **Tool Action:** CI grep `scripts/check_forbidden_configs.sh` blocks any commit with eFuse burn commands or hardware secure boot. |
@@ -30,8 +31,8 @@ Every project risk defined in PLAN §9 was evaluated and verified against real t
 | **R6** | USB re-enumeration changes `ttyACMx` | **PASS.** Port re-resolution by UID in $\le 5$ s verified over 50 reboot cycles (BL-053). Windows `COM14` remained static. | Zephyr tests must use UID resolution rather than hardcoded tty paths. | **Tool Action:** `labflash.core.resolve_board()` retries UID query over 5-second window post-reboot. |
 | **R7** | USB power budget / brownouts | **PASS on dev workstation; FAIL on RPi4.** RPi4 showed 7 brownout UV events / 10 min. Dev workstation showed 0 brownouts. | All flashing and heavy compilation must stay on dev machine; RPi4 limited to OTA dispatch. | **Plan Action:** Codified in `docs/rpi4_limitations.md`. Zephyr builds stay on workstation/CI. |
 | **R8** | BlueZ flakiness / adapter hangs | **Bypassed on dev host via Windows native Bleak.** RPi4 BlueZ service is masked. | Windows Python with `bleak` is the primary BLE runner; RPi4 requires manual unmasking if used. | **Tool Action:** Host BLE scripts run via Windows Python 3.12 (`.venv_win_ble`). |
-| **R9** | LABID frames interleaved with logs | **PASS.** One-fputs atomic frame writes under console lock prevented frame interleaving across 1,000 queries. | Zephyr shell must be disabled on the LABID UART or use isolated raw printks. | **Checklist Item:** In Zephyr `prj.conf`, disable `CONFIG_SHELL` on console UART. |
-| **R10** | Console shell eats RX bytes | **PASS.** Dedicated ESP-IDF UART RX task (priority 2) read raw bytes cleanly. | Zephyr console UART must feed dedicated ring buffer without shell intercept. | **Checklist Item:** Wire raw UART callback in Zephyr LABID port module. |
+| **R9** | LABID frames interleaved with logs | **PASS.** One-fputs atomic frame writes under console lock prevented frame interleaving across 1,000 queries. | **PASS in Zephyr too** -- `CONFIG_SHELL=n` set from the start (`esp_zephyr/app/prj.conf`); `labid_port_zephyr.c`'s IRQ-driven RX + ring buffer never showed frame interleaving in any test. | Checklist item followed correctly; not the source of BL-064 (see Section 4). |
+| **R10** | Console shell eats RX bytes | **PASS.** Dedicated ESP-IDF UART RX task (priority 2) read raw bytes cleanly. | **Mostly PASS, with a real caveat found live.** The IRQ-driven ring buffer (`uart_irq_callback_user_data_set` + `uart_irq_rx_enable`) works correctly on v1 and any direct-flashed build. It stops firing entirely (`irq=0, rx=0` forever) specifically after a real MCUboot swap boot -- an unresolved interaction, not a shell/console-intercept issue. See Section 4. | Checklist item ("wire raw UART callback") was done correctly; the bug is downstream of it. |
 | **R11** | Self-hosted runner exposure | **PASS.** `hil.yml` enforces passwordless sudo check (`sudo -n true` must fail) and keys isolation check. | Same security boundaries apply to Zephyr HIL runs. | **Tool Action:** `.github/workflows/hil.yml` security gate runs on all PRs. |
 | **R12** | Self-reported blink hides real fault | **PASS.** Dual verification: LABID `measure` (hardware toggle frequency) matched visual and timing specs (1.00 Hz vs 4.19 Hz). | Zephyr blink must count hardware toggles inside the timer ISR. | **Checklist Item:** Implement `toggles` counter in Zephyr LED PWM/GPIO callback. |
 | **R13** | USB serial descriptor across boots | **PASS.** ESP32-S3 native USB-Serial-JTAG device descriptor consistently presents chip MAC (`E0:72:A1:AA:23:90`). | Verify Zephyr CDC_ACM or USB-Serial-JTAG driver preserves chip MAC as USB serial string. | **Checklist Item:** Verify `dmesg` / `usbipd` serial descriptor under Zephyr firmware. |
@@ -77,7 +78,162 @@ Every project risk defined in PLAN §9 was evaluated and verified against real t
 
 ---
 
-## 4. Required Actions for the Zephyr Track (P2 Bring-Up Checklist)
+## 4. Zephyr Track Traps (added 2026-09-23, live HIL work on lab-esp-zephyr)
+
+### Trap 9: Live console capture needs a SHARED connection, not a second reader (BL-060)
+- **Symptom:** `tests_hil/conftest.py`'s live `serial_capture` fixture was a stub -- "raw console not
+  captured" -- because Windows COM ports are exclusive-access: a standalone second reader (like
+  `scripts/serial_watch.py`) run alongside a live LABID test fails to open the port at all. Every prior
+  LABID transport also opened and closed the port per query, so nothing was listening -- and console
+  bytes were dropped -- during the gaps between queries, including exactly the moments (OTA apply,
+  bootloader transitions) that needed to be seen.
+- **Resolution:** Built `SharedConsolePort` (`host/labflash/serial_console.py`): opens the port ONCE
+  and keeps it open for the whole test/run. A background thread continuously drains bytes into (a) a
+  timestamped `console.log` and (b) an in-memory queue a `read1()`/`write()` transport adapter drains,
+  so existing LABID query code works unmodified against the same handle instead of racing a second one.
+  `close()` is a no-op (existing call sites close after every query); `shutdown()` actually releases the
+  port, called once at the very end. This is what made every console-log excerpt in Sections 4-5
+  possible.
+
+### Trap 10: "Continuous reset" was a held BOOT button, not a firmware crash
+- **Symptom:** Board appeared to be connecting/disconnecting on USB repeatedly, looking exactly like a
+  firmware crash loop. Console watchers and `usbipd list` showed it cycling.
+- **Resolution:** Actually the board was manually placed in ROM download/bootloader mode (BOOT button
+  or GPIO0 jumper still held from an earlier recovery attempt), which presents a different USB identity
+  than the running app -- every attempted reset just re-entered the bootloader. `esptool --before
+  no-reset chip-id` connecting successfully without ever resetting is the tell: if the ROM bootloader
+  answers immediately, the chip was already sitting in it. Always check "is anything physically holding
+  BOOT/GPIO0" before assuming a firmware fault.
+
+### Trap 11: Windows `usbipd bind --force` silently breaks native serial access
+- **Symptom:** `usbipd list` showed a board's busid as `Shared (forced)`; Windows-native `pyserial`
+  could not open the port (`FileNotFoundError` even though `Win32_PnPEntity` showed it present, or
+  later `PermissionError(13, Access is denied)`).
+- **Resolution:** A forced usbipd bind replaces the port's normal Windows driver with usbipd's own
+  passthrough stub, even when not actively attached to WSL2. `usbipd unbind --busid <n>` (needs an
+  elevated shell) restores the normal `usbser` driver and native access. `usbipd bind`/`unbind`/
+  `bind --force` all require administrator privileges; plain `usbipd attach --wsl` does not.
+
+### Trap 12: Stray `serial_watch.py` processes silently hold the port exclusively
+- **Symptom:** A live test failed with `PermissionError(13, Access is denied)` opening a COM port that
+  `usbipd list` and Device Manager both showed as present and healthy.
+- **Resolution:** Windows COM ports are exclusive-access; an earlier diagnostic `serial_watch.py`
+  session that didn't get cleanly killed (e.g. a backgrounded `Start-Process` that "looked" dead but
+  wasn't) keeps holding the handle. `tasklist | findstr python` /
+  `Get-CimInstance Win32_Process -Filter "Name='python.exe'" | Select-Object ProcessId,CommandLine`
+  finds them by command line; `taskkill /F /PID <n>` clears them.
+
+### Trap 13: A held-open shared serial connection races an internal one-shot connection (BL-060 follow-up)
+- **Symptom:** After wiring `SharedConsolePort` (a persistent connection held open for the whole test,
+  so `console.log` captures continuously), every live OTA update started throwing
+  `PermissionError`/`Access is denied` even though it worked before that change.
+- **Resolution:** `run_update`/`run_update_zephyr`'s own internal pre/post LABID snapshot opened a
+  SECOND, separate one-shot `SerialLineTransport` on the same port -- harmless when the console reader
+  was a stub, a hard conflict once something else genuinely holds the port. Fix: thread the same
+  `transport_factory` through so every caller reuses the one open connection instead of racing a
+  second `open()`.
+
+### Trap 14: `ImageStatesWrite(confirm=True)` sent too early skips the real MCUboot swap
+- **Symptom:** A Zephyr SMP OTA (UDP or BLE) reported 100% uploaded and "marked permanent/confirmed",
+  reset the device -- but the board came back still running the OLD image. The SMP layer's own
+  `ImageStatesRead()` claimed the new image was "active", directly contradicting LABID (whose version
+  string is baked into the actual running binary and cannot be faked).
+- **Resolution:** `confirm=True` sent immediately after upload, before the new image had ever booted,
+  let MCUboot update its own image-list bookkeeping to claim success without ever performing the
+  physical slot swap. The correct sequence is `confirm=False` (marks the image test/pending, which is
+  what makes MCUboot actually swap and boot into it as a trial), then let the device's own self-test
+  logic call `boot_write_img_confirmed()` after it boots and passes health checks. Verified live: real
+  boot log shows `Swap type: test` -> `Starting swap using move algorithm` -> genuine boot into the new
+  image, self-test PASSED, confirmed. This is BL-065.
+
+### Trap 15: A completed MCUboot swap boot can permanently break the LABID UART RX interrupt (UNRESOLVED)
+- **Symptom:** After Trap 14 was fixed and a real swap genuinely completes, the newly-booted image's
+  LABID console UART RX interrupt never fires (`irq=0, rx=0` in the app's own instrumented heartbeat
+  log, indefinitely). Reads (device -> host) still work; only writes (host -> device) are affected,
+  timing out at the Windows serial driver level.
+- **Investigation, in order:**
+  1. First suspected BLE connection events reprogramming ESP32's interrupt matrix -- disproven by
+     reordering radio init before LABID init and testing against a real BLE OTA (no change).
+  2. Then isolated to the 4Hz blink rate -- a diagnostic build with the version label unchanged but
+     blink forced to 1Hz worked fine, narrowing it to blink/LED call frequency.
+  3. Root-caused to Zephyr's `ws2812_i2s` driver: a hardcoded 2-block DMA buffer pool (not exposed via
+     devicetree) exhausts under sustained LED update calls, and that exhaustion state ALSO kills the
+     UART RX interrupt (mechanism linking the two not traced further). Confirmed by patching the pool
+     to 8 blocks in the shared Zephyr SDK checkout -- fixed, stayed fixed 60+s. Mitigated at the app
+     level instead (rate-limit the actual LED hardware call to 1 Hz, independent of the logical toggle
+     rate the tests measure).
+  4. **The mitigation held up in isolated direct-flash testing but NOT during a real live OTA.**
+     Decisive follow-up: a diagnostic build with the LED hardware call disabled ENTIRELY (zero calls,
+     ever) still failed identically when reached via a real OTA swap, while the exact same binary
+     worked fine via direct flash. **This rules out the LED/mem_slab mechanism as the cause of this
+     specific failure** -- it's a real, separate, already-fixed bug (item 3 above), not what's actually
+     still blocking things.
+- **Status: UNRESOLVED.** Every direct-flash boot observed in this investigation has worked; every real
+  MCUboot swap boot has failed, regardless of LED activity, rate limit, or build variant content. Some
+  interaction between MCUboot's move-swap algorithm and the LABID UART RX interrupt is the real, still
+  open bug (BL-064). Static/log-based debugging is likely exhausted; next steps need either a
+  partition/flash-cache layout comparison between a fresh flash and a post-swap boot, inspection of
+  whether MCUboot's own bootloader stage touches UART/USB-Serial-JTAG clock or pin config differently
+  than a cold boot, or JTAG-level debugging.
+
+### Trap 16: `LiveBackend`'s hand-built test `Namespace` silently drifted from the real CLI
+- **Symptom:** Every live zephyr OTA attempt through the test harness crashed with
+  `AttributeError: 'Namespace' object has no attribute 'udp_port'` (then `'confirm_timeout'`), even
+  though the same operation worked fine from the real `labflash` CLI.
+- **Resolution:** `tests_hil/live_backend.py`'s `LiveBackend.update()` builds its own `argparse.Namespace`
+  by hand instead of going through `host/labflash/__main__.py`'s real argument parser, so it silently
+  fell out of sync when Zephyr UDP/BLE support added new CLI flags (`--udp-port`, `--confirm-timeout`)
+  with defaults. Any code path that hand-constructs a `Namespace` to stand in for real CLI args needs
+  to be kept in lockstep with the CLI's own defaults, or built from the parser itself.
+
+### Trap 17: Zephyr's real per-variant build convention is `build_<variant>`, not IDF's `build`
+- **Symptom:** `LiveBackend.image_for("v1")` for the zephyr board resolved to a stale, tiny (137 KB)
+  pre-BLE/WiFi build from initial bring-up instead of the current ~736 KB image, because the shared
+  `VARIANT_DIRS = {"v1": "build", ...}` mapping was written for IDF's convention (`esp_idf/build/`) and
+  silently carried over to Zephyr, where every OTHER variant already used `build_v2`/`build_hang`/etc.
+  Lesson: a variant-to-directory convention that's correct for one board target should not be assumed
+  correct for another just because the dict is shared.
+- **Resolution:** Prefer `build_v1` first for zephyr (matching the uniform `build_<variant>` pattern),
+  falling back to the legacy path.
+
+### Trap 18: A native-Windows Python venv can end up empty/broken silently
+- **Symptom:** `.venv_win_ble\Scripts\python.exe` produced "The system cannot find the path specified"
+  -- a raw OS error, not a Python one. `dir .venv_win_ble` showed only a stray `Lib\` folder: no
+  `Scripts\`, no `pyvenv.cfg`, no interpreter.
+- **Resolution:** The venv was simply broken/incomplete (cause not determined -- possibly an
+  interrupted `venv` creation from an earlier session). No repair path for a partial venv; delete and
+  recreate (`python -m venv .venv_win_ble` + `pip install -e host pytest bleak smpclient`). Also worth
+  checking for a second, WRONG-platform venv under a similar name (`.venv` in this repo turned out to
+  be a WSL/Linux venv, identifiable by its `lib64/` layout -- Windows venvs use `Lib\site-packages`).
+
+### Trap 19: Two agents sharing one working directory can silently fold each other's uncommitted work into a commit
+- **Symptom:** A commit (`d308248`) appeared with a Zephyr-focused message ("complete Zephyr phase
+  acceptance run") but its diff also included unrelated IDF-track `tickets.json`/evidence-file changes
+  that had been made moments earlier in the same session and not yet committed.
+- **Resolution:** When two agent sessions (or a human and an agent) operate on the exact same working
+  directory rather than separate clones, a broad `git commit`/`git add -A` by either one can sweep up
+  the other's staged-but-uncommitted work. If it's already pushed, don't rewrite shared history to
+  "fix" the attribution -- the content is still correct, just filed under the wrong commit title; note
+  it and move on. If caught before pushing, `git reset --soft HEAD~1` and re-commit as separate,
+  correctly-scoped commits. Always `git status`/`git log -3` before assuming a clean starting point when
+  two sessions might share a directory.
+
+## 5. Zephyr Track Status Summary (as of 2026-09-23)
+
+| Item | Status |
+|------|--------|
+| BL-050 (HIL dummy test, both boards) | Done |
+| BL-051 (T01-T03 boot/update) | idf done; zephyr blocked on Trap 14 |
+| BL-056 (RPi4 self-hosted runner) | idf done (runner registered, verified); zephyr n/a until a board is attached to the RPi4 |
+| BL-064 (LABID dies after v2 build) | Two bugs: mem_slab exhaustion fixed; MCUboot-swap-vs-LABID open |
+| BL-065 (MCUboot never swaps) | Fixed and verified live |
+
+Full per-ticket evidence for the Zephyr track's HIL work: `scripts/evidence/bl050_zephyr_dummy_hil_2026-09-22/`,
+`scripts/evidence/bl064_zephyr_labid_rx_irq_dead.md`, `scripts/evidence/bl056_rpi4_runner.md`.
+
+---
+
+## 6. Required Actions for the Zephyr Track (P2 Bring-Up Checklist)
 
 Before beginning Zephyr implementation, the following checklist items are mandated:
 
@@ -96,7 +252,7 @@ Before beginning Zephyr implementation, the following checklist items are mandat
 
 ---
 
-## 5. Owner Review & Sign-Off
+## 7. Owner Review & Sign-Off
 
 - **Reviewer:** Mohamed Soubhi (Project Owner)  
 - **Decision:** ESP-IDF Track technical achievements, test evidence, and lessons learned accepted in full.  
