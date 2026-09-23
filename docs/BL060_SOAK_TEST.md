@@ -95,6 +95,34 @@ Timings, HTTPS OTA (3 cycles, consistent within ~1 s):
 
 Log line meaning: `GATT procedure initiated: notify; att_handle=16` = board pushed a progress/ack notification to the subscribed client.
 
+## Running the soak on the RPi4 with the second board (2026-09-24, in progress)
+
+Goal: run the same IDF soak on the second physical board (the ex-Zephyr hardware, MAC `ac:a7:04:2c:3b:04`, BLE
+`AC:A7:04:2C:3B:06`) from the Pi, in parallel with the workstation soak on board 1. Full trap write-up:
+`docs/LESSONS_LEARNED.md` Traps 20-23.
+
+**Setup that worked**
+1. `sudo systemctl unmask bluetooth && sudo systemctl enable --now bluetooth && sudo hciconfig hci0 up`
+   (scan then sees `nimble-ble-ota`). `rfkill list` must show no block.
+2. `git clone`, `python3 -m venv .venv`, `pip install -e host`, `pip install bleak esp-idf-nvs-partition-gen`.
+3. Copy from the workstation: `credentials.env`, `keys/{ca,server_cert,server_key}.pem`, and
+   `esp_idf/build/` (bootloader, partition table, otadata, app) plus `esp_idf/build_v2/bootlab_idf_blink.bin`.
+   Do NOT copy `idf_sbv2.pem` (signing key). `chmod 600` the secrets.
+4. Flash the IDF baseline (explicit offsets, `-b 230400`, run from `esp_idf/build`):
+   `python -m esptool --chip esp32s3 -p /dev/ttyACM0 -b 230400 --before default-reset --after hard-reset write-flash --flash-mode dio --flash-size keep --flash-freq 80m 0x0 bootloader/bootloader.bin 0x8000 partition_table/partition-table.bin 0xf000 ota_data_initial.bin 0x20000 bootlab_idf_blink.bin`
+5. Provision WiFi/token into NVS: `labflash provision idf --port /dev/ttyACM0 --env-file credentials.env`.
+   Boot log then shows `WiFi connected: IP=192.168.1.153` and `HTTPS control server started on port 443`;
+   `curl -k https://192.168.1.153/version` returns `{"app":"1.0.0",...,"slot":0,"confirmed":true}`.
+6. `rig-pi.yaml` (untracked) pins `idf` to the second board (`mac`, `ble_mac`, `ip`), so the Pi never touches board 1.
+7. `sudo ufw allow from 192.168.1.153 to any port 8443 proto tcp` (the board pulls the image from the Pi).
+8. Run: `python -m tests_hil.soak --port /dev/ttyACM0 --board-ip 192.168.1.153 --keys-dir keys --env-file credentials.env --rig-config rig-pi.yaml --cycles 4 --out scripts/evidence/bl060_soak_pi_smoke_<date>`
+
+**Status: BLOCKED on Pi power.** The trigger and the board's pull now work (TLS fix `13a1d2c`, ufw rule), but the
+download stopped at 196,608 / 1,249,280 bytes while `vcgencmd get_throttled` showed `0x50005` (live under-voltage).
+Fix the supply / use a powered hub for the ESP, then re-run and watch the live bits:
+`while true; do v=$(vcgencmd get_throttled | cut -d= -f2); (( (v & 0x5) != 0 )) && echo "$(date +%T) $v"; sleep 0.5; done`
+Not yet exercised on the Pi: a completed OTA and any BLE cycle.
+
 ## Evidence
 
 _To be added after the runs complete._

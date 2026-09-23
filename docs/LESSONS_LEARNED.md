@@ -217,6 +217,60 @@ Every project risk defined in PLAN §9 was evaluated and verified against real t
   correctly-scoped commits. Always `git status`/`git log -3` before assuming a clean starting point when
   two sessions might share a directory.
 
+### Trap 20: An under-voltage RPi4 stalls a WiFi OTA mid-transfer (BL-060 Pi smoke run, 2026-09-24)
+- **Symptom:** WiFi OTA served from the RPi4 stopped after 196,608 of 1,249,280 bytes
+  (`host served: {'update.bin': 196608}`), slot stayed `0 -> 0`, `UPDATE FAILED`. The board's captured console
+  simply ended at `esp_https_ota: Writing to <ota_1> ...` with no error line.
+- **Evidence:** `vcgencmd get_throttled` was `0x50000` at idle (sticky history bits only) but `0x50005`
+  on nearly every sample from 01:51:25 to 01:52:06 while a transfer ran (`0x1` under-voltage now,
+  `0x4` throttled now). Same class of fault as `docs/rpi4_limitations.md` section 2.1.
+- **Resolution / how to check:** Use the official 5.1 V / 3 A supply and a short cable, and put the ESP
+  on a powered USB hub. Test with a loop that prints only when the LIVE bits are set:
+  `while true; do v=$(vcgencmd get_throttled | cut -d= -f2); (( (v & 0x5) != 0 )) && echo "$(date +%T) $v"; sleep 0.5; done`.
+  `0x10000`/`0x40000` are sticky until reboot, so ignore them. Do not trust Pi soak results until the loop
+  stays silent through a full transfer. The Pi's `wlan0` link (6.5 MBit/s rx at -62 dBm) is a secondary suspect;
+  wire it to Ethernet. Status: power cause is strongly indicated, not yet confirmed by a clean re-run.
+
+### Trap 21: Python >= 3.13 rejects the lab Root CA, and `trigger()` reports it as "board never answered" (FIXED `13a1d2c`)
+- **Symptom:** every `POST /ota` from the RPi4 (Python 3.13) failed with
+  `ERROR: the board never answered POST /ota (timed out after retrying)`; `curl -k` to the same board worked.
+- **Root cause:** Python 3.13's `ssl.create_default_context()` turns on `VERIFY_X509_STRICT`, which rejects
+  a CA certificate without a `keyUsage` extension. The lab CA has only `Basic Constraints: CA:TRUE`.
+  `WifiBoard.trigger()` swallows every `URLError` and returns `-1`, so the real
+  `CERTIFICATE_VERIFY_FAILED ... CA cert does not include key usage extension` was invisible.
+- **Misdiagnosis to avoid:** the board cert's SAN lists only `192.168.1.152`, and `curl --cacert` on
+  `192.168.1.153` failed on that. It was NOT the cause: the client sets `check_hostname = False`. An
+  `/etc/hosts` alias did nothing. Replay the exact request in a small script and print the exception.
+- **Resolution:** `WifiBoard` clears `VERIFY_X509_STRICT` (chain verification against the pinned CA stays on;
+  test `test_tls_context_does_not_require_ca_key_usage_extension`). Longer term: reissue the CA with
+  `keyUsage = keyCertSign, cRLSign`.
+
+### Trap 22: A host firewall silently blocks the board's OTA pull, so nothing is served (`host served: {}`)
+- **Symptom:** the board accepted `POST /ota` (HTTP 202) and logged `OTA requested ... task created`, then
+  `read error :-0x0050` and nothing more; the host logged `host served: {}`, slot `0 -> 0`.
+- **Root cause:** the RPi4 runs ufw with `INPUT DROP`. The board's TCP SYNs to the host's OTA server on
+  port 8443 were dropped (`journalctl -k | grep "UFW BLOCK" | grep SRC=<board ip>` showed `DPT=8443 ... SYN`).
+  The `-0x0050` line also appears on a healthy run (the first probe connection), so it is not the signal.
+- **Resolution:** `sudo ufw allow from <board ip> to any port 8443 proto tcp`. Keep it source-restricted.
+  The Pi's rules live in `table ip filter` (iptables-nft); an `nft ... inet filter` rule fails with
+  "No such file or directory" and never applied.
+
+### Trap 23: A second board on a new host is not ready after `flash`: provisioning, deps and image layout (BL-060 Pi setup)
+- **Symptom / fixes, in the order hit:**
+  - `git clone` gives no secrets or builds: copy `credentials.env`, `keys/{ca,server_cert,server_key}.pem`,
+    `esp_idf/build*/bootlab_idf_blink.bin` yourself. Never copy the RSA signing key (`idf_sbv2.pem`) to the Pi.
+  - `pip install -e .` fails at the repo root: the project is `host/` (`pip install -e host`). `bleak` and
+    `esp-idf-nvs-partition-gen` are NOT in `host/pyproject.toml`; install by hand (provisioning fails with
+    `No module named 'esp_idf_nvs_partition_gen'`).
+  - esptool cannot take `@flasher_args.json` (that JSON is not an argfile): pass explicit offsets
+    (`0x0 bootloader.bin 0x8000 partition-table.bin 0xf000 ota_data_initial.bin 0x20000 app.bin`).
+  - After flashing, the log says `WiFi unprovisioned: NVS namespace 'lab' not found`: WiFi credentials
+    live in NVS, not in the firmware. Run `labflash provision idf --port <port> --env-file credentials.env`.
+  - Default `host/config/rig.yaml` pins `idf` to board 1's MAC; a second board needs its own rig file
+    (`--rig-config rig-pi.yaml`). `labflash flash idf` without `--port` would resolve board 1.
+  - Right after a reset the USB-Serial-JTAG port re-enumerates, so `miniterm` dies with "device reports readiness
+    to read but returned no data"; the boot log is printed once, so pulse RTS from a script to capture it.
+
 ## 5. Zephyr Track Status Summary (as of 2026-09-23)
 
 | Item | Status |

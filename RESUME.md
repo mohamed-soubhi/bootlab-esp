@@ -23,6 +23,15 @@ Last log (2026-09-23d): 3 HTTPS OTA cycles clean (~22 s each, signature OK, conf
 slots alternate). BLE OTA (1249280 B) was very slow (~3-5 KB/s, >4.6 min, unfinished when log ended); owner
 restarted the board and the test. Recurring benign `read error :-0x0050` on the first HTTPS probe.
 
+RPi4 + second board (2026-09-24): board B (MAC ac:a7:04:2c:3b:04, IP 192.168.1.153) flashed with IDF v1 from the
+Pi, provisioned, BLE + HTTPS up. Pi soak smoke run BLOCKED: Pi under-voltage (live `get_throttled` 0x50005) during
+the OTA, download stopped at 196,608/1,249,280 B. Fixed along the way: Python 3.13 strict-TLS bug (`13a1d2c`),
+ufw rule for 8443. Not yet done on the Pi: a completed OTA, any BLE cycle. Setup + lessons:
+`docs/BL060_SOAK_TEST.md` (Pi section), `docs/LESSONS_LEARNED.md` Traps 20-23. Pi-only leftovers to clean up:
+manual `iptables -I INPUT ... 8443` rule (redundant with ufw), `rig-pi.yaml` (untracked).
+Candidate follow-up (owner's call): add `bleak` + `esp-idf-nvs-partition-gen` to `host/pyproject.toml`
+(e.g. an optional `hil` group).
+
 NEXT when owner pastes results: read `report.json` / `cycles.jsonl` / `console.log` from the `--out` dir,
 fill the Evidence table in `docs/BL060_SOAK_TEST.md`, check BLE duration + pass rate (target >= 99 %,
 final state v1), then update BL-060 in `tickets/TICKETS.md` and `docs/LESSONS_LEARNED.md` if warranted.
