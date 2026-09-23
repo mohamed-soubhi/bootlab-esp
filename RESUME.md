@@ -26,43 +26,51 @@ was already designed for exactly this, just bypassed by the premature host-side 
 `Starting swap using move algorithm` -> genuine boot into `Variant: v2`, `Self-test PASSED`,
 `confirmed=1`, WiFi connecting. First real end-to-end swap observed in this whole investigation. Done.
 
-## BL-064 — root cause confirmed, mitigation NOT sufficient under real OTA conditions (this instance,
-2026-09-23)
+## BL-064 — TWO separate bugs; one fixed, one still unexplained (this instance, 2026-09-23)
 
-Went from "unknown firmware bug" to a fully root-caused mechanism, but the shippable fix isn't working
-yet under real conditions. Across ~7 rounds of live hardware testing:
+Across ~9 rounds of live hardware testing, went from "unknown firmware bug" to a decisively isolated
+picture:
 
-1. Fix attempt 1 (reorder BLE/WiFi init before `labid_port_init`) -- disproven against a real BLE OTA,
-   reverted (`a9a0fdc` -> `655ee77`).
-2. Isolation: irq works fine on v1 with BLE advertising; only `APP_VARIANT_V2` breaks it -- narrowed
-   further to the 4Hz blink rate specifically (diagnostic build, `app=2.0.0` label + 1Hz blink, worked).
-3. Root cause CONFIRMED by patching Zephyr's shared `ws2812_i2s.c` driver (DMA buffer pool 2->8
-   blocks, reverted after confirming): the 2-block mem_slab pool exhausts under sustained LED update
-   calls, and that exhaustion state also kills the LABID UART RX interrupt.
-4. Shippable mitigation (`2705d53`): rate-limit `led_strip_update_rgb()` to 500ms. **Verified via
-   direct esptool flash**: stable for 60+s. **Failed when tested via a real live BLE OTA** (same run
-   that first surfaced BL-065) -- irq=0 again.
-5. Strengthened to 1000ms (`97c9adf`, undercutting v1's actual call rate). **Retested live after fixing
-   BL-065 (so the swap now genuinely completes): still irq=0, rx=0** at 349s uptime.
+1. Fix attempt 1 (reorder BLE/WiFi init) -- disproven, reverted (`a9a0fdc` -> `655ee77`).
+2. Isolation: only `APP_VARIANT_V2` breaks it, narrowed to the 4Hz blink rate.
+3. Root cause #1 CONFIRMED: Zephyr's `ws2812_i2s` driver's 2-block DMA buffer pool exhausts under
+   sustained LED update calls, and that exhaustion also kills the LABID UART RX interrupt. Verified by
+   patching the pool 2->8 (shared SDK checkout, reverted after confirming).
+4. Shippable mitigation for #1 (`2705d53` -> strengthened `97c9adf`, rate-limit `led_strip_update_rgb()`
+   to 1000ms): **stable for 60+s via direct esptool flash, but STILL froze when tested via a real live
+   BLE OTA.**
+5. **Decisive isolation test**: built a diagnostic v2 with LED hardware calls disabled ENTIRELY (zero
+   calls, ever). Same binary: direct flash -> works fine. Real live BLE OTA of that same binary -> same
+   exact `irq=0, rx=0` failure. **This conclusively rules out LED/mem_slab as the cause of the OTA-swap
+   failure.** Root cause #1 (mem_slab) is real and correctly mitigated, but it's a *separate, already-
+   fixed* bug from what's actually blocking live OTA now.
 
-**Every passing observation of v2 in this investigation used a direct esptool flash (no swap). Every
-failing observation went through a real MCUboot swap.** This is the strongest untested lead -- not
-blink/call rate, but something about the swap process itself (leftover slot 1 state, flash
-cache/mapping, or an interaction between the move-swap algorithm and whatever the LABID UART IRQ
-depends on). Next session should design a test that isolates this specifically: an OTA swap to a
-variant with zero LED activity, to see if the freeze still occurs with no blink loop running at all.
+**The real, current blocker (root cause #2, NOT found)**: every direct-flash boot in this entire
+investigation has worked; every real MCUboot swap boot has failed, regardless of LED activity, rate
+limit, or build variant content. Some interaction between MCUboot's move-swap algorithm and the LABID
+UART RX interrupt is the actual bug. Candidate next steps (cheapest first): diff partition/flash-cache
+layout between a fresh flash and a post-swap slot 0; check whether MCUboot's bootloader stage touches
+UART/USB-Serial-JTAG clock/pin config differently than a cold boot; try a proper two-phase confirm
+(`confirm=False` -> wait for test-boot -> separate `confirm=True` call) instead of this session's
+single-call `confirm=False`; JTAG debugging if static/log analysis is exhausted (it may be).
 
-Also fixed along the way (kept, unrelated): `LiveBackend.image_for()` was looking up zephyr's v1 image
-under `VARIANT_DIRS["v1"]="build"` (IDF's convention), pointing at a stale pre-BLE build. Now prefers
-`build_v1` first, matching zephyr's real `build_<variant>` convention.
+Also fixed along the way (kept, unrelated, real fix): `LiveBackend.image_for()` was looking up zephyr's
+v1 image under `VARIANT_DIRS["v1"]="build"` (IDF's convention), pointing at a stale pre-BLE build. Now
+prefers `build_v1` first, matching zephyr's real `build_<variant>` convention.
+
+**BL-065 is separately, fully FIXED and verified live** (`6875d3b`) -- `confirm=True` sent before the
+new image ever booted let MCUboot fake its own bookkeeping without ever swapping; `confirm=False` (test/
+pending) makes it perform the real swap, and the device's own self-test logic confirms it after boot.
+Real boot log confirms: `Swap type: test` -> `Starting swap using move algorithm` -> genuine v2 boot.
 
 Board left on the known-good confirmed `build_v1`. Full evidence, all rounds:
 `scripts/evidence/bl064_zephyr_labid_rx_irq_dead.md`.
 
-**Session note**: this investigation ran to ~$170+ across many live hardware cycles. Real, durable
-progress was made (BL-065 genuinely fixed; BL-064 root-caused with a strong new untested lead), but
-BL-064's fix is not yet working end-to-end -- don't assume it's done from the commit history alone,
-check this file and the evidence doc first.
+**Session note**: this investigation ran to ~$184+ across ~9 live hardware cycles. Real, durable
+progress: BL-065 genuinely fixed and verified; BL-064's mem_slab mechanism genuinely fixed; BL-064's
+REAL remaining blocker (MCUboot-swap-vs-LABID) is now cleanly isolated but not yet root-caused. Don't
+assume BL-064 is done from the commit history alone (multiple "fix" commits exist for the sub-bug that
+turned out not to be the real blocker) -- check this file and the evidence doc first.
 
 ## ZEPHYR TAKEOVER (this instance, 2026-09-22, after the peer ran out of tokens)
 
