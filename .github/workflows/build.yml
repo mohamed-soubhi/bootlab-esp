@@ -179,8 +179,10 @@ jobs:
           mkdir -p "$ESPRESSIF_TOOLS_PATH/tools/xtensa-esp-elf/$TC_VER"
           wget -q "https://github.com/espressif/crosstool-NG/releases/download/${TC_VER}/xtensa-esp-elf-15.2.0_20251204-x86_64-linux-gnu.tar.xz" \
             -O /tmp/xtensa-esp-elf.tar.xz
-          tar xf /tmp/xtensa-esp-elf.tar.xz -C "$ESPRESSIF_TOOLS_PATH/tools/xtensa-esp-elf/$TC_VER" --strip-components=1
-          test -x "${CROSS_COMPILE}gcc"
+          # The tarball's top-level directory is xtensa-esp-elf/ (bin/xtensa-esp32s3-elf-gcc lives under it) and
+          # CROSS_COMPILE expects $TC_VER/xtensa-esp-elf/bin/..., so extract WITHOUT --strip-components.
+          tar xf /tmp/xtensa-esp-elf.tar.xz -C "$ESPRESSIF_TOOLS_PATH/tools/xtensa-esp-elf/$TC_VER"
+          test -x "${CROSS_COMPILE}gcc" || { echo "toolchain compiler not found: ${CROSS_COMPILE}gcc"; ls "$ESPRESSIF_TOOLS_PATH/tools/xtensa-esp-elf/$TC_VER"; exit 1; }
 
       - name: Generate CI test keys (ECDSA-P256, Zephyr/MCUboot)
         run: |
