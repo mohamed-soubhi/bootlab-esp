@@ -7,7 +7,7 @@
 
 ## Progress
 
-- **IDF track:** `███████████████████████░░░░░░░` **36/47 done**
+- **IDF track:** `████████████████████████░░░░░░` **37/47 done**
 - **Zephyr track:** `█████████████████████░░░░░░░░░` **29/41 done**
 
 | Epic | Phase | IDF | Zephyr |
@@ -18,7 +18,7 @@
 | E2 ESP32-S3 #1 — Zephyr | P2 | — | `█████████░` 10/11 |
 | E3 labflash CLI | P3 | `██████████` 6/6 | `██████████` 6/6 |
 | E4 HIL tests + CI | P4 | `████████░░` 8/10 | `██░░░░░░░░` 2/9 |
-| E5 Soak, docs, handover | P5 | `█░░░░░░░░░` 1/10 | `██░░░░░░░░` 1/5 |
+| E5 Soak, docs, handover | P5 | `██░░░░░░░░` 2/10 | `██░░░░░░░░` 1/5 |
 
 ## Gantt — IDF track
 
@@ -71,7 +71,7 @@ gantt
     BL-070 hil.yml self-hosted runner on the development :bl070, 2026-10-07, 4d
     BL-071 IDF acceptance re-run from the development ma :bl071, 2026-10-11, 4d
     section P5 Soak docs handover
-    BL-060 Overnight soak ×100 :bl060, 2026-10-09, 1d
+    BL-060 Overnight soak ×100 :done, bl060, 2026-10-09, 1d
     BL-061 README quick start :crit, bl061, 2026-10-09, 1d
     BL-062 Recovery runbook + adding-a-board guide :crit, bl062, 2026-10-09, 1d
     BL-063 Final PLAN.md update :crit, bl063, 2026-10-10, 1d
@@ -91,24 +91,24 @@ gantt
 |---|---|---|
 | **BL-061** README quick start | 2 tickets | README content is complete and its commands were exercised during BL-043/051, but 'Fresh clone reaches T02 green following README only' was not run f… |
 | **BL-062** Recovery runbook + adding-a-board guide | 2 tickets | Docs complete and the recovery evidence rests on the live BL-042 run (accepted); formally waits on BL-057 (dependency). |
+| **BL-063** Final PLAN.md update | 2 tickets | Waits on BL-060. Its text also repeated the unverified soak/stability claims (PLAN 8 boxes unchecked in review); re-review after BL-057/BL-060 are re… |
 
 ### Ready to start — IDF track (todo, every dependency of this board done)
 
-- **BL-060** [S] Overnight soak ×100
+- **BL-069** [L] [Advanced] Random-variant image generator and signed image pool (varied footprint, both OTA slots)
 - **BL-070** [L] hil.yml self-hosted runner on the development machine (workstation)
 
 ### Waiting-on — IDF track
 
 | Ticket | Status | Waiting on (unfinished dependencies) |
 |---|---|---|
-| BL-060 Overnight soak ×100 | ⬜ todo | — |
 | BL-061 README quick start | 🟥 blocked | — |
 | BL-062 Recovery runbook + adding-a-board guide | 🟥 blocked | — |
-| BL-063 Final PLAN.md update | 🟥 blocked | BL-060[idf] ⬜ |
-| BL-063a IDF lessons learned (retrospective) | 🟥 blocked | BL-060[idf] ⬜, BL-061[idf] 🟥, BL-062[idf] 🟥, BL-063[idf] 🟥, BL-071[idf] ⬜ |
+| BL-063 Final PLAN.md update | 🟥 blocked | — |
+| BL-063a IDF lessons learned (retrospective) | 🟥 blocked | BL-061[idf] 🟥, BL-062[idf] 🟥, BL-063[idf] 🟥, BL-071[idf] ⬜ |
 | BL-063b HTML presentation of the IDF track | 🟥 blocked | BL-063a[idf] 🟥 |
-| BL-067 [Advanced] Heavy randomized OTA soak 4 good + | ⬜ todo | BL-060[idf] ⬜, BL-069[idf] ⬜ |
-| BL-069 [Advanced] Random-variant image generator and | ⬜ todo | BL-060[idf] ⬜ |
+| BL-067 [Advanced] Heavy randomized OTA soak 4 good + | ⬜ todo | BL-069[idf] ⬜ |
+| BL-069 [Advanced] Random-variant image generator and | ⬜ todo | — |
 | BL-070 hil.yml self-hosted runner on the development | ⬜ todo | — |
 | BL-071 IDF acceptance re-run from the development ma | ⬜ todo | BL-070[idf] ⬜ |
 | BL-072 [Advanced] Multi-board randomized OTA soak tw | ⬜ todo | BL-067[idf] ⬜ |

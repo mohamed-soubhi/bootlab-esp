@@ -13,15 +13,21 @@ directory on this machine AND the Windows mirror -- a commit made here can catch
 from the other session (happened at least once, see commit `d308248`'s history); check `git status`
 and `git log -3` before assuming a clean starting point.
 
-## BL-060 live soak — WAITING ON OWNER RESULTS (checkpoint 2026-09-24)
+## BL-060 — IDF track DONE 2026-09-24 (100/100); Zephyr track still open
 
-Owner is running `python -m tests_hil.soak ...` natively on Windows (COM14, board 192.168.1.152,
-`--cycles 100`, pattern wifi,wifi,ble,ble). Runbook + commands: `docs/BL060_SOAK_TEST.md`.
-The other agent's work is already on origin/master (nothing unpushed at this checkpoint).
+The 2026-09-23d run finished and its artifacts were recovered on 2026-09-25 from the Windows scratch dir
+(`C:\MSA\embedded-OS\bootlab-esp\scripts\evidence\bl060_soak_2026-09-23d`) into
+`scripts/evidence/bl060_soak_2026-09-23d/` (report.json, cycles.jsonl, status.json, update.log, console.log.gz
++ a README with the full tables). Runbook + commands: `docs/BL060_SOAK_TEST.md`.
 
-Last log (2026-09-23d): 3 HTTPS OTA cycles clean (~22 s each, signature OK, confirmed=1 ~6 s after boot,
-slots alternate). BLE OTA (1249280 B) was very slow (~3-5 KB/s, >4.6 min, unfinished when log ended); owner
-restarted the board and the test. Recurring benign `read error :-0x0050` on the first HTTPS probe.
+Result: 100/100 cycles, 100 % pass (target >= 99 %), 0 failures, no aborts, final state v1, `01:08:28` -> `04:57:18`
+= 3 h 48 m 50 s. WiFi 50/50 (29.7-32.9 s/cycle, ~38 KB/s); BLE 50/50 (165.9-391.4 s/cycle, 3.1-7.4 KB/s) with a
++45 % slowdown in the second half of the run — still 100 % pass, so a throughput observation, not a defect
+(`docs/LESSONS_LEARNED.md` Trap 24). Recurring benign `read error :-0x0050` on the first HTTPS probe of each OTA
+(51 in the run); one `grep -i fail` hit is an RF-coexistence policy line, not a cycle failure.
+
+`tickets/TICKETS.md` BL-060 is now 🔵 doing: IDF track ✅ done with both IDF ACs ticked, Zephyr track ⬜ todo.
+Nothing else in BL-060's IDF scope is outstanding.
 
 RPi4 + second board (2026-09-24): board B (MAC ac:a7:04:2c:3b:04, IP 192.168.1.153) flashed with IDF v1 from the
 Pi, provisioned, BLE + HTTPS up. Pi soak smoke run BLOCKED: Pi under-voltage (live `get_throttled` 0x50005) during
@@ -32,10 +38,13 @@ manual `iptables -I INPUT ... 8443` rule (redundant with ufw), `rig-pi.yaml` (un
 Candidate follow-up (owner's call): add `bleak` + `esp-idf-nvs-partition-gen` to `host/pyproject.toml`
 (e.g. an optional `hil` group).
 
-NEXT when owner pastes results: read `report.json` / `cycles.jsonl` / `console.log` from the `--out` dir,
-fill the Evidence table in `docs/BL060_SOAK_TEST.md`, check BLE duration + pass rate (target >= 99 %,
-final state v1), then update BL-060 in `tickets/TICKETS.md` and `docs/LESSONS_LEARNED.md` if warranted.
-Open question: is BLE throughput (conn interval flipping 48<->12) a real defect or just slow-by-design.
+NEXT (nothing is blocked on the owner now):
+1. BL-060 Zephyr scope: run the equivalent soak on the Zephyr board (ble + udp). Untouched.
+2. BL-067's 200-cycle randomized soak should budget BLE at the *drifted* rate (~280 s/cycle), not the
+   first-cycle ~190 s — see `docs/LESSONS_LEARNED.md` Trap 24.
+3. Settle the BLE drift question with a BLE-only soak (no WiFi interleaved); see Trap 24 for the method.
+4. Pi + second board stays BLOCKED on Pi under-voltage (`0x50005`); not part of BL-060's IDF acceptance.
+   Leftovers there: manual `iptables -I INPUT ... 8443` rule (redundant with ufw), untracked `rig-pi.yaml`.
 
 ## BL-055[zephyr] — DONE 2026-09-24 (green CI run 35943848028); the history below is kept for context
 

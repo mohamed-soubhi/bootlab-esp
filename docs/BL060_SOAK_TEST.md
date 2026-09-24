@@ -75,9 +75,18 @@ Get-Content -Wait scripts\evidence\bl060_soak_<date>\update.log
 Other flags: `--pause`, `--max-consecutive-failures`, `--images-dir`, `--rig-config`, `--console-log`, `--no-console-log`.
 `--out` must be a new directory unless `--resume` is passed.
 
-## Observations from run 2026-09-23d (console.log)
+## Observations from run 2026-09-23d — the complete 100-cycle run (console.log)
 
-Timings, HTTPS OTA (3 cycles, consistent within ~1 s):
+Full evidence and the raw artifacts: `scripts/evidence/bl060_soak_2026-09-23d/README.md`.
+Window `01:08:28` -> `04:57:18`, 3 h 48 m 50 s, `100/100` cycles pass, `final_state_v1: true`.
+
+| | WiFi | BLE |
+|---|---|---|
+| Cycles / passes | 50 / 50 | 50 / 50 |
+| min / median / mean / max | 29.7 / 31.9 / 31.7 / 32.9 s | 165.9 / 210.4 / 232.3 / 391.4 s |
+| Throughput (1 249 280 B image) | ~38 KB/s | 3.1-7.4 KB/s (median 5.8) |
+
+Timings inside an HTTPS OTA (consistent within ~1 s across the run):
 
 | Phase | Time |
 |---|---|
@@ -86,12 +95,20 @@ Timings, HTTPS OTA (3 cycles, consistent within ~1 s):
 | Reboot -> `confirmed=1` | ~6 s |
 
 - Slots alternate correctly (ota_0 <-> ota_1); RSA-PSS signature verified each time; rollback protection works.
-- `esp-tls-mbedtls: read error :-0x0050` (connection reset) appears on the first probe of every HTTPS OTA; the retry succeeds ~1 s later. Benign but recurring; candidate lesson-learned.
+  `confirmed=1` is reached ~6 s after each boot; the `confirmed=0` polls in between are the self-test window.
+- `esp-tls-mbedtls: read error :-0x0050` (connection reset) appears on the first probe of every HTTPS OTA (51 in the
+  run: 50 cycles + the initial boot); the retry succeeds ~1 s later. Benign but recurring; candidate lesson-learned.
 - `skip_common_name=true` warning: acceptable in the lab, must not ship (disables server-name authentication).
-- BLE OTA: `fw_length = 1249280`, progress notifications on att_handle=16 about every 1.8 s. Still running after 4.6 min
-  (roughly 3-5 KB/s, >12x slower than HTTPS). Connection interval flips between 48 and 12 units.
-  Disconnect `reason=531` (0x213) is the client closing the link; harmless.
-- Timestamp jumps of 2-5 s inside the BLE log (23:34:28, 23:36:35, 23:38:33) are likely host log buffering; a real BLE pause is not ruled out.
+- BLE OTA: `fw_length = 1249280`, progress notifications on att_handle=16 about every 1.8 s. Connection interval
+  flips between 48 and 12 units. Disconnect `reason=531` (0x213) is the client closing the link; harmless.
+- **BLE is ~7x slower than HTTPS and degrades during the run**: first 50 BLE cycles median 193.6 s vs second 50
+  median 280.5 s (+45 %); 5 cycles over 300 s (72, 75, 80, 83, 95), worst 391.4 s. All still PASS, so this is a
+  throughput observation, not a failure. Open question: a design limit of the notify-driven upload vs. real
+  degradation (thermal, 2.4 GHz coexistence with the WiFi cycles, or host-side BLE stack). See
+  `docs/LESSONS_LEARNED.md`.
+- WiFi is very stable: the whole spread is 29.7-32.9 s.
+- `grep -i fail` matches exactly one line (`wifi:Coexist: Wi-Fi connect fail, apply reconnect coex policy`) — an RF
+  coexistence policy message, not a cycle failure. `update.log` contains no retry markers.
 
 Log line meaning: `GATT procedure initiated: notify; att_handle=16` = board pushed a progress/ack notification to the subscribed client.
 
@@ -125,8 +142,14 @@ Not yet exercised on the Pi: a completed OTA and any BLE cycle.
 
 ## Evidence
 
-_To be added after the runs complete._
-
 | Run | Date | Cycles | Pass rate | WiFi | BLE | Final v1 | Evidence dir |
 |---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| IDF soak (workstation, COM14, board 192.168.1.152) | 2026-09-24 | 100/100 | **100 %** (target ≥ 99 %) | 50/50, 29.7-32.9 s | 50/50, 165.9-391.4 s | yes | `scripts/evidence/bl060_soak_2026-09-23d/` |
+| IDF soak, Pi + board 2 (192.168.1.153) | 2026-09-24 | blocked | — | — | — | — | Pi under-voltage (`0x50005`) mid-download; see section above |
+
+Earlier incomplete attempts (22, 22b, 22c: harness/firmware bugs, 3-15 cycles, aborted) are kept in
+`scripts/evidence/bl060_soak_2026-09-22*`.
+
+**IDF acceptance (BL-060, IDF scope):** pass rate ≥ 99 % -> PASS (100/100); root cause logged for every failure ->
+vacuously PASS (0 failures, `failure_log` empty). **Zephyr scope (ble + udp) is still open** — no Zephyr soak has
+been run.

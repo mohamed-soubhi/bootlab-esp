@@ -271,6 +271,21 @@ Every project risk defined in PLAN §9 was evaluated and verified against real t
   - Right after a reset the USB-Serial-JTAG port re-enumerates, so `miniterm` dies with "device reports readiness
     to read but returned no data"; the boot log is printed once, so pulse RTS from a script to capture it.
 
+### Trap 24: BLE OTA is ~7× slower than HTTPS and degrades over a long soak (BL-060 100-cycle run, 2026-09-24)
+- **Observation, not a failure:** the 100-cycle IDF soak passed 100/100, but BLE cycles drift.
+  WiFi: 50 cycles, 29.7-32.9 s each (~38 KB/s for the 1 249 280 B image), flat across 3 h 48 m.
+  BLE: 50 cycles, 165.9-391.4 s each (3.1-7.4 KB/s, median 5.8), median 193.6 s in the first half of the run
+  vs 280.5 s in the second half (+45 %); 5 cycles over 300 s (72, 75, 80, 83, 95), worst 391.4 s.
+- **Why it matters for planning, not correctness:** BLE is the long pole. A soak with a high BLE share takes
+  hours even though every cycle passes; BL-067's randomized 200-cycle soak should budget for the drift rather
+  than the first-cycle rate.
+- **Not yet root-caused.** Candidates, none ruled out: the notify-driven upload design (~1 progress notification
+  per 1.8 s, connection interval flipping between 48 and 12 units), 2.4 GHz coexistence with the interleaved
+  WiFi cycles, thermal drift, or the host-side BLE stack (`bleak` on Windows) rather than the board.
+- **How to settle it:** run a BLE-only soak (no WiFi cycles interleaved) and compare the same drift curve; if it
+  still drifts, watch `esp_ble` connection-interval / MTU negotiation in `console.log` and the host-side
+  notification timing. Evidence for this run: `scripts/evidence/bl060_soak_2026-09-23d/`.
+
 ## 5. Zephyr Track Status Summary (as of 2026-09-23)
 
 | Item | Status |

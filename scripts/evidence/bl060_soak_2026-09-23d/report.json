@@ -1,0 +1,24 @@
+{
+  "mode": "live",
+  "requested_cycles": 100,
+  "total_cycles": 100,
+  "passes": 100,
+  "failures": 0,
+  "pass_rate_pct": 100.0,
+  "target_pct": 99.0,
+  "aborted": false,
+  "final_state_v1": true,
+  "elapsed_s": 13729.7,
+  "by_transport": {
+    "wifi": {
+      "total": 50,
+      "passes": 50
+    },
+    "ble": {
+      "total": 50,
+      "passes": 50
+    }
+  },
+  "resumed_from": 0,
+  "failure_log": []
+}

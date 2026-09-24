@@ -9,13 +9,13 @@
 
 `█████████████████████░░░░░░░░░` **42/60 done (70%)**
 
-- **IDF track:** `███████████████░░░░░` 36/47
+- **IDF track:** `████████████████░░░░` 37/47
 - **Zephyr track:** `██████████████░░░░░░` 29/41
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 7
-    "doing" : 6
+    "todo" : 6
+    "doing" : 7
     "blocked" : 5
     "done" : 42
 ```
@@ -991,7 +991,7 @@ Machine version of BL-056a (canceled: RPi4 cannot be depended on). Re-run the ID
 
 | | ID | Title | Size | Boards | Depends on | PR |
 |---|---|---|---|---|---|---|
-| ⬜ | BL-060 | Overnight soak ×100 | S | zephyr, idf | BL-057a, BL-057b |  |
+| 🔵 | BL-060 | Overnight soak ×100 | S | zephyr, idf | BL-057a, BL-057b |  |
 | 🟥 | BL-061 | README quick start | S | host | BL-057a, BL-057b |  |
 | 🟥 | BL-062 | Recovery runbook + adding-a-board guide | S | host | BL-057a, BL-057b |  |
 | 🟥 | BL-063 | Final PLAN.md update | S | host | BL-060 |  |
@@ -1002,20 +1002,20 @@ Machine version of BL-056a (canceled: RPi4 cannot be depended on). Re-run the ID
 | ⬜ | BL-069 | [Advanced] Random-variant image generator and signed image pool (varied footprint, both OTA slots) | L | idf | BL-060 |  |
 | ⬜ | BL-072 | [Advanced] Multi-board randomized OTA soak: two boards in random parallel on one machine (400 cycles) | L | idf | BL-067 |  |
 
-<details><summary>⬜ <b>BL-060</b> — Overnight soak ×100</summary>
+<details><summary>🔵 <b>BL-060</b> — Overnight soak ×100</summary>
 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** zephyr, idf  
-- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
+- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
 - **Depends on:** BL-057a, BL-057b  
 - **Plan:** §8 P5
 
-T16 repeated per board/transport. [REVIEW 2026-09-21 (independent re-check): status reverted. The recorded '100 cycles, 100% pass' was tests_hil/test_t16_soak.py run with --mock-rig (elapsed 0.0 s; a simulated rig), not a soak on the board. A real T16 is ~100 alternating OTA cycles on lab-esp-idf via `labflash update` (hours), with the console captured. Needs a live implementation of update_ota in tests_hil/conftest.py and an owner-approved overnight window.]
+T16 repeated per board/transport. [REVIEW 2026-09-21 (independent re-check): status reverted. The recorded '100 cycles, 100% pass' was tests_hil/test_t16_soak.py run with --mock-rig (elapsed 0.0 s; a simulated rig), not a soak on the board. A real T16 is ~100 alternating OTA cycles on lab-esp-idf via `labflash update` (hours), with the console captured. Needs a live implementation of update_ota in tests_hil/conftest.py and an owner-approved overnight window.] [PROGRESS 2026-09-24: IDF track DONE. First complete live 100-cycle T16 soak on lab-esp-idf (native Windows, COM14, board 192.168.1.152, pattern wifi,wifi,ble,ble): 100/100 cycles PASS, 100 % (target >= 99 %), 0 failures, no aborts, final state v1, elapsed 3 h 48 m 50 s. WiFi 50/50 (29.7-32.9 s/cycle, ~38 KB/s); BLE 50/50 (165.9-391.4 s/cycle, 3.1-7.4 KB/s) with a +45 % slowdown in the second half of the run (still 100 % pass -- throughput observation, not a failure). Evidence: scripts/evidence/bl060_soak_2026-09-23d/ (report.json, cycles.jsonl, console.log.gz + README); runbook and tables: docs/BL060_SOAK_TEST.md. ZEPHYR track still todo: no zephyr soak (ble + udp) has been run. The Pi + second-board run is blocked on Pi under-voltage (0x50005) and is not part of this acceptance.]
 
 **Acceptance criteria**
 *IDF scope*
-- [ ] Pass rate ≥ 99 % on the idf board (ble + wifi)
-- [ ] Root cause logged for every failure
+- [x] Pass rate ≥ 99 % on the idf board (ble + wifi)
+- [x] Root cause logged for every failure
 *Zephyr scope*
 - [ ] Pass rate ≥ 99 % on the zephyr board (ble + udp)
 - [ ] Root cause logged for every failure
@@ -1137,7 +1137,7 @@ Comprehensive public presentation site and interactive deck published to GitHub 
 - **Depends on:** BL-060, BL-069  
 - **Plan:** §8 P5
 
-Follow-up to BL-060 (strict v1<->v2 alternation, wifi,wifi,ble,ble). Extend tests_hil/soak.py into a heavy randomized soak: every cycle picks a variant and a transport (wifi or ble) at random from a seeded RNG. Variants: four VALID signed images with distinct versions (v1, v2 exist; v3 and v4 must be built) plus the FAILURE images already in the tree (bad_sig, hang, no_confirm). Mix: 70 % fixed valid (v1..v4) / 10 % generated valid (signed pool from BL-069, footprint varied) / 20 % failure, with a cap on consecutive failure images. The pass condition becomes the expected OUTCOME for the image, checked against a model of the last confirmed image: valid -> runs and confirmed; bad_sig -> rejected, board stays on the previous confirmed image; no_confirm -> boots, never confirms, rolls back to the previous image after reset; hang -> boots, hangs, watchdog rollback to the previous image. next_variant() (toggle) is replaced by the model. The seed is logged in report.json and --seed replays the exact cycle sequence. Console captured as in BL-060; the run aborts and restores the board to a confirmed image on repeated unexpected outcomes. Runs on the workstation with board 1 (native Windows, R14). Runbook and traps: docs/BL060_SOAK_TEST.md, docs/LESSONS_LEARNED.md. Note: failure-image cycles (hang, no_confirm) are slower because of timeouts and extra reboots, so plan the run length accordingly.
+Follow-up to BL-060 (strict v1<->v2 alternation, wifi,wifi,ble,ble). Extend tests_hil/soak.py into a heavy randomized soak: every cycle picks a variant and a transport (wifi or ble) at random from a seeded RNG. Variants: four VALID signed images with distinct versions (v1, v2 exist; v3 and v4 must be built) plus the FAILURE images already in the tree (bad_sig, hang, no_confirm). Mix: 70 % fixed valid (v1..v4) / 10 % generated valid (signed pool from BL-069, footprint varied) / 20 % failure, with a cap on consecutive failure images. The pass condition becomes the expected OUTCOME for the image, checked against a model of the last confirmed image: valid -> runs and confirmed; bad_sig -> rejected, board stays on the previous confirmed image; no_confirm -> boots, never confirms, rolls back to the previous image after reset; hang -> boots, hangs, watchdog rollback to the previous image. next_variant() (toggle) is replaced by the model. The seed is logged in report.json and --seed replays the exact cycle sequence. Console captured as in BL-060; the run aborts and restores the board to a confirmed image on repeated unexpected outcomes. Runs on the workstation with board 1 (native Windows, R14). Runbook and traps: docs/BL060_SOAK_TEST.md, docs/LESSONS_LEARNED.md. Note: failure-image cycles (hang, no_confirm) are slower because of timeouts and extra reboots, so plan the run length accordingly. [NOTE 2026-09-25: budget BLE at the DRIFTED rate, not the first-cycle rate. BL-060's completed 100-cycle soak measured BLE median 193.6 s/cycle in its first half vs 280.5 s in its second half (+45 %, worst 391.4 s), against 31.9 s for WiFi; see scripts/evidence/bl060_soak_2026-09-23d/ and docs/LESSONS_LEARNED.md Trap 24. With a ~20 % failure-image mix and 200 cycles this run is many hours, so plan the window accordingly and expect the BLE share to dominate.]
 
 **Acceptance criteria**
 - [ ] At least 4 valid fixed images built and signed with distinct version strings (v1..v4), the existing bad_sig, hang and no_confirm images, and the BL-069 generated pool consumed through its manifest
@@ -1258,7 +1258,7 @@ flowchart TB
         BL071["BL-071"]:::todo
     end
     subgraph E5_g["P5 Soak, docs, handover"]
-        BL060["BL-060"]:::todo
+        BL060["BL-060"]:::doing
         BL061["BL-061"]:::blocked
         BL062["BL-062"]:::blocked
         BL063["BL-063"]:::blocked
