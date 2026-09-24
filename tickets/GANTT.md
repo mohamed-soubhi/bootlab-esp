@@ -7,18 +7,18 @@
 
 ## Progress
 
-- **IDF track:** `█████████████████████████░░░░░` **36/43 done**
-- **Zephyr track:** `████████████████████░░░░░░░░░░` **27/40 done**
+- **IDF track:** `████████████████████████░░░░░░` **36/45 done**
+- **Zephyr track:** `█████████████████████░░░░░░░░░` **28/40 done**
 
 | Epic | Phase | IDF | Zephyr |
 |---|---|---|---|
 | E0 Host & rig setup | P0 | `██████████` 8/8 | `██████████` 6/6 |
 | EL LABID common library | PL | `██████████` 4/4 | `██████████` 4/4 |
 | E1 ESP32-S3 #2 — ESP-IDF | P1 | `██████████` 9/9 | — |
-| E2 ESP32-S3 #1 — Zephyr | P2 | — | `████████░░` 9/11 |
+| E2 ESP32-S3 #1 — Zephyr | P2 | — | `█████████░` 10/11 |
 | E3 labflash CLI | P3 | `██████████` 6/6 | `██████████` 6/6 |
 | E4 HIL tests + CI | P4 | `█████████░` 8/9 | `█░░░░░░░░░` 1/8 |
-| E5 Soak, docs, handover | P5 | `█░░░░░░░░░` 1/7 | `██░░░░░░░░` 1/5 |
+| E5 Soak, docs, handover | P5 | `█░░░░░░░░░` 1/9 | `██░░░░░░░░` 1/5 |
 
 ## Gantt — IDF track
 
@@ -77,6 +77,8 @@ gantt
     BL-063a IDF lessons learned (retrospective) :crit, bl063a, 2026-10-11, 1d
     BL-063b HTML presentation of the IDF track :crit, bl063b, 2026-10-12, 2d
     BL-066 GitHub Pages project showcase & presentation :done, bl066, 2026-09-16, 2d
+    BL-067 [Advanced] Heavy randomized OTA soak 4 good + :bl067, 2026-10-10, 4d
+    BL-068 [Advanced] Multi-board randomized OTA soak tw :bl068, 2026-10-14, 2d
 ```
 
 **Legend:** green = ✅ done · blue = 🔵 acceptance criteria pass, held only by a dependency · red = 🟥 blocked · plain = ⬜ todo · orange line = today.
@@ -104,6 +106,8 @@ gantt
 | BL-063 Final PLAN.md update | 🟥 blocked | BL-060[idf] ⬜ |
 | BL-063a IDF lessons learned (retrospective) | 🟥 blocked | BL-060[idf] ⬜, BL-061[idf] 🟥, BL-062[idf] 🟥, BL-063[idf] 🟥, BL-056a[idf] 🟥 |
 | BL-063b HTML presentation of the IDF track | 🟥 blocked | BL-063a[idf] 🟥 |
+| BL-067 [Advanced] Heavy randomized OTA soak 4 good + | ⬜ todo | BL-060[idf] ⬜ |
+| BL-068 [Advanced] Multi-board randomized OTA soak tw | ⬜ todo | BL-067[idf] ⬜ |
 
 ## Gantt — Zephyr track
 
@@ -135,8 +139,8 @@ gantt
     BL-034 Zephyr mcumgr SMP over BLE :done, bl034, 2026-09-25, 2d
     BL-035 Zephyr WiFi + SMP over UDP (single build with :done, bl035, 2026-09-27, 4d
     BL-036 Zephyr phase acceptance run :done, bl036, 2026-10-01, 1d
-    BL-064 Zephyr v2 build LABID UART RX interrupt never :bl064, 2026-10-01, 2d
-    BL-065 Zephyr UDP SMP OTA marked confirmed but MCUbo :bl065, 2026-10-01, 2d
+    BL-064 Zephyr MCUboot swap breaks LABID UART RX inte :active, bl064, 2026-10-01, 2d
+    BL-065 Zephyr OTA (UDP and BLE SMP) marked confirmed :done, bl065, 2026-10-01, 2d
     section P3 labflash CLI
     BL-040 labflash core config UID resolution re-enumer :done, bl040, 2026-09-22, 2d
     BL-041 identify info status measure :done, bl041, 2026-09-25, 1d
@@ -173,14 +177,12 @@ None: nothing on this board is blocked.
 - **BL-053** [S] HIL T10–T15 LABID + identity + USB
 - **BL-054** [M] (Stretch) HIL T17 power cut
 - **BL-055** [M] build.yml cloud CI
-- **BL-064** [M] Zephyr v2 build: LABID UART RX interrupt never fires (irq=0, rx=0)
-- **BL-065** [M] Zephyr UDP SMP OTA: marked confirmed but MCUboot never swaps slots
 
 ### Waiting-on — Zephyr track
 
 | Ticket | Status | Waiting on (unfinished dependencies) |
 |---|---|---|
-| BL-051 HIL T01–T03 boot + update | ⬜ todo | BL-064[zephyr] ⬜, BL-065[zephyr] ⬜ |
+| BL-051 HIL T01–T03 boot + update | ⬜ todo | BL-064[zephyr] 🔵 |
 | BL-052 HIL T04–T09 rollback security robustness | ⬜ todo | — |
 | BL-053 HIL T10–T15 LABID + identity + USB | ⬜ todo | — |
 | BL-054 (Stretch) HIL T17 power cut | ⬜ todo | — |
@@ -191,5 +193,4 @@ None: nothing on this board is blocked.
 | BL-061 README quick start | ⬜ todo | BL-057b[zephyr] ⬜ |
 | BL-062 Recovery runbook + adding-a-board guide | ⬜ todo | BL-057b[zephyr] ⬜ |
 | BL-063 Final PLAN.md update | ⬜ todo | BL-060[zephyr] ⬜ |
-| BL-064 Zephyr v2 build LABID UART RX interrupt never | ⬜ todo | — |
-| BL-065 Zephyr UDP SMP OTA marked confirmed but MCUbo | ⬜ todo | — |
+| BL-064 Zephyr MCUboot swap breaks LABID UART RX inte | 🔵 doing | — |

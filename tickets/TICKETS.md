@@ -6,17 +6,17 @@
 
 ## Overall
 
-`█████████████████████░░░░░░░░░` **40/56 done (71%)**
+`█████████████████████░░░░░░░░░` **41/58 done (70%)**
 
-- **IDF track:** `█████████████████░░░` 36/43
-- **Zephyr track:** `██████████████░░░░░░` 27/40
+- **IDF track:** `████████████████░░░░` 36/45
+- **Zephyr track:** `██████████████░░░░░░` 28/40
 
 ```mermaid
 pie showData title Ticket status
     "todo" : 4
-    "doing" : 6
+    "doing" : 7
     "blocked" : 6
-    "done" : 40
+    "done" : 41
 ```
 
 ## Epics
@@ -26,10 +26,10 @@ pie showData title Ticket status
 | E0 | P0 | Host & rig setup | `████████████` | 8/8 | ✅ done | §2, §3, §8 P0 |
 | EL | PL | LABID common library | `████████████` | 4/4 | ✅ done | §7.3, §8 PL |
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `████████████` | 9/9 | ✅ done | §4.2, §5, §6, §7.2, §8 P1 |
-| E2 | P2 | ESP32-S3 #1 — Zephyr | `██████████░░` | 9/11 | 🔵 doing | §4.1, §5, §6, §7.1, §8 P2 |
+| E2 | P2 | ESP32-S3 #1 — Zephyr | `███████████░` | 10/11 | 🔵 doing | §4.1, §5, §6, §7.1, §8 P2 |
 | E3 | P3 | labflash CLI | `████████████` | 7/7 | ✅ done | §8 P3 |
 | E4 | P4 | HIL tests + CI | `██░░░░░░░░░░` | 2/10 | 🟥 blocked | §8 P4 |
-| E5 | P5 | Soak, docs, handover | `██░░░░░░░░░░` | 1/7 | 🟥 blocked | §8 P5 |
+| E5 | P5 | Soak, docs, handover | `█░░░░░░░░░░░` | 1/9 | 🟥 blocked | §8 P5 |
 
 ## Epic dependency graph
 
@@ -38,10 +38,10 @@ flowchart LR
     E0["P0 Host & rig setup<br/>8/8"]:::done
     EL["PL LABID common library<br/>4/4"]:::done
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>9/9"]:::done
-    E2["P2 ESP32-S3 #1 — Zephyr<br/>9/11"]:::doing
+    E2["P2 ESP32-S3 #1 — Zephyr<br/>10/11"]:::doing
     E3["P3 labflash CLI<br/>7/7"]:::done
     E4["P4 HIL tests + CI<br/>2/10"]:::blocked
-    E5["P5 Soak, docs, handover<br/>1/7"]:::blocked
+    E5["P5 Soak, docs, handover<br/>1/9"]:::blocked
     E0 --> EL
     E1 --> E3
     E2 --> E3
@@ -56,8 +56,7 @@ flowchart LR
 
 ## Ready to start now
 
-- **BL-064** Zephyr v2 build: LABID UART RX interrupt never fires (irq=0, rx=0) (M) — E2
-- **BL-065** Zephyr UDP SMP OTA: marked confirmed but MCUboot never swaps slots (M) — E2
+- Nothing ready (check blocked tickets).
 
 ## Blocked
 
@@ -452,8 +451,8 @@ Run all P1 acceptance checks. [RESULT 2026-09-21 -- ALL 6 PLAN P1 CHECKBOXES PAS
 | ✅ | BL-034 | Zephyr mcumgr SMP over BLE | M | zephyr | BL-033 |  |
 | ✅ | BL-035 | Zephyr WiFi + SMP over UDP (single build with BT) | L | zephyr | BL-034 |  |
 | ✅ | BL-036 | Zephyr phase acceptance run | S | zephyr | BL-032, BL-035 |  |
-| ⬜ | BL-064 | Zephyr v2 build: LABID UART RX interrupt never fires (irq=0, rx=0) | M | zephyr | BL-035 |  |
-| ⬜ | BL-065 | Zephyr UDP SMP OTA: marked confirmed but MCUboot never swaps slots | M | zephyr | BL-035 |  |
+| 🔵 | BL-064 | Zephyr: MCUboot swap breaks LABID UART RX interrupt (LED/mem_slab sub-bug fixed) | M | zephyr | BL-035 |  |
+| ✅ | BL-065 | Zephyr OTA (UDP and BLE SMP): marked confirmed but MCUboot never swaps slots | M | zephyr | BL-035 |  |
 
 <details><summary>✅ <b>BL-005b</b> — Detect board hardware → rig.yaml (Zephyr board)</summary>
 
@@ -602,15 +601,15 @@ Run all P2 acceptance checks. [RESULT 2026-09-22 -- ALL 6 PLAN P2 CHECKBOXES PAS
 
 </details>
 
-<details><summary>⬜ <b>BL-064</b> — Zephyr v2 build: LABID UART RX interrupt never fires (irq=0, rx=0)</summary>
+<details><summary>🔵 <b>BL-064</b> — Zephyr: MCUboot swap breaks LABID UART RX interrupt (LED/mem_slab sub-bug fixed)</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** zephyr  
-- **Tracks:** Zephyr ⬜ todo  
+- **Tracks:** Zephyr 🔵 doing  
 - **Depends on:** BL-035  
 - **Plan:** §4.1, §5, §6, §7.1, §8 P2
 
-Found 2026-09-22 running BL-051 live on lab-esp-zephyr. After a live BLE SMP OTA v1->v2 (build_v2, the WiFi+BT coexistence build from BL-035), the board boots and runs fine (LABID ANNOUNCE and blink both work), but every subsequent host->board write over the same UART times out (pyserial SerialTimeoutException, reproduced with an 8s write_timeout -- genuinely stuck, not just slow). The board's own heartbeat log confirms it: '[APP] Heartbeat: variant=v2, ..., irq=0, rx=0' -- the LABID console UART RX interrupt has never fired since boot, so the device never drains its USB-CDC RX buffer and every host write blocks until the driver times out. Reads (device->host) work fine throughout; only writes are affected. Root cause not yet found -- likely the BLE+WiFi coexistence init in this build either fails to register the console UART RX IRQ, or something in app_ble_smp.c/app_wifi.c claims/disables it. Needs a source-level look at esp_zephyr/app/src/{main.c,labid_port wiring} for how/when the UART RX IRQ is enabled relative to BLE/WiFi init, then a west rebuild + reflash + a repeat of this same live-write test to confirm the fix. Board was reflashed back to the known-good confirmed v1 (build_v1, unaffected) to leave it healthy; evidence: scripts/evidence/bl064_zephyr_labid_rx_irq_dead.md. [UPDATE 2026-09-23: fix attempt 1 (reorder BLE/WiFi init before labid_port_init, hypothesis: BLE connection reprograms the interrupt matrix and steals an earlier-claimed vector) tested against the REAL trigger (a live v1->v2 BLE OTA) and DISPROVEN -- same exact failure recurred. New data: irq works fine on v1 with BLE advertising (irq=130, rx=1260 mid-test); it's specifically APP_VARIANT_V2 that never gets a working RX IRQ, reproduced both via OTA swap and via a fresh direct esptool flash of build_v2 -- not tied to BLE connection events or init order. Reverted the reorder (no benefit, misleading). Full detail: scripts/evidence/bl064_zephyr_labid_rx_irq_dead.md.
+Found 2026-09-22 running BL-051 live on lab-esp-zephyr. After a live BLE SMP OTA v1->v2 (build_v2, the WiFi+BT coexistence build from BL-035), the board boots and runs fine (LABID ANNOUNCE and blink both work), but every subsequent host->board write over the same UART times out (pyserial SerialTimeoutException, reproduced with an 8s write_timeout -- genuinely stuck, not just slow). The board's own heartbeat log confirms it: '[APP] Heartbeat: variant=v2, ..., irq=0, rx=0' -- the LABID console UART RX interrupt has never fired since boot, so the device never drains its USB-CDC RX buffer and every host write blocks until the driver times out. Reads (device->host) work fine throughout; only writes are affected. Root cause not yet found -- likely the BLE+WiFi coexistence init in this build either fails to register the console UART RX IRQ, or something in app_ble_smp.c/app_wifi.c claims/disables it. Needs a source-level look at esp_zephyr/app/src/{main.c,labid_port wiring} for how/when the UART RX IRQ is enabled relative to BLE/WiFi init, then a west rebuild + reflash + a repeat of this same live-write test to confirm the fix. Board was reflashed back to the known-good confirmed v1 (build_v1, unaffected) to leave it healthy; evidence: scripts/evidence/bl064_zephyr_labid_rx_irq_dead.md. [UPDATE 2026-09-23: fix attempt 1 (reorder BLE/WiFi init before labid_port_init, hypothesis: BLE connection reprograms the interrupt matrix and steals an earlier-claimed vector) tested against the REAL trigger (a live v1->v2 BLE OTA) and DISPROVEN -- same exact failure recurred. New data: irq works fine on v1 with BLE advertising (irq=130, rx=1260 mid-test); it's specifically APP_VARIANT_V2 that never gets a working RX IRQ, reproduced both via OTA swap and via a fresh direct esptool flash of build_v2 -- not tied to BLE connection events or init order. Reverted the reorder (no benefit, misleading). Full detail: scripts/evidence/bl064_zephyr_labid_rx_irq_dead.md. [UPDATE 2026-09-23 part 2: isolation test confirms it's the 4Hz blink rate, not the version/variant label -- a diagnostic build_v2_diag (app=2.0.0 label, forced 1Hz blink) works fine (irq=1, rx=10 after one query). WS2812 is driven over I2S (CONFIG_WS2812_STRIP_I2S), called once per half-period in the blink loop -- 4x more often at 4Hz than 1Hz. Candidate mechanism: the ws2812_i2s Zephyr driver blocking/disabling interrupts during transactions, possibly sharing a DMA channel or interrupt priority with USB-Serial-JTAG. Not yet confirmed at the driver-source level. scripts/evidence/bl064_zephyr_labid_rx_irq_dead.md has full detail and next-step ideas.] [UPDATE 2026-09-23 part 3: ROOT CAUSE CONFIRMED. ws2812_i2s.c's DMA TX buffer pool (k_mem_slab, hardcoded to 2 blocks, no explicit free on the success path) exhausts under the 4Hz call rate; that exhaustion state also kills the LABID UART RX interrupt (causal link empirically confirmed by patching the pool to 8 blocks -- fixed, stayed fixed 60+s of continuous 4Hz blinking; patch reverted after confirming, since it's in the shared ~/zephyrproject SDK checkout, not this repo). Real shippable fix not yet applied: either rate-limit led_strip_update_rgb() calls in main.c's blink loop (project-level, no SDK patch needed), or find+fix why the driver isn't freeing blocks promptly, or add a proper tracked west module patch for the pool size. Full evidence: scripts/evidence/bl064_zephyr_labid_rx_irq_dead.md.] [UPDATE 2026-09-23 part 4: app-level fix IMPLEMENTED AND COMMITTED (2705d53): rate-limit the actual led_strip_update_rgb() hardware call to ~2 Hz in main.c's blink loop, independent of the logical 4Hz toggle rate (toggle_count/self-test/heartbeat unaffected, confirmed labflash.identify.measure() reads the STATE? toggles field, not a physical light sensor). Verified via direct esptool flash + sustained LABID polling over 60+ seconds of continuous 4Hz blinking: stable, no freeze. NOT yet verified via a live end-to-end OTA (blocked by the separate BL-065 bug, which prevented the board from ever actually reaching the fixed v2 code path during a real BLE/UDP OTA test). [UPDATE 2026-09-23 part 5: BL-065 fixed and confirmed a real OTA swap now works end-to-end -- but the SAME live-OTA test still shows irq=0,rx=0. Strengthened the rate limit 500ms->1000ms (matching/undercutting v1's actual call rate) and retested live: STILL fails. Call-frequency-alone theory weakened. New lead: every PASSING observation of v2 in this investigation used a direct esptool flash (no MCUboot swap); every FAILING observation went through a real OTA swap. Swap-vs-direct-flash is the strongest untested variable now. Full detail: scripts/evidence/bl064_zephyr_labid_rx_irq_dead.md.] [UPDATE 2026-09-23 part 6, DECISIVE: this is actually TWO separate bugs. Built a diagnostic v2 with LED hardware calls disabled entirely (zero led_strip_update_rgb() calls ever) and tested it both ways: direct esptool flash -> LABID works fine; real live BLE OTA of the SAME binary -> same exact irq=0,rx=0 failure. This conclusively rules out LED/mem_slab as the cause of the OTA-swap failure -- that mechanism (found and mitigated earlier, 2705d53/97c9adf) is a real, separate, independent bug that's actually fixed. The REAL blocker is an unexplained interaction between MCUboot's move-swap algorithm and the LABID UART RX interrupt: every direct-flash boot in this whole investigation has worked; every OTA-swap boot has failed, regardless of LED activity, rate limit, or build variant. Root cause of THIS part not found. Candidate next steps (partition/cache layout diff, MCUboot bootloader-stage peripheral state, proper two-phase confirm, JTAG debugging) in scripts/evidence/bl064_zephyr_labid_rx_irq_dead.md's final section.]
 
 **Acceptance criteria**
 - [ ] Live host writes to the board over LABID UART succeed after booting build_v2 (or any BLE-coexistence variant)
@@ -618,18 +617,18 @@ Found 2026-09-22 running BL-051 live on lab-esp-zephyr. After a live BLE SMP OTA
 
 </details>
 
-<details><summary>⬜ <b>BL-065</b> — Zephyr UDP SMP OTA: marked confirmed but MCUboot never swaps slots</summary>
+<details><summary>✅ <b>BL-065</b> — Zephyr OTA (UDP and BLE SMP): marked confirmed but MCUboot never swaps slots</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** zephyr  
-- **Tracks:** Zephyr ⬜ todo  
+- **Tracks:** Zephyr ✅ done  
 - **Depends on:** BL-035  
 - **Plan:** §4.1, §5, §6, §7.1, §8 P2
 
-Found 2026-09-23 while testing BL-064's reorder fix. A UDP SMP OTA v2->v1 uploaded 100%, the client sent ImageStatesWrite(confirm=True) successfully, and the device reset -- but LABID's before/after snapshot shows the board still running the OLD image after the reset (app=2.0.0 both before and after), i.e. MCUboot never actually swapped to the newly uploaded image. host/labflash/update_cli.py's make_zephyr_udp_send/check_zephyr_image path reported the upload and confirm as fully successful (all host-side checks PASS except the final 'running the new image' one), so this looks like either: the confirm write happened before the image was fully validated/written (a race), or the UDP SMP transport's slot targeting is wrong (uploading into the wrong slot, or the primary slot instead of the secondary), or MCUboot's swap_type logic isn't seeing the pending image as a valid upgrade candidate over this specific transport. Needs a live watched console (BL-060's console.log) during a UDP OTA to see what MCUboot actually does on reset -- was BL-064's fresh evidence, not yet in its own evidence file.
+Found 2026-09-23 while testing BL-064's reorder fix. A UDP SMP OTA v2->v1 uploaded 100%, the client sent ImageStatesWrite(confirm=True) successfully, and the device reset -- but LABID's before/after snapshot shows the board still running the OLD image after the reset (app=2.0.0 both before and after), i.e. MCUboot never actually swapped to the newly uploaded image. host/labflash/update_cli.py's make_zephyr_udp_send/check_zephyr_image path reported the upload and confirm as fully successful (all host-side checks PASS except the final 'running the new image' one), so this looks like either: the confirm write happened before the image was fully validated/written (a race), or the UDP SMP transport's slot targeting is wrong (uploading into the wrong slot, or the primary slot instead of the secondary), or MCUboot's swap_type logic isn't seeing the pending image as a valid upgrade candidate over this specific transport. Needs a live watched console (BL-060's console.log) during a UDP OTA to see what MCUboot actually does on reset -- was BL-064's fresh evidence, not yet in its own evidence file. [UPDATE 2026-09-23: reproduced over BLE too, not just UDP. Live v1->v2 BLE OTA with the BL-064 rate-limit fix applied: transfer 100%, 'marked permanent/confirmed', reset -- but LABID reports the board still on app=1.0.0 (the OLD image) while the SMP layer itself reports active=2.0.0. Same exact contradiction pattern as the original UDP finding. This confirms it's a real MCUboot/SMP swap bug independent of transport, and blocks fully validating BL-064's fix end-to-end via live OTA (validated instead via direct esptool flash + sustained LABID polling, 60+s stable -- see scripts/evidence/bl064_zephyr_labid_rx_irq_dead.md).] [FIXED 2026-09-23, 6875d3b: root cause was confirm=True sent before the new image ever booted, so MCUboot never performed the actual swap (just updated its own bookkeeping). Fix: confirm=False (test/pending), letting MCUboot do the real swap; the device already self-confirms via its own self-test logic. Verified live over BLE: real boot log shows Swap type: test -> Starting swap using move algorithm -> successful boot into v2, self-test PASSED, confirmed=1. See scripts/evidence/bl064_zephyr_labid_rx_irq_dead.md for the full writeup (filed there since found while testing BL-064).]
 
 **Acceptance criteria**
-- [ ] Live UDP SMP OTA v1<->v2 actually swaps and boots the new image (not just reports success)
+- [x] Live UDP SMP OTA v1<->v2 actually swaps and boots the new image (not just reports success)
 
 </details>
 
@@ -971,6 +970,8 @@ Split from BL-057 on 2026-09-22. REMAINING: 3 consecutive live green whole-suite
 | 🟥 | BL-063a | IDF lessons learned (retrospective) | S | host | BL-060, BL-061, BL-062, BL-063, BL-056a |  |
 | 🟥 | BL-063b | HTML presentation of the IDF track | M | host | BL-063a |  |
 | ✅ | BL-066 | GitHub Pages project showcase & presentation deck (Dual-OS, challenges, lessons learned) | M | host | — |  |
+| ⬜ | BL-067 | [Advanced] Heavy randomized OTA soak: 4 good + failure variants, random transport (200 cycles, IDF board 1) | L | idf | BL-060 |  |
+| ⬜ | BL-068 | [Advanced] Multi-board randomized OTA soak: two boards in random parallel (400 cycles) | M | idf | BL-067 |  |
 
 <details><summary>⬜ <b>BL-060</b> — Overnight soak ×100</summary>
 
@@ -1099,6 +1100,45 @@ Comprehensive public presentation site and interactive deck published to GitHub 
 
 </details>
 
+<details><summary>⬜ <b>BL-067</b> — [Advanced] Heavy randomized OTA soak: 4 good + failure variants, random transport (200 cycles, IDF board 1)</summary>
+
+- **Size:** L (3–5 days)  
+- **Boards:** idf  
+- **Tracks:** IDF ⬜ todo  
+- **Depends on:** BL-060  
+- **Plan:** §8 P5
+
+Follow-up to BL-060 (strict v1<->v2 alternation, wifi,wifi,ble,ble). Extend tests_hil/soak.py into a heavy randomized soak: every cycle picks a variant and a transport (wifi or ble) at random from a seeded RNG. Variants: four VALID signed images with distinct versions (v1, v2 exist; v3 and v4 must be built) plus the FAILURE images already in the tree (bad_sig, hang, no_confirm). Mix: 80 % valid / 20 % failure, with a cap on consecutive failure images. The pass condition becomes the expected OUTCOME for the image, checked against a model of the last confirmed image: valid -> runs and confirmed; bad_sig -> rejected, board stays on the previous confirmed image; no_confirm -> boots, never confirms, rolls back to the previous image after reset; hang -> boots, hangs, watchdog rollback to the previous image. next_variant() (toggle) is replaced by the model. The seed is logged in report.json and --seed replays the exact cycle sequence. Console captured as in BL-060; the run aborts and restores the board to a confirmed image on repeated unexpected outcomes. Runs on the workstation with board 1 (native Windows, R14). Runbook and traps: docs/BL060_SOAK_TEST.md, docs/LESSONS_LEARNED.md. Note: failure-image cycles (hang, no_confirm) are slower because of timeouts and extra reboots, so plan the run length accordingly.
+
+**Acceptance criteria**
+- [ ] At least 4 valid images built and signed with distinct version strings (v1..v4), plus the existing bad_sig, hang and no_confirm images
+- [ ] Expected outcome defined and verified for every variant, including the rollback target after a failure image
+- [ ] Random variant + transport per cycle from a seeded RNG; the same --seed reproduces the same sequence
+- [ ] Mix is 80 % valid / 20 % failure images; failure images are never run back to back beyond the agreed cap
+- [ ] 200 cycles on the idf board: outcome pass rate >= 99 %
+- [ ] Root cause logged for every unexpected outcome; board restored to a confirmed image at the end
+
+</details>
+
+<details><summary>⬜ <b>BL-068</b> — [Advanced] Multi-board randomized OTA soak: two boards in random parallel (400 cycles)</summary>
+
+- **Size:** M (1–2 days)  
+- **Boards:** idf  
+- **Tracks:** IDF ⬜ todo  
+- **Depends on:** BL-067  
+- **Plan:** §8 P5
+
+Run the BL-067 randomized soak on two physical boards in parallel from two hosts: board 1 from the workstation and the second board (ex-Zephyr hardware, MAC ac:a7:04:2c:3b:04, IP 192.168.1.153, flashed with the IDF app) from the RPi4, 400 cycles in total across the boards. Same seed and variant set on both boards so results are comparable, one report per board (never mixed inside one run). Goal: catch board-to-board differences (flash chip, PSRAM, RF, power) and shared-air effects (2.4 GHz, BLE scanning). Prerequisite found during the Pi setup (docs/LESSONS_LEARNED.md Traps 20-23): the RPi4 must have stable power (vcgencmd get_throttled live bits 0x1/0x4 stay clear during a full OTA transfer), preferably a powered USB hub for the ESP and Ethernet for the Pi; the board needs provisioning, a Pi-specific rig file, a ufw rule for the OTA port, and Python 3.13 strict-TLS handling (fixed in 13a1d2c). The Zephyr firmware is out of scope (different transport, BL-064/BL-065 open).
+
+**Acceptance criteria**
+- [ ] Second board runs the IDF app: provisioned, WiFi + BLE OTA both proven from the RPi4 (one completed WiFi OTA and one BLE OTA)
+- [ ] RPi4 power verified: get_throttled live bits stay clear through a full OTA transfer
+- [ ] 400 randomized cycles across both boards, run in parallel, same seed and variant set per board
+- [ ] Outcome pass rate >= 99 % per board, with one report.json per board
+- [ ] Any board-specific difference between the two boards is documented with root cause
+
+</details>
+
 ## Full ticket dependency graph
 
 <details><summary>Show graph</summary>
@@ -1142,8 +1182,8 @@ flowchart TB
         BL034["BL-034"]:::done
         BL035["BL-035"]:::done
         BL036["BL-036"]:::done
-        BL064["BL-064"]:::todo
-        BL065["BL-065"]:::todo
+        BL064["BL-064"]:::doing
+        BL065["BL-065"]:::done
     end
     subgraph E3_g["P3 labflash CLI"]
         BL040["BL-040"]:::done
@@ -1174,6 +1214,8 @@ flowchart TB
         BL063a["BL-063a"]:::blocked
         BL063b["BL-063b"]:::blocked
         BL066["BL-066"]:::done
+        BL067["BL-067"]:::todo
+        BL068["BL-068"]:::todo
     end
     BL001 --> BL002
     BL002 --> BL003
@@ -1275,6 +1317,8 @@ flowchart TB
     BL063a --> BL063b
     BL035 --> BL064
     BL035 --> BL065
+    BL060 --> BL067
+    BL067 --> BL068
     classDef todo fill:#eeeeee,stroke:#999,color:#333
     classDef doing fill:#cfe3ff,stroke:#2f6fdb,color:#123
     classDef blocked fill:#ffd6d6,stroke:#c62828,color:#400
