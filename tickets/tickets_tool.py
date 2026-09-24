@@ -25,7 +25,8 @@ DB = HERE / "tickets.json"
 MD = HERE / "TICKETS.md"
 CSV = HERE / "tickets.csv"
 
-ICON = {"todo": "⬜", "doing": "🔵", "review": "🟣", "blocked": "🟥", "done": "✅"}
+ICON = {"todo": "⬜", "doing": "🔵", "review": "🟣", "blocked": "🟥", "done": "✅", "canceled": "🚫"}
+CANCELED = "canceled"
 
 
 def load():
@@ -38,6 +39,24 @@ def save(d):
 
 def by_id(d):
     return {t["id"]: t for t in d["tickets"]}
+
+
+def active(d):
+    """View of the database without canceled tickets. A canceled ticket is out of scope: it is not counted in any
+    progress figure, not scheduled, and does not gate its dependents (edges to it are dropped). The database itself
+    is never modified; canceled tickets are still listed in TICKETS.md (own section) and kept in tickets.csv."""
+    gone = {t["id"] for t in d["tickets"] if t["status"] == CANCELED}
+    if not gone:
+        return d
+    kept = []
+    for t in d["tickets"]:
+        if t["id"] in gone:
+            continue
+        c = dict(t, deps=[x for x in t["deps"] if x not in gone])
+        if t.get("deps_by_track"):
+            c["deps_by_track"] = {k: [g for g in v if g not in gone] for k, v in t["deps_by_track"].items()}
+        kept.append(c)
+    return {**d, "tickets": kept}
 
 
 def check(d):
@@ -169,7 +188,7 @@ def apply_set(d, tid, status, track=None, pr=None):
     track = track if len(tr) > 1 else (tr[0] if tr else "")
     node = (tid, track)
     if status in ("doing", "review", "done"):
-        open_deps = [x for x in node_deps(d, node) if node_status(d, x) != "done"]
+        open_deps = [x for x in node_deps(d, node) if node_status(d, x) not in ("done", CANCELED)]
         if open_deps:
             raise ValueError(f"{_fmt_node(node)} depends on unfinished {[_fmt_node(x) for x in open_deps]}")
     if len(tr) > 1:
@@ -244,6 +263,8 @@ def epic_status(ts):
 
 
 def render(d):
+    canceled = [t for t in d["tickets"] if t["status"] == CANCELED]
+    d = active(d)      # canceled tickets are out of scope: not counted, not scheduled (listed in their own section)
     ids = by_id(d)
     per_epic = defaultdict(list)
     for t in d["tickets"]:
@@ -258,7 +279,7 @@ def render(d):
     w = out.append
     w(f"# {d['project']} — Tickets & Progress\n")
     w("> Generated from `tickets.json` by `tickets_tool.py render`. **Do not edit by hand.**")
-    w("> Plan reference: `PLAN.md`. Legend: ⬜ todo · 🔵 doing · 🟣 review · 🟥 blocked · ✅ done")
+    w("> Plan reference: `PLAN.md`. Legend: ⬜ todo · 🔵 doing · 🟣 review · 🟥 blocked · ✅ done · 🚫 canceled (out of scope, not counted)")
     w("> **Schedule, progress and what blocks what: see [GANTT.md](GANTT.md).**\n")
     w("## Overall\n")
     w(f"`{bar(done, total, 30)}` **{done}/{total} done ({100*done//total}%)**\n")
@@ -338,6 +359,16 @@ def render(d):
         for t in blocked:
             w(f"- 🟥 **{t['id']}** {t['title']} {('— ' + t['pr']) if t['pr'] else ''}")
     w("")
+
+    if canceled:
+        w("## Canceled (out of scope: not counted, not scheduled, do not gate anything)\n")
+        w("| | ID | Title | Why | Replaced by |")
+        w("|---|---|---|---|---|")
+        for t in canceled:
+            why = (t.get("cancel_reason") or "—").replace("|", "/")
+            repl = ", ".join(t.get("superseded_by", [])) or "—"
+            w(f"| {ICON[CANCELED]} | {t['id']} | {t['title']} | {why} | {repl} |")
+        w("")
 
     w("## Tickets by epic\n")
     for e in d["epics"]:
@@ -788,7 +819,7 @@ def _gantt_text_tracks(d, start):
 
 
 def write_gantt(d):
-    GANTT_MD.write_text(gantt_text(d), encoding="utf-8")
+    GANTT_MD.write_text(gantt_text(active(d)), encoding="utf-8")
 
 
 def main():
@@ -818,11 +849,12 @@ def main():
     if a.cmd == "check":
         print(f"OK: {len(d['tickets'])} tickets, {len(d['epics'])} epics, no dependency errors")
     elif a.cmd == "next":
-        if has_tracks(d):
-            for t, k in ready_nodes(d):
+        live = active(d)
+        if has_tracks(live):
+            for t, k in ready_nodes(live):
                 print(f"{t['id']}  [{t['size']}]  {('[' + k + '] ') if k else ''}{t['title']}")
         else:
-            for t in ready(d):
+            for t in ready(live):
                 print(f"{t['id']}  [{t['size']}]  {t['title']}")
     elif a.cmd == "render":
         render(d)

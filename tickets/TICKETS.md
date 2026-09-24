@@ -1,21 +1,21 @@
 # bootlab-esp — Tickets & Progress
 
 > Generated from `tickets.json` by `tickets_tool.py render`. **Do not edit by hand.**
-> Plan reference: `PLAN.md`. Legend: ⬜ todo · 🔵 doing · 🟣 review · 🟥 blocked · ✅ done
+> Plan reference: `PLAN.md`. Legend: ⬜ todo · 🔵 doing · 🟣 review · 🟥 blocked · ✅ done · 🚫 canceled (out of scope, not counted)
 > **Schedule, progress and what blocks what: see [GANTT.md](GANTT.md).**
 
 ## Overall
 
 `█████████████████████░░░░░░░░░` **41/59 done (69%)**
 
-- **IDF track:** `████████████████░░░░` 36/46
+- **IDF track:** `███████████████░░░░░` 35/46
 - **Zephyr track:** `██████████████░░░░░░` 28/40
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 5
-    "doing" : 7
-    "blocked" : 6
+    "todo" : 7
+    "doing" : 6
+    "blocked" : 5
     "done" : 41
 ```
 
@@ -28,7 +28,7 @@ pie showData title Ticket status
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `████████████` | 9/9 | ✅ done | §4.2, §5, §6, §7.2, §8 P1 |
 | E2 | P2 | ESP32-S3 #1 — Zephyr | `███████████░` | 10/11 | 🔵 doing | §4.1, §5, §6, §7.1, §8 P2 |
 | E3 | P3 | labflash CLI | `████████████` | 7/7 | ✅ done | §8 P3 |
-| E4 | P4 | HIL tests + CI | `██░░░░░░░░░░` | 2/10 | 🟥 blocked | §8 P4 |
+| E4 | P4 | HIL tests + CI | `██░░░░░░░░░░` | 2/10 | 🔵 doing | §8 P4 |
 | E5 | P5 | Soak, docs, handover | `█░░░░░░░░░░░` | 1/10 | 🟥 blocked | §8 P5 |
 
 ## Epic dependency graph
@@ -40,7 +40,7 @@ flowchart LR
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>9/9"]:::done
     E2["P2 ESP32-S3 #1 — Zephyr<br/>10/11"]:::doing
     E3["P3 labflash CLI<br/>7/7"]:::done
-    E4["P4 HIL tests + CI<br/>2/10"]:::blocked
+    E4["P4 HIL tests + CI<br/>2/10"]:::doing
     E5["P5 Soak, docs, handover<br/>1/10"]:::blocked
     E0 --> EL
     E1 --> E3
@@ -60,12 +60,19 @@ flowchart LR
 
 ## Blocked
 
-- 🟥 **BL-056a** IDF acceptance re-run on the RPi4 (OTA-programming host) 
 - 🟥 **BL-061** README quick start 
 - 🟥 **BL-062** Recovery runbook + adding-a-board guide 
 - 🟥 **BL-063** Final PLAN.md update 
 - 🟥 **BL-063a** IDF lessons learned (retrospective) 
 - 🟥 **BL-063b** HTML presentation of the IDF track 
+
+## Canceled (out of scope: not counted, not scheduled, do not gate anything)
+
+| | ID | Title | Why | Replaced by |
+|---|---|---|---|---|
+| 🚫 | BL-056 | [CANCELED: RPi4] hil.yml self-hosted runner on RPi4 | RPi4 cannot be depended on (owner decision 2026-09-24): live under-voltage while serving an OTA (vcgencmd get_throttled 0x50005, download stalled at 196,608 of 1,249,280 bytes), documented power instability (docs/rpi4_limitations.md 2.1), Bluetooth had to be unmasked by hand, no board attached by default. See docs/LESSONS_LEARNED.md Traps 20-23. This work moves to the development machine (workstation: Windows-native tools + WSL). Its IDF track was completed and documented (runner rpi4-hil registered, isolation checks passed on a real dispatch, scripts/evidence/bl056_rpi4_runner.md); that work stays on record but no longer counts, and the runner should be deregistered. | BL-070 |
+| 🚫 | BL-056a | [CANCELED: RPi4] IDF acceptance re-run on the RPi4 (OTA-programming host) | RPi4 cannot be depended on (owner decision 2026-09-24): live under-voltage while serving an OTA (vcgencmd get_throttled 0x50005, download stalled at 196,608 of 1,249,280 bytes), documented power instability (docs/rpi4_limitations.md 2.1), Bluetooth had to be unmasked by hand, no board attached by default. See docs/LESSONS_LEARNED.md Traps 20-23. This work moves to the development machine (workstation: Windows-native tools + WSL). | BL-071 |
+| 🚫 | BL-068 | [CANCELED: RPi4] [Advanced] Multi-board randomized OTA soak: two boards in random parallel (400 cycles) | RPi4 cannot be depended on (owner decision 2026-09-24): live under-voltage while serving an OTA (vcgencmd get_throttled 0x50005, download stalled at 196,608 of 1,249,280 bytes), documented power instability (docs/rpi4_limitations.md 2.1), Bluetooth had to be unmasked by hand, no board attached by default. See docs/LESSONS_LEARNED.md Traps 20-23. This work moves to the development machine (workstation: Windows-native tools + WSL). | BL-072 |
 
 ## Tickets by epic
 
@@ -777,10 +784,10 @@ pytest with mocked BLE / serial / HTTP. [DONE 2026-09-22 -- 180 unit tests passi
 | 🔵 | BL-053 | HIL T10–T15 LABID + identity + USB | S | zephyr, idf | BL-050 |  |
 | 🔵 | BL-054 | (Stretch) HIL T17 power cut | M | zephyr, idf | BL-050 |  |
 | 🔵 | BL-055 | build.yml cloud CI | M | host | BL-028, BL-036 |  |
-| 🔵 | BL-056 | hil.yml self-hosted runner on RPi4 | M | host | BL-055, BL-051 |  |
-| 🟥 | BL-056a | IDF acceptance re-run on the RPi4 (OTA-programming host) | M | host, idf | BL-043, BL-056 |  |
 | ✅ | BL-057a | Full HIL suite green 3× in a row (IDF board) | S | idf | BL-051, BL-052, BL-053 |  |
-| ⬜ | BL-057b | Full HIL suite green 3× in a row (Zephyr board) | S | zephyr | BL-051, BL-052, BL-053, BL-056 |  |
+| ⬜ | BL-057b | Full HIL suite green 3× in a row (Zephyr board) | M | zephyr | BL-051, BL-052, BL-053, BL-070 |  |
+| ⬜ | BL-070 | hil.yml self-hosted runner on the development machine (workstation) | L | host | BL-055, BL-051 |  |
+| ⬜ | BL-071 | IDF acceptance re-run from the development machine (OTA-programming host, native Windows) | L | host, idf | BL-043, BL-070 |  |
 
 <details><summary>✅ <b>BL-050</b> — HIL framework: fixtures, markers, artifacts</summary>
 
@@ -892,42 +899,6 @@ Builds, unit tests, fuzz smoke, forbidden-config grep, CI test keys.
 
 </details>
 
-<details><summary>🔵 <b>BL-056</b> — hil.yml self-hosted runner on RPi4</summary>
-
-- **Size:** M (1–2 days)  
-- **Boards:** host  
-- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
-- **Depends on:** BL-055, BL-051  
-- **Plan:** §8 P4
-
-Private repo, dedicated runner user, concurrency: hil. [REVIEW 2026-09-21 (independent re-check): status reverted. Workflow file only; AC1 not shown.] [DONE 2026-09-22 (idf track): self-hosted runner 'rpi4-hil' registered on msa-linuxRPi4 (labels self-hosted,hil; no sudo; no keys/), confirmed online via GitHub API. hil.yml dispatched for real (workflow_dispatch, run 35763148956): 'Verify runner isolation & security' step PASSED for real (no sudo, no keys/ present); 'Install dependencies' PASSED; 'Run HIL tests (IDF track)' FAILED cleanly with 'live HIL: board serial port not found' on all 19 idf tests -- expected, no board is physically attached to the RPi4 yet (docs/rpi4_limitations.md Sec 2.2). That remaining gap is BL-056a's job (owner action: attach a board + unmask Bluetooth), not this ticket's.
-
-**Acceptance criteria**
-*IDF scope*
-- [x] HIL job runs on PR for the idf board
-- [x] Runner has no sudo and no access to keys/
-*Zephyr scope*
-- [ ] HIL job runs on PR for the zephyr board
-
-</details>
-
-<details><summary>🟥 <b>BL-056a</b> — IDF acceptance re-run on the RPi4 (OTA-programming host)</summary>
-
-- **Size:** M (1–2 days)  
-- **Boards:** host, idf  
-- **Tracks:** IDF 🟥 blocked  
-- **Depends on:** BL-043, BL-056  
-- **Plan:** §8 P4
-
-Owner decision 2026-09-21: development stays on the current machine (WSL2 + Windows-native tools); the RPi4 has limitations and is used for OTA programming. When the IDF track is done, re-run the IDF acceptance from the RPi4. Builds stay on the development machine / CI; the RPi4 programs and verifies the boards. [REVIEW 2026-09-21 (independent re-check): status reverted from 'PASS with documented boundary' to blocked: the update from the RPi4 never ran.]
-
-**Acceptance criteria**
-- [ ] labflash update idf --transport ble and wifi both succeed from the RPi4
-- [ ] LABID VER? and identity verified from the RPi4 after each update
-- [ ] RPi4 limitations documented (what runs there, what stays on the dev machine or CI)
-
-</details>
-
 <details><summary>✅ <b>BL-057a</b> — Full HIL suite green 3× in a row (IDF board)</summary>
 
 - **Size:** S (≤ 0.5 day)  
@@ -946,16 +917,53 @@ Split from BL-057 on 2026-09-22 (owner decision: drop the BL-056/RPi4-runner dep
 
 <details><summary>⬜ <b>BL-057b</b> — Full HIL suite green 3× in a row (Zephyr board)</summary>
 
-- **Size:** S (≤ 0.5 day)  
+- **Size:** M (1–2 days)  
 - **Boards:** zephyr  
 - **Tracks:** Zephyr ⬜ todo  
-- **Depends on:** BL-051, BL-052, BL-053, BL-056  
+- **Depends on:** BL-051, BL-052, BL-053, BL-070  
 - **Plan:** §8 P4
 
-Split from BL-057 on 2026-09-22. REMAINING: 3 consecutive live green whole-suite runs on lab-esp-zephyr. Kept dependent on BL-056 (RPi4/self-hosted runner) since this half has not run live yet; Zephyr hold applies.
+Split from BL-057 on 2026-09-22. REMAINING: 3 consecutive live green whole-suite runs on lab-esp-zephyr. Kept dependent on BL-070 (self-hosted runner on the development machine; BL-056 on the RPi4 was canceled 2026-09-24) since this half has not run live yet; Zephyr hold applies.
 
 **Acceptance criteria**
 - [ ] 3 consecutive green runs on the zephyr board
+
+</details>
+
+<details><summary>⬜ <b>BL-070</b> — hil.yml self-hosted runner on the development machine (workstation)</summary>
+
+- **Size:** L (3–5 days)  
+- **Boards:** host  
+- **Tracks:** IDF ⬜ todo · Zephyr ⬜ todo  
+- **Depends on:** BL-055, BL-051  
+- **Plan:** §8 P4
+
+Machine version of BL-056 (canceled: RPi4 cannot be depended on). Register a GitHub self-hosted runner on the development workstation (native Windows, where the boards, COM ports and the BLE adapter are) with labels self-hosted,hil, a dedicated low-privilege runner user, concurrency: hil, and run hil.yml on PR. Harder than the Pi version and therefore sized L: (1) the workstation HOLDS the signing keys (keys/, idf_sbv2.pem), so the runner user must be proven unable to read them, which was free on the Pi; (2) the runner shares the machine and the boards with the developer and with long soaks (BL-060/BL-067), so it needs a lock or a schedule so a PR run never opens a COM port a soak already holds (see docs/LESSONS_LEARNED.md Traps 9, 12, 13); (3) Windows service setup, not systemd. R14 still applies: native Windows only, never WSL for serial. The earlier Pi runner 'rpi4-hil' should be deregistered by the owner.
+
+**Acceptance criteria**
+*IDF scope*
+- [ ] HIL job runs on PR for the idf board
+- [ ] Runner user cannot read keys/ or idf_sbv2.pem (verified by the workflow's isolation step)
+- [ ] A PR run and a running soak cannot collide on the same COM port
+*Zephyr scope*
+- [ ] HIL job runs on PR for the zephyr board
+
+</details>
+
+<details><summary>⬜ <b>BL-071</b> — IDF acceptance re-run from the development machine (OTA-programming host, native Windows)</summary>
+
+- **Size:** L (3–5 days)  
+- **Boards:** host, idf  
+- **Tracks:** IDF ⬜ todo  
+- **Depends on:** BL-043, BL-070  
+- **Plan:** §8 P4
+
+Machine version of BL-056a (canceled: RPi4 cannot be depended on). Re-run the IDF acceptance with `labflash update idf` from the workstation's native Windows environment, not WSL and not curl: both transports, verified through LABID after every update, and document what runs on the machine, what stays in WSL (builds, signing), and what CI does. Sized L because it also has to cover what the Pi version never reached: BLE from a native host, LABID checks (BL-056a's AC2 used curl over HTTPS only), and a clean-checkout run (the Pi setup showed that credentials, keys, images, provisioning and extra pip packages are needed: docs/LESSONS_LEARNED.md Trap 23). BL-060's live soak evidence can be reused where it applies.
+
+**Acceptance criteria**
+- [ ] labflash update idf --transport ble and wifi both succeed from the development machine (native Windows)
+- [ ] LABID VER? and identity verified after each update
+- [ ] Host limitations documented: what runs on the machine, what stays in WSL or CI
 
 </details>
 
@@ -967,12 +975,12 @@ Split from BL-057 on 2026-09-22. REMAINING: 3 consecutive live green whole-suite
 | 🟥 | BL-061 | README quick start | S | host | BL-057a, BL-057b |  |
 | 🟥 | BL-062 | Recovery runbook + adding-a-board guide | S | host | BL-057a, BL-057b |  |
 | 🟥 | BL-063 | Final PLAN.md update | S | host | BL-060 |  |
-| 🟥 | BL-063a | IDF lessons learned (retrospective) | S | host | BL-060, BL-061, BL-062, BL-063, BL-056a |  |
+| 🟥 | BL-063a | IDF lessons learned (retrospective) | S | host | BL-060, BL-061, BL-062, BL-063, BL-071 |  |
 | 🟥 | BL-063b | HTML presentation of the IDF track | M | host | BL-063a |  |
 | ✅ | BL-066 | GitHub Pages project showcase & presentation deck (Dual-OS, challenges, lessons learned) | M | host | — |  |
 | ⬜ | BL-067 | [Advanced] Heavy randomized OTA soak: 4 good + failure variants, random transport (200 cycles, IDF board 1) | L | idf | BL-060, BL-069 |  |
-| ⬜ | BL-068 | [Advanced] Multi-board randomized OTA soak: two boards in random parallel (400 cycles) | M | idf | BL-067 |  |
 | ⬜ | BL-069 | [Advanced] Random-variant image generator and signed image pool (varied footprint, both OTA slots) | L | idf | BL-060 |  |
+| ⬜ | BL-072 | [Advanced] Multi-board randomized OTA soak: two boards in random parallel on one machine (400 cycles) | L | idf | BL-067 |  |
 
 <details><summary>⬜ <b>BL-060</b> — Overnight soak ×100</summary>
 
@@ -1053,7 +1061,7 @@ Pinned versions, Zephyr partitions, deviations. [REVIEW 2026-09-21 (independent 
 - **Size:** S (≤ 0.5 day)  
 - **Boards:** host  
 - **Tracks:** IDF 🟥 blocked  
-- **Depends on:** BL-060, BL-061, BL-062, BL-063, BL-056a  
+- **Depends on:** BL-060, BL-061, BL-062, BL-063, BL-071  
 - **Plan:** §8 P5
 
 Retrospective after the IDF board is complete, BEFORE any Zephyr work starts, so what the IDF track taught shapes the Zephyr plan (PLAN R13/R14/R15, USB reset behaviour, vacuous evidence, optional subsystems, ...). [REVIEW 2026-09-21 (independent re-check): held by dependencies.]
@@ -1122,25 +1130,6 @@ Follow-up to BL-060 (strict v1<->v2 alternation, wifi,wifi,ble,ble). Extend test
 
 </details>
 
-<details><summary>⬜ <b>BL-068</b> — [Advanced] Multi-board randomized OTA soak: two boards in random parallel (400 cycles)</summary>
-
-- **Size:** M (1–2 days)  
-- **Boards:** idf  
-- **Tracks:** IDF ⬜ todo  
-- **Depends on:** BL-067  
-- **Plan:** §8 P5
-
-Run the BL-067 randomized soak on two physical boards in parallel from two hosts: board 1 from the workstation and the second board (ex-Zephyr hardware, MAC ac:a7:04:2c:3b:04, IP 192.168.1.153, flashed with the IDF app) from the RPi4, 400 cycles in total across the boards. Same seed and variant set on both boards so results are comparable, one report per board (never mixed inside one run). Goal: catch board-to-board differences (flash chip, PSRAM, RF, power) and shared-air effects (2.4 GHz, BLE scanning). Prerequisite found during the Pi setup (docs/LESSONS_LEARNED.md Traps 20-23): the RPi4 must have stable power (vcgencmd get_throttled live bits 0x1/0x4 stay clear during a full OTA transfer), preferably a powered USB hub for the ESP and Ethernet for the Pi; the board needs provisioning, a Pi-specific rig file, a ufw rule for the OTA port, and Python 3.13 strict-TLS handling (fixed in 13a1d2c). The Zephyr firmware is out of scope (different transport, BL-064/BL-065 open).
-
-**Acceptance criteria**
-- [ ] Second board runs the IDF app: provisioned, WiFi + BLE OTA both proven from the RPi4 (one completed WiFi OTA and one BLE OTA)
-- [ ] RPi4 power verified: get_throttled live bits stay clear through a full OTA transfer
-- [ ] 400 randomized cycles across both boards, run in parallel, same seed and variant set per board
-- [ ] Outcome pass rate >= 99 % per board, with one report.json per board
-- [ ] Any board-specific difference between the two boards is documented with root cause
-
-</details>
-
 <details><summary>⬜ <b>BL-069</b> — [Advanced] Random-variant image generator and signed image pool (varied footprint, both OTA slots)</summary>
 
 - **Size:** L (3–5 days)  
@@ -1158,6 +1147,25 @@ Generate a pool of valid, signed IDF images whose footprint differs from the fix
 - [ ] Safe-pin allowlist documented with the reason for each excluded pin group; the generator refuses any pin outside it
 - [ ] Every valid pool image installed and confirmed on both OTA slots of board 1 over WiFi and over BLE at least once
 - [ ] Generator never touches the LABID, WiFi, BLE OTA or confirm code paths (checked by test)
+
+</details>
+
+<details><summary>⬜ <b>BL-072</b> — [Advanced] Multi-board randomized OTA soak: two boards in random parallel on one machine (400 cycles)</summary>
+
+- **Size:** L (3–5 days)  
+- **Boards:** idf  
+- **Tracks:** IDF ⬜ todo  
+- **Depends on:** BL-067  
+- **Plan:** §8 P5
+
+Machine version of BL-068 (canceled: the second board was to run from the RPi4, which cannot be depended on). Run the BL-067 randomized soak on TWO boards in parallel from the SAME workstation (native Windows): board 1 (uid E072A1AA2390, IP 192.168.1.152) and the second board (ex-Zephyr hardware, MAC ac:a7:04:2c:3b:04, flashed with the IDF app and provisioned, IP 192.168.1.153), 400 cycles in total. Same seed and variant set on both boards, one report per board, never mixed inside one run. Sized L because one host now has to keep two runs apart: separate COM ports and console logs, a different --http-port per run (both default to 8443), a per-board rig file so the BLE scan is pinned by MAC (find_device refuses to guess, but only pins when a MAC is known), and one BLE adapter serving two boards (BLE cycles will be slower when they overlap; decide whether BLE cycles are serialized with a lock). The second board must first be flashed and provisioned from the workstation (docs/LESSONS_LEARNED.md Trap 23). Goal unchanged: catch board-to-board differences (flash chip, PSRAM, RF, power).
+
+**Acceptance criteria**
+- [ ] Second board runs the IDF app: provisioned, WiFi + BLE OTA both proven from the workstation
+- [ ] Two runs in parallel from one machine without port, OTA-server-port or BLE-target collisions (each run pinned to its own board)
+- [ ] 400 randomized cycles across both boards, same seed and variant set per board
+- [ ] Outcome pass rate >= 99 % per board, with one report.json per board
+- [ ] Any board-specific difference between the two boards is documented with root cause
 
 </details>
 
@@ -1223,10 +1231,10 @@ flowchart TB
         BL053["BL-053"]:::doing
         BL054["BL-054"]:::doing
         BL055["BL-055"]:::doing
-        BL056["BL-056"]:::doing
-        BL056a["BL-056a"]:::blocked
         BL057a["BL-057a"]:::done
         BL057b["BL-057b"]:::todo
+        BL070["BL-070"]:::todo
+        BL071["BL-071"]:::todo
     end
     subgraph E5_g["P5 Soak, docs, handover"]
         BL060["BL-060"]:::todo
@@ -1237,8 +1245,8 @@ flowchart TB
         BL063b["BL-063b"]:::blocked
         BL066["BL-066"]:::done
         BL067["BL-067"]:::todo
-        BL068["BL-068"]:::todo
         BL069["BL-069"]:::todo
+        BL072["BL-072"]:::todo
     end
     BL001 --> BL002
     BL002 --> BL003
@@ -1314,17 +1322,13 @@ flowchart TB
     BL050 --> BL054
     BL028 --> BL055
     BL036 --> BL055
-    BL055 --> BL056
-    BL051 --> BL056
-    BL043 --> BL056a
-    BL056 --> BL056a
     BL051 --> BL057a
     BL052 --> BL057a
     BL053 --> BL057a
     BL051 --> BL057b
     BL052 --> BL057b
     BL053 --> BL057b
-    BL056 --> BL057b
+    BL070 --> BL057b
     BL057a --> BL060
     BL057b --> BL060
     BL057a --> BL061
@@ -1336,14 +1340,18 @@ flowchart TB
     BL061 --> BL063a
     BL062 --> BL063a
     BL063 --> BL063a
-    BL056a --> BL063a
+    BL071 --> BL063a
     BL063a --> BL063b
     BL035 --> BL064
     BL035 --> BL065
     BL060 --> BL067
     BL069 --> BL067
-    BL067 --> BL068
     BL060 --> BL069
+    BL055 --> BL070
+    BL051 --> BL070
+    BL043 --> BL071
+    BL070 --> BL071
+    BL067 --> BL072
     classDef todo fill:#eeeeee,stroke:#999,color:#333
     classDef doing fill:#cfe3ff,stroke:#2f6fdb,color:#123
     classDef blocked fill:#ffd6d6,stroke:#c62828,color:#400
