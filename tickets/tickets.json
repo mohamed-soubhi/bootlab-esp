@@ -1133,8 +1133,8 @@
         "Green on main",
         "Signed artifacts uploaded"
       ],
-      "status": "doing",
-      "pr": "",
+      "status": "done",
+      "pr": "https://github.com/mohamed-soubhi/bootlab-esp/actions/runs/35943848028",
       "tracks": [
         "idf",
         "zephyr"
@@ -1151,7 +1151,7 @@
       },
       "track_status": {
         "idf": "done",
-        "zephyr": "todo"
+        "zephyr": "done"
       }
     },
     {

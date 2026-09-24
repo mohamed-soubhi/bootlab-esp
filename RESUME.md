@@ -37,7 +37,15 @@ fill the Evidence table in `docs/BL060_SOAK_TEST.md`, check BLE duration + pass 
 final state v1), then update BL-060 in `tickets/TICKETS.md` and `docs/LESSONS_LEARNED.md` if warranted.
 Open question: is BLE throughput (conn interval flipping 48<->12) a real defect or just slow-by-design.
 
-## BL-055[zephyr] — IN PROGRESS, handoff checkpoint (this instance, 2026-09-23)
+## BL-055[zephyr] — DONE 2026-09-24 (green CI run 35943848028); the history below is kept for context
+
+Resolved on 2026-09-24. Three more CI blockers were found and fixed after the ones listed below: (1) the toolchain
+tarball was extracted with `--strip-components=1`, so `CROSS_COMPILE` pointed one directory too deep and `test -x` failed
+silently (`cc57ae3`); (2) Zephyr's `soc/espressif` CMake needs `esptool>=5.0.2` on PATH (`707254b`); (3) separately, the
+Python host job never installed `smpclient`, so `mypy` failed and the unit tests had not been running in CI (`51b2afd`).
+All 5 CI jobs are green on `master`, and the signed Zephyr artifacts are uploaded.
+
+## (history) BL-055[zephyr] — was IN PROGRESS, handoff checkpoint (this instance, 2026-09-23)
 
 Added a `zephyr-build` job to `.github/workflows/build.yml` (mirrors the existing working
 `idf-build` job: west/toolchain setup, CI-only signing keys, build+sign all 5 variants, upload

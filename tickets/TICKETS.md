@@ -6,17 +6,17 @@
 
 ## Overall
 
-`████████████████████░░░░░░░░░░` **41/60 done (68%)**
+`█████████████████████░░░░░░░░░` **42/60 done (70%)**
 
 - **IDF track:** `███████████████░░░░░` 36/47
-- **Zephyr track:** `██████████████░░░░░░` 28/41
+- **Zephyr track:** `██████████████░░░░░░` 29/41
 
 ```mermaid
 pie showData title Ticket status
     "todo" : 7
-    "doing" : 7
+    "doing" : 6
     "blocked" : 5
-    "done" : 41
+    "done" : 42
 ```
 
 ## Epics
@@ -28,7 +28,7 @@ pie showData title Ticket status
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `████████████` | 9/9 | ✅ done | §4.2, §5, §6, §7.2, §8 P1 |
 | E2 | P2 | ESP32-S3 #1 — Zephyr | `███████████░` | 10/11 | 🔵 doing | §4.1, §5, §6, §7.1, §8 P2 |
 | E3 | P3 | labflash CLI | `████████████` | 7/7 | ✅ done | §8 P3 |
-| E4 | P4 | HIL tests + CI | `██░░░░░░░░░░` | 2/11 | 🔵 doing | §8 P4 |
+| E4 | P4 | HIL tests + CI | `███░░░░░░░░░` | 3/11 | 🔵 doing | §8 P4 |
 | E5 | P5 | Soak, docs, handover | `█░░░░░░░░░░░` | 1/10 | 🟥 blocked | §8 P5 |
 
 ## Epic dependency graph
@@ -40,7 +40,7 @@ flowchart LR
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>9/9"]:::done
     E2["P2 ESP32-S3 #1 — Zephyr<br/>10/11"]:::doing
     E3["P3 labflash CLI<br/>7/7"]:::done
-    E4["P4 HIL tests + CI<br/>2/11"]:::doing
+    E4["P4 HIL tests + CI<br/>3/11"]:::doing
     E5["P5 Soak, docs, handover<br/>1/10"]:::blocked
     E0 --> EL
     E1 --> E3
@@ -782,7 +782,7 @@ pytest with mocked BLE / serial / HTTP. [DONE 2026-09-22 -- 180 unit tests passi
 | 🔵 | BL-052 | HIL T04–T09 rollback, security, robustness | M | zephyr, idf | BL-050 |  |
 | 🔵 | BL-053 | HIL T10–T15 LABID + identity + USB | S | zephyr, idf | BL-050 |  |
 | 🔵 | BL-054 | (Stretch) HIL T17 power cut | M | zephyr, idf | BL-050 |  |
-| 🔵 | BL-055 | build.yml cloud CI | M | host | BL-028, BL-036 |  |
+| ✅ | BL-055 | build.yml cloud CI | M | host | BL-028, BL-036 | [link](https://github.com/mohamed-soubhi/bootlab-esp/actions/runs/35943848028) |
 | 🔵 | BL-056 | hil.yml self-hosted runner on RPi4 | M | host | BL-055, BL-051 | [link](https://github.com/mohamed-soubhi/bootlab-esp/actions/runs/35939632759) |
 | ✅ | BL-057a | Full HIL suite green 3× in a row (IDF board) | S | idf | BL-051, BL-052, BL-053 |  |
 | ⬜ | BL-057b | Full HIL suite green 3× in a row (Zephyr board) | M | zephyr | BL-051, BL-052, BL-053, BL-070 |  |
@@ -879,11 +879,11 @@ Needs per-port switchable hub.
 
 </details>
 
-<details><summary>🔵 <b>BL-055</b> — build.yml cloud CI</summary>
+<details><summary>✅ <b>BL-055</b> — build.yml cloud CI</summary>
 
 - **Size:** M (1–2 days)  
 - **Boards:** host  
-- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
+- **Tracks:** IDF ✅ done · Zephyr ✅ done  
 - **Depends on:** BL-028, BL-036  
 - **Plan:** §8 P4
 
@@ -894,8 +894,8 @@ Builds, unit tests, fuzz smoke, forbidden-config grep, CI test keys.
 - [x] Green on main for the IDF build
 - [x] Signed IDF artifacts uploaded
 *Zephyr scope*
-- [ ] Green on main for the Zephyr build
-- [ ] Signed Zephyr artifacts uploaded
+- [x] Green on main for the Zephyr build
+- [x] Signed Zephyr artifacts uploaded
 
 </details>
 
@@ -1249,7 +1249,7 @@ flowchart TB
         BL052["BL-052"]:::doing
         BL053["BL-053"]:::doing
         BL054["BL-054"]:::doing
-        BL055["BL-055"]:::doing
+        BL055["BL-055"]:::done
         BL056["BL-056"]:::doing
         BL057a["BL-057a"]:::done
         BL057b["BL-057b"]:::todo
