@@ -168,6 +168,8 @@ jobs:
       - name: Install Zephyr's own Python requirements
         run: |
           pip install -r "$ZEPHYR_BASE/scripts/requirements.txt"
+          # zephyr/soc/espressif/common/CMakeLists.txt requires esptool>=5.0.2 on PATH (not in requirements.txt)
+          pip install "esptool>=5.0.2"
 
       - name: Fetch HAL blobs (hal_espressif) and the Xtensa toolchain directly from crosstool-NG
         run: |
