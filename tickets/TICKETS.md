@@ -3,6 +3,7 @@
 > Generated from `tickets.json` by `tickets_tool.py render`. **Do not edit by hand.**
 > Plan reference: `PLAN.md`. Legend: ⬜ todo · 🔵 doing · 🟣 review · 🟥 blocked · ✅ done · 🚫 canceled (out of scope, not counted)
 > **Schedule, progress and what blocks what: see [GANTT.md](GANTT.md).**
+> **How the project is run (V-model, ticket loop, reviews): see [SDLC.md](SDLC.md).**
 
 ## Overall
 

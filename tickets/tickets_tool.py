@@ -280,7 +280,8 @@ def render(d):
     w(f"# {d['project']} — Tickets & Progress\n")
     w("> Generated from `tickets.json` by `tickets_tool.py render`. **Do not edit by hand.**")
     w("> Plan reference: `PLAN.md`. Legend: ⬜ todo · 🔵 doing · 🟣 review · 🟥 blocked · ✅ done · 🚫 canceled (out of scope, not counted)")
-    w("> **Schedule, progress and what blocks what: see [GANTT.md](GANTT.md).**\n")
+    w("> **Schedule, progress and what blocks what: see [GANTT.md](GANTT.md).**")
+    w("> **How the project is run (V-model, ticket loop, reviews): see [SDLC.md](SDLC.md).**\n")
     w("## Overall\n")
     w(f"`{bar(done, total, 30)}` **{done}/{total} done ({100*done//total}%)**\n")
     if has_tracks(d):
