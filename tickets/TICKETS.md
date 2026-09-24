@@ -6,15 +6,15 @@
 
 ## Overall
 
-`█████████████████████░░░░░░░░░` **41/59 done (69%)**
+`████████████████████░░░░░░░░░░` **41/60 done (68%)**
 
-- **IDF track:** `███████████████░░░░░` 35/46
-- **Zephyr track:** `██████████████░░░░░░` 28/40
+- **IDF track:** `███████████████░░░░░` 35/47
+- **Zephyr track:** `██████████████░░░░░░` 28/41
 
 ```mermaid
 pie showData title Ticket status
     "todo" : 7
-    "doing" : 6
+    "doing" : 7
     "blocked" : 5
     "done" : 41
 ```
@@ -28,7 +28,7 @@ pie showData title Ticket status
 | E1 | P1 | ESP32-S3 #2 — ESP-IDF | `████████████` | 9/9 | ✅ done | §4.2, §5, §6, §7.2, §8 P1 |
 | E2 | P2 | ESP32-S3 #1 — Zephyr | `███████████░` | 10/11 | 🔵 doing | §4.1, §5, §6, §7.1, §8 P2 |
 | E3 | P3 | labflash CLI | `████████████` | 7/7 | ✅ done | §8 P3 |
-| E4 | P4 | HIL tests + CI | `██░░░░░░░░░░` | 2/10 | 🔵 doing | §8 P4 |
+| E4 | P4 | HIL tests + CI | `██░░░░░░░░░░` | 2/11 | 🔵 doing | §8 P4 |
 | E5 | P5 | Soak, docs, handover | `█░░░░░░░░░░░` | 1/10 | 🟥 blocked | §8 P5 |
 
 ## Epic dependency graph
@@ -40,7 +40,7 @@ flowchart LR
     E1["P1 ESP32-S3 #2 — ESP-IDF<br/>9/9"]:::done
     E2["P2 ESP32-S3 #1 — Zephyr<br/>10/11"]:::doing
     E3["P3 labflash CLI<br/>7/7"]:::done
-    E4["P4 HIL tests + CI<br/>2/10"]:::doing
+    E4["P4 HIL tests + CI<br/>2/11"]:::doing
     E5["P5 Soak, docs, handover<br/>1/10"]:::blocked
     E0 --> EL
     E1 --> E3
@@ -70,7 +70,6 @@ flowchart LR
 
 | | ID | Title | Why | Replaced by |
 |---|---|---|---|---|
-| 🚫 | BL-056 | [CANCELED: RPi4] hil.yml self-hosted runner on RPi4 | RPi4 cannot be depended on (owner decision 2026-09-24): live under-voltage while serving an OTA (vcgencmd get_throttled 0x50005, download stalled at 196,608 of 1,249,280 bytes), documented power instability (docs/rpi4_limitations.md 2.1), Bluetooth had to be unmasked by hand, no board attached by default. See docs/LESSONS_LEARNED.md Traps 20-23. This work moves to the development machine (workstation: Windows-native tools + WSL). Its IDF track was completed and documented (runner rpi4-hil registered, isolation checks passed on a real dispatch, scripts/evidence/bl056_rpi4_runner.md); that work stays on record but no longer counts, and the runner should be deregistered. | BL-070 |
 | 🚫 | BL-056a | [CANCELED: RPi4] IDF acceptance re-run on the RPi4 (OTA-programming host) | RPi4 cannot be depended on (owner decision 2026-09-24): live under-voltage while serving an OTA (vcgencmd get_throttled 0x50005, download stalled at 196,608 of 1,249,280 bytes), documented power instability (docs/rpi4_limitations.md 2.1), Bluetooth had to be unmasked by hand, no board attached by default. See docs/LESSONS_LEARNED.md Traps 20-23. This work moves to the development machine (workstation: Windows-native tools + WSL). | BL-071 |
 | 🚫 | BL-068 | [CANCELED: RPi4] [Advanced] Multi-board randomized OTA soak: two boards in random parallel (400 cycles) | RPi4 cannot be depended on (owner decision 2026-09-24): live under-voltage while serving an OTA (vcgencmd get_throttled 0x50005, download stalled at 196,608 of 1,249,280 bytes), documented power instability (docs/rpi4_limitations.md 2.1), Bluetooth had to be unmasked by hand, no board attached by default. See docs/LESSONS_LEARNED.md Traps 20-23. This work moves to the development machine (workstation: Windows-native tools + WSL). | BL-072 |
 
@@ -784,6 +783,7 @@ pytest with mocked BLE / serial / HTTP. [DONE 2026-09-22 -- 180 unit tests passi
 | 🔵 | BL-053 | HIL T10–T15 LABID + identity + USB | S | zephyr, idf | BL-050 |  |
 | 🔵 | BL-054 | (Stretch) HIL T17 power cut | M | zephyr, idf | BL-050 |  |
 | 🔵 | BL-055 | build.yml cloud CI | M | host | BL-028, BL-036 |  |
+| 🔵 | BL-056 | hil.yml self-hosted runner on RPi4 | M | host | BL-055, BL-051 |  |
 | ✅ | BL-057a | Full HIL suite green 3× in a row (IDF board) | S | idf | BL-051, BL-052, BL-053 |  |
 | ⬜ | BL-057b | Full HIL suite green 3× in a row (Zephyr board) | M | zephyr | BL-051, BL-052, BL-053, BL-070 |  |
 | ⬜ | BL-070 | hil.yml self-hosted runner on the development machine (workstation) | L | host | BL-055, BL-051 |  |
@@ -899,6 +899,25 @@ Builds, unit tests, fuzz smoke, forbidden-config grep, CI test keys.
 
 </details>
 
+<details><summary>🔵 <b>BL-056</b> — hil.yml self-hosted runner on RPi4</summary>
+
+- **Size:** M (1–2 days)  
+- **Boards:** host  
+- **Tracks:** IDF 🔵 doing · Zephyr ⬜ todo  
+- **Depends on:** BL-055, BL-051  
+- **Plan:** §8 P4
+
+[REINSTATED 2026-09-24: the owner deleted the runner by mistake and wants it back; it was useful and is a good CI/CD demo. It is a secondary, demo/CI runner and is NOT on the critical path: soak, acceptance and HIL gating are done on the development machine (BL-070, BL-071, BL-072). Re-registration steps: scripts/evidence/bl056_rpi4_runner.md.] Private repo, dedicated runner user, concurrency: hil. [REVIEW 2026-09-21 (independent re-check): status reverted. Workflow file only; AC1 not shown.] [DONE 2026-09-22 (idf track): self-hosted runner 'rpi4-hil' registered on msa-linuxRPi4 (labels self-hosted,hil; no sudo; no keys/), confirmed online via GitHub API. hil.yml dispatched for real (workflow_dispatch, run 35763148956): 'Verify runner isolation & security' step PASSED for real (no sudo, no keys/ present); 'Install dependencies' PASSED; 'Run HIL tests (IDF track)' FAILED cleanly with 'live HIL: board serial port not found' on all 19 idf tests -- expected, no board is physically attached to the RPi4 yet (docs/rpi4_limitations.md Sec 2.2). That remaining gap is BL-056a's job (owner action: attach a board + unmask Bluetooth), not this ticket's.
+
+**Acceptance criteria**
+*IDF scope*
+- [ ] HIL job runs on PR for the idf board
+- [ ] Runner has no sudo and no access to keys/
+*Zephyr scope*
+- [ ] HIL job runs on PR for the zephyr board
+
+</details>
+
 <details><summary>✅ <b>BL-057a</b> — Full HIL suite green 3× in a row (IDF board)</summary>
 
 - **Size:** S (≤ 0.5 day)  
@@ -938,7 +957,7 @@ Split from BL-057 on 2026-09-22. REMAINING: 3 consecutive live green whole-suite
 - **Depends on:** BL-055, BL-051  
 - **Plan:** §8 P4
 
-Machine version of BL-056 (canceled: RPi4 cannot be depended on). Register a GitHub self-hosted runner on the development workstation (native Windows, where the boards, COM ports and the BLE adapter are) with labels self-hosted,hil, a dedicated low-privilege runner user, concurrency: hil, and run hil.yml on PR. Harder than the Pi version and therefore sized L: (1) the workstation HOLDS the signing keys (keys/, idf_sbv2.pem), so the runner user must be proven unable to read them, which was free on the Pi; (2) the runner shares the machine and the boards with the developer and with long soaks (BL-060/BL-067), so it needs a lock or a schedule so a PR run never opens a COM port a soak already holds (see docs/LESSONS_LEARNED.md Traps 9, 12, 13); (3) Windows service setup, not systemd. R14 still applies: native Windows only, never WSL for serial. The earlier Pi runner 'rpi4-hil' should be deregistered by the owner.
+Machine version of BL-056 (canceled: RPi4 cannot be depended on). Register a GitHub self-hosted runner on the development workstation (native Windows, where the boards, COM ports and the BLE adapter are) with labels self-hosted,hil, a dedicated low-privilege runner user, concurrency: hil, and run hil.yml on PR. Harder than the Pi version and therefore sized L: (1) the workstation HOLDS the signing keys (keys/, idf_sbv2.pem), so the runner user must be proven unable to read them, which was free on the Pi; (2) the runner shares the machine and the boards with the developer and with long soaks (BL-060/BL-067), so it needs a lock or a schedule so a PR run never opens a COM port a soak already holds (see docs/LESSONS_LEARNED.md Traps 9, 12, 13); (3) Windows service setup, not systemd. R14 still applies: native Windows only, never WSL for serial. The Pi runner 'rpi4-hil' (BL-056) stays as a secondary CI/CD demo runner, so give this workstation runner its own label (for example 'hil-ws') and point the board-driving jobs at it: with both runners labeled 'hil', a PR job could land on the Pi, which has no board wired for the tests.
 
 **Acceptance criteria**
 *IDF scope*
@@ -1231,6 +1250,7 @@ flowchart TB
         BL053["BL-053"]:::doing
         BL054["BL-054"]:::doing
         BL055["BL-055"]:::doing
+        BL056["BL-056"]:::doing
         BL057a["BL-057a"]:::done
         BL057b["BL-057b"]:::todo
         BL070["BL-070"]:::todo
@@ -1322,6 +1342,8 @@ flowchart TB
     BL050 --> BL054
     BL028 --> BL055
     BL036 --> BL055
+    BL055 --> BL056
+    BL051 --> BL056
     BL051 --> BL057a
     BL052 --> BL057a
     BL053 --> BL057a

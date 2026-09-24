@@ -1157,7 +1157,7 @@
     {
       "id": "BL-056",
       "epic": "E4",
-      "title": "[CANCELED: RPi4] hil.yml self-hosted runner on RPi4",
+      "title": "hil.yml self-hosted runner on RPi4",
       "size": "M",
       "boards": [
         "host"
@@ -1166,12 +1166,12 @@
         "BL-055",
         "BL-051"
       ],
-      "desc": "[CANCELED 2026-09-24 - RPi4] Superseded by BL-070 (same goal, done on the development machine). Private repo, dedicated runner user, concurrency: hil. [REVIEW 2026-09-21 (independent re-check): status reverted. Workflow file only; AC1 not shown.] [DONE 2026-09-22 (idf track): self-hosted runner 'rpi4-hil' registered on msa-linuxRPi4 (labels self-hosted,hil; no sudo; no keys/), confirmed online via GitHub API. hil.yml dispatched for real (workflow_dispatch, run 35763148956): 'Verify runner isolation & security' step PASSED for real (no sudo, no keys/ present); 'Install dependencies' PASSED; 'Run HIL tests (IDF track)' FAILED cleanly with 'live HIL: board serial port not found' on all 19 idf tests -- expected, no board is physically attached to the RPi4 yet (docs/rpi4_limitations.md Sec 2.2). That remaining gap is BL-056a's job (owner action: attach a board + unmask Bluetooth), not this ticket's.",
+      "desc": "[REINSTATED 2026-09-24: the owner deleted the runner by mistake and wants it back; it was useful and is a good CI/CD demo. It is a secondary, demo/CI runner and is NOT on the critical path: soak, acceptance and HIL gating are done on the development machine (BL-070, BL-071, BL-072). Re-registration steps: scripts/evidence/bl056_rpi4_runner.md.] Private repo, dedicated runner user, concurrency: hil. [REVIEW 2026-09-21 (independent re-check): status reverted. Workflow file only; AC1 not shown.] [DONE 2026-09-22 (idf track): self-hosted runner 'rpi4-hil' registered on msa-linuxRPi4 (labels self-hosted,hil; no sudo; no keys/), confirmed online via GitHub API. hil.yml dispatched for real (workflow_dispatch, run 35763148956): 'Verify runner isolation & security' step PASSED for real (no sudo, no keys/ present); 'Install dependencies' PASSED; 'Run HIL tests (IDF track)' FAILED cleanly with 'live HIL: board serial port not found' on all 19 idf tests -- expected, no board is physically attached to the RPi4 yet (docs/rpi4_limitations.md Sec 2.2). That remaining gap is BL-056a's job (owner action: attach a board + unmask Bluetooth), not this ticket's.",
       "ac": [
         "HIL job runs on PR",
         "Runner has no sudo and no access to keys/"
       ],
-      "status": "canceled",
+      "status": "doing",
       "pr": "",
       "tracks": [
         "idf",
@@ -1187,14 +1187,10 @@
         ]
       },
       "track_status": {
-        "idf": "done",
+        "idf": "doing",
         "zephyr": "todo"
       },
-      "block_reason": "idf track done (runner registered, security checks pass on a real dispatch). zephyr track stays todo behind the Zephyr hold (BL-063b) and BL-056a (no board attached to the RPi4 yet).",
-      "cancel_reason": "RPi4 cannot be depended on (owner decision 2026-09-24): live under-voltage while serving an OTA (vcgencmd get_throttled 0x50005, download stalled at 196,608 of 1,249,280 bytes), documented power instability (docs/rpi4_limitations.md 2.1), Bluetooth had to be unmasked by hand, no board attached by default. See docs/LESSONS_LEARNED.md Traps 20-23. This work moves to the development machine (workstation: Windows-native tools + WSL). Its IDF track was completed and documented (runner rpi4-hil registered, isolation checks passed on a real dispatch, scripts/evidence/bl056_rpi4_runner.md); that work stays on record but no longer counts, and the runner should be deregistered.",
-      "superseded_by": [
-        "BL-070"
-      ]
+      "block_reason": "idf track: runner 'rpi4-hil' was deleted by the owner on 2026-09-24; re-register it (runbook in scripts/evidence/bl056_rpi4_runner.md) and dispatch hil.yml to confirm, then it is done again. zephyr track stays todo behind the Zephyr hold (BL-063b)."
     },
     {
       "id": "BL-056a",
@@ -1651,7 +1647,7 @@
         "BL-055",
         "BL-051"
       ],
-      "desc": "Machine version of BL-056 (canceled: RPi4 cannot be depended on). Register a GitHub self-hosted runner on the development workstation (native Windows, where the boards, COM ports and the BLE adapter are) with labels self-hosted,hil, a dedicated low-privilege runner user, concurrency: hil, and run hil.yml on PR. Harder than the Pi version and therefore sized L: (1) the workstation HOLDS the signing keys (keys/, idf_sbv2.pem), so the runner user must be proven unable to read them, which was free on the Pi; (2) the runner shares the machine and the boards with the developer and with long soaks (BL-060/BL-067), so it needs a lock or a schedule so a PR run never opens a COM port a soak already holds (see docs/LESSONS_LEARNED.md Traps 9, 12, 13); (3) Windows service setup, not systemd. R14 still applies: native Windows only, never WSL for serial. The earlier Pi runner 'rpi4-hil' should be deregistered by the owner.",
+      "desc": "Machine version of BL-056 (canceled: RPi4 cannot be depended on). Register a GitHub self-hosted runner on the development workstation (native Windows, where the boards, COM ports and the BLE adapter are) with labels self-hosted,hil, a dedicated low-privilege runner user, concurrency: hil, and run hil.yml on PR. Harder than the Pi version and therefore sized L: (1) the workstation HOLDS the signing keys (keys/, idf_sbv2.pem), so the runner user must be proven unable to read them, which was free on the Pi; (2) the runner shares the machine and the boards with the developer and with long soaks (BL-060/BL-067), so it needs a lock or a schedule so a PR run never opens a COM port a soak already holds (see docs/LESSONS_LEARNED.md Traps 9, 12, 13); (3) Windows service setup, not systemd. R14 still applies: native Windows only, never WSL for serial. The Pi runner 'rpi4-hil' (BL-056) stays as a secondary CI/CD demo runner, so give this workstation runner its own label (for example 'hil-ws') and point the board-driving jobs at it: with both runners labeled 'hil', a PR job could land on the Pi, which has no board wired for the tests.",
       "ac": [
         "HIL job runs on PR",
         "Runner has no sudo/admin and no access to keys/"

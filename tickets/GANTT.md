@@ -7,8 +7,8 @@
 
 ## Progress
 
-- **IDF track:** `███████████████████████░░░░░░░` **35/46 done**
-- **Zephyr track:** `█████████████████████░░░░░░░░░` **28/40 done**
+- **IDF track:** `██████████████████████░░░░░░░░` **35/47 done**
+- **Zephyr track:** `████████████████████░░░░░░░░░░` **28/41 done**
 
 | Epic | Phase | IDF | Zephyr |
 |---|---|---|---|
@@ -17,7 +17,7 @@
 | E1 ESP32-S3 #2 — ESP-IDF | P1 | `██████████` 9/9 | — |
 | E2 ESP32-S3 #1 — Zephyr | P2 | — | `█████████░` 10/11 |
 | E3 labflash CLI | P3 | `██████████` 6/6 | `██████████` 6/6 |
-| E4 HIL tests + CI | P4 | `████████░░` 7/9 | `█░░░░░░░░░` 1/8 |
+| E4 HIL tests + CI | P4 | `███████░░░` 7/10 | `█░░░░░░░░░` 1/9 |
 | E5 Soak, docs, handover | P5 | `█░░░░░░░░░` 1/10 | `██░░░░░░░░` 1/5 |
 
 ## Gantt — IDF track
@@ -66,6 +66,7 @@ gantt
     BL-053 HIL T10–T15 LABID + identity + USB :done, bl053, 2026-10-06, 1d
     BL-054 (Stretch) HIL T17 power cut :done, bl054, 2026-10-06, 2d
     BL-055 build.yml cloud CI :done, bl055, 2026-09-30, 2d
+    BL-056 hil.yml self-hosted runner on RPi4 :active, bl056, 2026-10-07, 2d
     BL-057a Full HIL suite green 3× in a row (IDF board) :done, bl057a, 2026-10-08, 1d
     BL-070 hil.yml self-hosted runner on the development :bl070, 2026-10-07, 4d
     BL-071 IDF acceptance re-run from the development ma :bl071, 2026-10-11, 4d
@@ -100,6 +101,7 @@ gantt
 
 | Ticket | Status | Waiting on (unfinished dependencies) |
 |---|---|---|
+| BL-056 hil.yml self-hosted runner on RPi4 | 🔵 doing | — |
 | BL-060 Overnight soak ×100 | ⬜ todo | — |
 | BL-061 README quick start | 🟥 blocked | — |
 | BL-062 Recovery runbook + adding-a-board guide | 🟥 blocked | — |
@@ -158,6 +160,7 @@ gantt
     BL-053 HIL T10–T15 LABID + identity + USB :bl053, 2026-10-08, 1d
     BL-054 (Stretch) HIL T17 power cut :bl054, 2026-10-08, 2d
     BL-055 build.yml cloud CI :bl055, 2026-10-02, 2d
+    BL-056 hil.yml self-hosted runner on RPi4 :bl056, 2026-10-09, 2d
     BL-057b Full HIL suite green 3× in a row (Zephyr boa :bl057b, 2026-10-13, 2d
     BL-070 hil.yml self-hosted runner on the development :bl070, 2026-10-09, 4d
     section P5 Soak docs handover
@@ -190,6 +193,7 @@ None: nothing on this board is blocked.
 | BL-053 HIL T10–T15 LABID + identity + USB | ⬜ todo | — |
 | BL-054 (Stretch) HIL T17 power cut | ⬜ todo | — |
 | BL-055 build.yml cloud CI | ⬜ todo | — |
+| BL-056 hil.yml self-hosted runner on RPi4 | ⬜ todo | BL-055[zephyr] ⬜, BL-051[zephyr] ⬜ |
 | BL-057b Full HIL suite green 3× in a row (Zephyr boa | ⬜ todo | BL-051[zephyr] ⬜, BL-052[zephyr] ⬜, BL-053[zephyr] ⬜, BL-070[zephyr] ⬜ |
 | BL-060 Overnight soak ×100 | ⬜ todo | BL-057b[zephyr] ⬜ |
 | BL-061 README quick start | ⬜ todo | BL-057b[zephyr] ⬜ |
