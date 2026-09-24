@@ -67,7 +67,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e host pytest pytest-cov ruff mypy types-pyserial types-PyYAML pyyaml pyserial bleak esp-idf-nvs-partition-gen esptool
+          pip install -e host pytest pytest-cov ruff mypy types-pyserial types-PyYAML pyyaml pyserial bleak esp-idf-nvs-partition-gen esptool "smpclient>=0.16"
 
       - name: Lint and type check (BL-046)
         run: |
