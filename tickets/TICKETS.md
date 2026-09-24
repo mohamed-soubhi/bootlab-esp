@@ -6,14 +6,14 @@
 
 ## Overall
 
-`█████████████████████░░░░░░░░░` **41/58 done (70%)**
+`█████████████████████░░░░░░░░░` **41/59 done (69%)**
 
-- **IDF track:** `████████████████░░░░` 36/45
+- **IDF track:** `████████████████░░░░` 36/46
 - **Zephyr track:** `██████████████░░░░░░` 28/40
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 4
+    "todo" : 5
     "doing" : 7
     "blocked" : 6
     "done" : 41
@@ -29,7 +29,7 @@ pie showData title Ticket status
 | E2 | P2 | ESP32-S3 #1 — Zephyr | `███████████░` | 10/11 | 🔵 doing | §4.1, §5, §6, §7.1, §8 P2 |
 | E3 | P3 | labflash CLI | `████████████` | 7/7 | ✅ done | §8 P3 |
 | E4 | P4 | HIL tests + CI | `██░░░░░░░░░░` | 2/10 | 🟥 blocked | §8 P4 |
-| E5 | P5 | Soak, docs, handover | `█░░░░░░░░░░░` | 1/9 | 🟥 blocked | §8 P5 |
+| E5 | P5 | Soak, docs, handover | `█░░░░░░░░░░░` | 1/10 | 🟥 blocked | §8 P5 |
 
 ## Epic dependency graph
 
@@ -41,7 +41,7 @@ flowchart LR
     E2["P2 ESP32-S3 #1 — Zephyr<br/>10/11"]:::doing
     E3["P3 labflash CLI<br/>7/7"]:::done
     E4["P4 HIL tests + CI<br/>2/10"]:::blocked
-    E5["P5 Soak, docs, handover<br/>1/9"]:::blocked
+    E5["P5 Soak, docs, handover<br/>1/10"]:::blocked
     E0 --> EL
     E1 --> E3
     E2 --> E3
@@ -970,8 +970,9 @@ Split from BL-057 on 2026-09-22. REMAINING: 3 consecutive live green whole-suite
 | 🟥 | BL-063a | IDF lessons learned (retrospective) | S | host | BL-060, BL-061, BL-062, BL-063, BL-056a |  |
 | 🟥 | BL-063b | HTML presentation of the IDF track | M | host | BL-063a |  |
 | ✅ | BL-066 | GitHub Pages project showcase & presentation deck (Dual-OS, challenges, lessons learned) | M | host | — |  |
-| ⬜ | BL-067 | [Advanced] Heavy randomized OTA soak: 4 good + failure variants, random transport (200 cycles, IDF board 1) | L | idf | BL-060 |  |
+| ⬜ | BL-067 | [Advanced] Heavy randomized OTA soak: 4 good + failure variants, random transport (200 cycles, IDF board 1) | L | idf | BL-060, BL-069 |  |
 | ⬜ | BL-068 | [Advanced] Multi-board randomized OTA soak: two boards in random parallel (400 cycles) | M | idf | BL-067 |  |
+| ⬜ | BL-069 | [Advanced] Random-variant image generator and signed image pool (varied footprint, both OTA slots) | L | idf | BL-060 |  |
 
 <details><summary>⬜ <b>BL-060</b> — Overnight soak ×100</summary>
 
@@ -1105,18 +1106,19 @@ Comprehensive public presentation site and interactive deck published to GitHub 
 - **Size:** L (3–5 days)  
 - **Boards:** idf  
 - **Tracks:** IDF ⬜ todo  
-- **Depends on:** BL-060  
+- **Depends on:** BL-060, BL-069  
 - **Plan:** §8 P5
 
-Follow-up to BL-060 (strict v1<->v2 alternation, wifi,wifi,ble,ble). Extend tests_hil/soak.py into a heavy randomized soak: every cycle picks a variant and a transport (wifi or ble) at random from a seeded RNG. Variants: four VALID signed images with distinct versions (v1, v2 exist; v3 and v4 must be built) plus the FAILURE images already in the tree (bad_sig, hang, no_confirm). Mix: 80 % valid / 20 % failure, with a cap on consecutive failure images. The pass condition becomes the expected OUTCOME for the image, checked against a model of the last confirmed image: valid -> runs and confirmed; bad_sig -> rejected, board stays on the previous confirmed image; no_confirm -> boots, never confirms, rolls back to the previous image after reset; hang -> boots, hangs, watchdog rollback to the previous image. next_variant() (toggle) is replaced by the model. The seed is logged in report.json and --seed replays the exact cycle sequence. Console captured as in BL-060; the run aborts and restores the board to a confirmed image on repeated unexpected outcomes. Runs on the workstation with board 1 (native Windows, R14). Runbook and traps: docs/BL060_SOAK_TEST.md, docs/LESSONS_LEARNED.md. Note: failure-image cycles (hang, no_confirm) are slower because of timeouts and extra reboots, so plan the run length accordingly.
+Follow-up to BL-060 (strict v1<->v2 alternation, wifi,wifi,ble,ble). Extend tests_hil/soak.py into a heavy randomized soak: every cycle picks a variant and a transport (wifi or ble) at random from a seeded RNG. Variants: four VALID signed images with distinct versions (v1, v2 exist; v3 and v4 must be built) plus the FAILURE images already in the tree (bad_sig, hang, no_confirm). Mix: 70 % fixed valid (v1..v4) / 10 % generated valid (signed pool from BL-069, footprint varied) / 20 % failure, with a cap on consecutive failure images. The pass condition becomes the expected OUTCOME for the image, checked against a model of the last confirmed image: valid -> runs and confirmed; bad_sig -> rejected, board stays on the previous confirmed image; no_confirm -> boots, never confirms, rolls back to the previous image after reset; hang -> boots, hangs, watchdog rollback to the previous image. next_variant() (toggle) is replaced by the model. The seed is logged in report.json and --seed replays the exact cycle sequence. Console captured as in BL-060; the run aborts and restores the board to a confirmed image on repeated unexpected outcomes. Runs on the workstation with board 1 (native Windows, R14). Runbook and traps: docs/BL060_SOAK_TEST.md, docs/LESSONS_LEARNED.md. Note: failure-image cycles (hang, no_confirm) are slower because of timeouts and extra reboots, so plan the run length accordingly.
 
 **Acceptance criteria**
-- [ ] At least 4 valid images built and signed with distinct version strings (v1..v4), plus the existing bad_sig, hang and no_confirm images
+- [ ] At least 4 valid fixed images built and signed with distinct version strings (v1..v4), the existing bad_sig, hang and no_confirm images, and the BL-069 generated pool consumed through its manifest
 - [ ] Expected outcome defined and verified for every variant, including the rollback target after a failure image
 - [ ] Random variant + transport per cycle from a seeded RNG; the same --seed reproduces the same sequence
-- [ ] Mix is 80 % valid / 20 % failure images; failure images are never run back to back beyond the agreed cap
+- [ ] Mix is 70 % fixed valid / 10 % generated valid / 20 % failure images; failure images are never run back to back beyond the agreed cap
 - [ ] 200 cycles on the idf board: outcome pass rate >= 99 %
 - [ ] Root cause logged for every unexpected outcome; board restored to a confirmed image at the end
+- [ ] Expected version and outcome of every generated image is taken from the BL-069 manifest, not hardcoded; the report shows which slot each generated image landed in
 
 </details>
 
@@ -1136,6 +1138,26 @@ Run the BL-067 randomized soak on two physical boards in parallel from two hosts
 - [ ] 400 randomized cycles across both boards, run in parallel, same seed and variant set per board
 - [ ] Outcome pass rate >= 99 % per board, with one report.json per board
 - [ ] Any board-specific difference between the two boards is documented with root cause
+
+</details>
+
+<details><summary>⬜ <b>BL-069</b> — [Advanced] Random-variant image generator and signed image pool (varied footprint, both OTA slots)</summary>
+
+- **Size:** L (3–5 days)  
+- **Boards:** idf  
+- **Tracks:** IDF ⬜ todo  
+- **Depends on:** BL-060  
+- **Plan:** §8 P5
+
+Generate a pool of valid, signed IDF images whose footprint differs from the fixed v1/v2 images, to prove the two OTA slots accept arbitrary code and not just two known binaries. gen_variant(seed) produces build parameters deterministically; images are built OFFLINE on the workstation (WSL, where the toolchain and the board's signing key idf_sbv2.pem live), never live inside a soak run, so a compile or signing error cannot be mistaken for an OTA failure. The soak only consumes the pool through a manifest (seed, parameters, unique version string, size, sha256, expected outcome). Reproducible builds (CONFIG_APP_REPRODUCIBLE_BUILD) so the same seed gives the same sha256. Randomized: image size via random padding data, INCLUDING sizes that are not a multiple of the 4 KB flash sector or of the BLE OTA sector size (last-sector handling), one image just under the 4 MB slot limit (must succeed) and one image over it ('too_big', must be rejected); LED colour and blink frequency (GPIO 48, WS2812); and toggling of pins taken ONLY from a documented safe allowlist (output only). Never randomized: the OTA/connectivity path (LABID, WiFi, BLE OTA service, confirm logic), and any pin used by USB-Serial-JTAG (GPIO 19/20), strapping (0/3/45/46), or flash/octal PSRAM (26-37). Every generated valid image must still pass the health self-test and confirm. Findings from the design discussion: CI cannot build these because its ephemeral keys are not the board's trusted key.
+
+**Acceptance criteria**
+- [ ] gen_variant(seed) is deterministic and unit-tested; the same seed reproduces the same parameters and the same image sha256
+- [ ] Pool of at least 12 signed valid images with distinct version strings and a spread of sizes, including non-sector-aligned sizes, one just under the 4 MB slot limit, and the over-limit 'too_big' image (expected: rejected)
+- [ ] Manifest (seed, parameters, version, size, sha256, expected outcome) written next to the images and validated by a test
+- [ ] Safe-pin allowlist documented with the reason for each excluded pin group; the generator refuses any pin outside it
+- [ ] Every valid pool image installed and confirmed on both OTA slots of board 1 over WiFi and over BLE at least once
+- [ ] Generator never touches the LABID, WiFi, BLE OTA or confirm code paths (checked by test)
 
 </details>
 
@@ -1216,6 +1238,7 @@ flowchart TB
         BL066["BL-066"]:::done
         BL067["BL-067"]:::todo
         BL068["BL-068"]:::todo
+        BL069["BL-069"]:::todo
     end
     BL001 --> BL002
     BL002 --> BL003
@@ -1318,7 +1341,9 @@ flowchart TB
     BL035 --> BL064
     BL035 --> BL065
     BL060 --> BL067
+    BL069 --> BL067
     BL067 --> BL068
+    BL060 --> BL069
     classDef todo fill:#eeeeee,stroke:#999,color:#333
     classDef doing fill:#cfe3ff,stroke:#2f6fdb,color:#123
     classDef blocked fill:#ffd6d6,stroke:#c62828,color:#400

@@ -7,7 +7,7 @@
 
 ## Progress
 
-- **IDF track:** `████████████████████████░░░░░░` **36/45 done**
+- **IDF track:** `███████████████████████░░░░░░░` **36/46 done**
 - **Zephyr track:** `█████████████████████░░░░░░░░░` **28/40 done**
 
 | Epic | Phase | IDF | Zephyr |
@@ -18,7 +18,7 @@
 | E2 ESP32-S3 #1 — Zephyr | P2 | — | `█████████░` 10/11 |
 | E3 labflash CLI | P3 | `██████████` 6/6 | `██████████` 6/6 |
 | E4 HIL tests + CI | P4 | `█████████░` 8/9 | `█░░░░░░░░░` 1/8 |
-| E5 Soak, docs, handover | P5 | `█░░░░░░░░░` 1/9 | `██░░░░░░░░` 1/5 |
+| E5 Soak, docs, handover | P5 | `█░░░░░░░░░` 1/10 | `██░░░░░░░░` 1/5 |
 
 ## Gantt — IDF track
 
@@ -77,8 +77,9 @@ gantt
     BL-063a IDF lessons learned (retrospective) :crit, bl063a, 2026-10-11, 1d
     BL-063b HTML presentation of the IDF track :crit, bl063b, 2026-10-12, 2d
     BL-066 GitHub Pages project showcase & presentation :done, bl066, 2026-09-16, 2d
-    BL-067 [Advanced] Heavy randomized OTA soak 4 good + :bl067, 2026-10-10, 4d
-    BL-068 [Advanced] Multi-board randomized OTA soak tw :bl068, 2026-10-14, 2d
+    BL-067 [Advanced] Heavy randomized OTA soak 4 good + :bl067, 2026-10-14, 4d
+    BL-068 [Advanced] Multi-board randomized OTA soak tw :bl068, 2026-10-18, 2d
+    BL-069 [Advanced] Random-variant image generator and :bl069, 2026-10-10, 4d
 ```
 
 **Legend:** green = ✅ done · blue = 🔵 acceptance criteria pass, held only by a dependency · red = 🟥 blocked · plain = ⬜ todo · orange line = today.
@@ -106,8 +107,9 @@ gantt
 | BL-063 Final PLAN.md update | 🟥 blocked | BL-060[idf] ⬜ |
 | BL-063a IDF lessons learned (retrospective) | 🟥 blocked | BL-060[idf] ⬜, BL-061[idf] 🟥, BL-062[idf] 🟥, BL-063[idf] 🟥, BL-056a[idf] 🟥 |
 | BL-063b HTML presentation of the IDF track | 🟥 blocked | BL-063a[idf] 🟥 |
-| BL-067 [Advanced] Heavy randomized OTA soak 4 good + | ⬜ todo | BL-060[idf] ⬜ |
+| BL-067 [Advanced] Heavy randomized OTA soak 4 good + | ⬜ todo | BL-060[idf] ⬜, BL-069[idf] ⬜ |
 | BL-068 [Advanced] Multi-board randomized OTA soak tw | ⬜ todo | BL-067[idf] ⬜ |
+| BL-069 [Advanced] Random-variant image generator and | ⬜ todo | BL-060[idf] ⬜ |
 
 ## Gantt — Zephyr track
 
