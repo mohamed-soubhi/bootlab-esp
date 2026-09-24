@@ -1172,7 +1172,7 @@
         "Runner has no sudo and no access to keys/"
       ],
       "status": "doing",
-      "pr": "",
+      "pr": "https://github.com/mohamed-soubhi/bootlab-esp/actions/runs/35939632759",
       "tracks": [
         "idf",
         "zephyr"
@@ -1187,10 +1187,10 @@
         ]
       },
       "track_status": {
-        "idf": "doing",
+        "idf": "done",
         "zephyr": "todo"
       },
-      "block_reason": "idf track: runner 'rpi4-hil' was deleted by the owner on 2026-09-24; re-register it (runbook in scripts/evidence/bl056_rpi4_runner.md) and dispatch hil.yml to confirm, then it is done again. zephyr track stays todo behind the Zephyr hold (BL-063b)."
+      "block_reason": "idf track done again (2026-09-24): runner 'rpi4-hil' is back online (labels self-hosted,Linux,ARM64,hil) and hil.yml run 35939632759 passed 'Verify runner isolation & security' and 'Install dependencies'; the HIL test step fails only with 'board serial port not found', as expected (no board wired to that runner's tests). Secondary CI/CD demo runner, not on the critical path. zephyr track stays todo behind the Zephyr hold (BL-063b)."
     },
     {
       "id": "BL-056a",

@@ -8,7 +8,7 @@
 
 `████████████████████░░░░░░░░░░` **41/60 done (68%)**
 
-- **IDF track:** `███████████████░░░░░` 35/47
+- **IDF track:** `███████████████░░░░░` 36/47
 - **Zephyr track:** `██████████████░░░░░░` 28/41
 
 ```mermaid
@@ -783,7 +783,7 @@ pytest with mocked BLE / serial / HTTP. [DONE 2026-09-22 -- 180 unit tests passi
 | 🔵 | BL-053 | HIL T10–T15 LABID + identity + USB | S | zephyr, idf | BL-050 |  |
 | 🔵 | BL-054 | (Stretch) HIL T17 power cut | M | zephyr, idf | BL-050 |  |
 | 🔵 | BL-055 | build.yml cloud CI | M | host | BL-028, BL-036 |  |
-| 🔵 | BL-056 | hil.yml self-hosted runner on RPi4 | M | host | BL-055, BL-051 |  |
+| 🔵 | BL-056 | hil.yml self-hosted runner on RPi4 | M | host | BL-055, BL-051 | [link](https://github.com/mohamed-soubhi/bootlab-esp/actions/runs/35939632759) |
 | ✅ | BL-057a | Full HIL suite green 3× in a row (IDF board) | S | idf | BL-051, BL-052, BL-053 |  |
 | ⬜ | BL-057b | Full HIL suite green 3× in a row (Zephyr board) | M | zephyr | BL-051, BL-052, BL-053, BL-070 |  |
 | ⬜ | BL-070 | hil.yml self-hosted runner on the development machine (workstation) | L | host | BL-055, BL-051 |  |
@@ -903,7 +903,7 @@ Builds, unit tests, fuzz smoke, forbidden-config grep, CI test keys.
 
 - **Size:** M (1–2 days)  
 - **Boards:** host  
-- **Tracks:** IDF 🔵 doing · Zephyr ⬜ todo  
+- **Tracks:** IDF ✅ done · Zephyr ⬜ todo  
 - **Depends on:** BL-055, BL-051  
 - **Plan:** §8 P4
 
@@ -911,8 +911,8 @@ Builds, unit tests, fuzz smoke, forbidden-config grep, CI test keys.
 
 **Acceptance criteria**
 *IDF scope*
-- [ ] HIL job runs on PR for the idf board
-- [ ] Runner has no sudo and no access to keys/
+- [x] HIL job runs on PR for the idf board
+- [x] Runner has no sudo and no access to keys/
 *Zephyr scope*
 - [ ] HIL job runs on PR for the zephyr board
 

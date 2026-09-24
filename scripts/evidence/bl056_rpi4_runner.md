@@ -81,6 +81,19 @@ critical path**; board-driving gates moved to the development machine (BL-070/07
    `Failed: live HIL: board serial port not found`). When that dispatch shows the two passing steps, run
    `python3 tickets/tickets_tool.py set BL-056 done --track idf` (with the run URL as `--pr`).
 
+### Result of the re-registration (2026-09-24)
+
+- The runner folder `~/actions-runner` had survived and GitHub still held the registration, so starting it was enough
+  (`nohup ./run.sh > run.log 2>&1 & disown`); no `config.sh` run was needed. If the log ever says
+  `Runner registration has been deleted from the server`, re-run steps 2-3 (`--replace`).
+- `gh api .../actions/runners`: `{"name":"rpi4-hil","status":"online","busy":false,"labels":["self-hosted","Linux","ARM64","hil"]}`.
+- `hil.yml` dispatched for real (run `35939632759`, https://github.com/mohamed-soubhi/bootlab-esp/actions/runs/35939632759),
+  runner log: `Listening for Jobs` -> `Running job: HIL Test Suite (ESP-IDF Rig)` -> `Failed`. Steps:
+  `Verify runner isolation & security` **success**, `Install dependencies` **success**, `Run HIL tests (IDF track)`
+  **failure**: `34 deselected, 19 errors`, every one `Failed: live HIL: board serial port not found`
+  (no board is wired to that runner's tests; the fixture refuses to fall back to a mock).
+- `BL-056[idf]` set to **done** again with this run as the PR link.
+
 ### Security notes (PLAN section 8 P4)
 - The runner user must stay **without sudo**; `hil.yml` checks `sudo -n true` and fails the job otherwise.
 - Only PRs from this **private** repository may run on it; never enable fork PRs on a self-hosted runner.
