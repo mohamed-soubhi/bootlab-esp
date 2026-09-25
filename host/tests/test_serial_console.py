@@ -85,3 +85,31 @@ def test_no_console_log_disables_tee_but_still_forwards_bytes(tmp_path):
             collected.extend(b)
         assert collected == b"hello\n"
         port.shutdown()
+
+
+def test_hard_reset_toggles_the_lines_on_the_already_open_handle(tmp_path):
+    """A second open of the same COM port is refused on Windows, so a reset must reuse the shared handle."""
+    events = []
+
+    class Recorder:
+        in_waiting = 0
+
+        def read(self, _n):
+            raise OSError("port gone")
+
+        def __setattr__(self, name, value):
+            if name in ("dtr", "rts"):
+                events.append((name, value))
+            object.__setattr__(self, name, value)
+
+    rec = Recorder()
+    with patch("serial.Serial", return_value=MagicMock(read=rec.read, in_waiting=0)) as factory:
+        port = SharedConsolePort("COM14", console_log=tmp_path / "c.log")
+        port._thread.join(timeout=2.0)
+        port._ser = rec
+        opens_before = factory.call_count
+        slept = []
+        port.hard_reset(hold_s=0.2, sleep=slept.append)
+        assert factory.call_count == opens_before                     # no new serial.Serial was constructed
+    assert events == [("dtr", True), ("rts", False), ("dtr", False), ("rts", True), ("dtr", False), ("rts", False)]
+    assert slept == [0.2, 0.2, 0.1]

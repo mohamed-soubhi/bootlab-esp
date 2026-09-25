@@ -337,6 +337,39 @@ Every project risk defined in PLAN §9 was evaluated and verified against real t
   `idf.py` runs from `esp_idf/`, so a relative `--out` path resolved against the wrong directory until
   `genvariants.run` made it absolute.
 
+### Trap 31: A second open of a COM port that the run already holds is refused on Windows (BL-067, 2026-09-25)
+- **Symptom:** every `no_confirm` cycle failed with `SerialException: could not open port 'COM14': PermissionError(13, 'Access is denied.')`
+  (cycles 42 and 53 of the first BL-067 run); a smoke test without a `no_confirm` cycle passed, so it stayed hidden until then.
+- **Cause:** `LiveBackend.reset()` opened the port itself, while the run's `SharedConsolePort` (continuous `console.log` capture) already held it.
+- **Resolution:** `SharedConsolePort.hard_reset()` toggles DTR/RTS on the handle it already holds and `LiveBackend.reset()` uses it when a
+  console port exists. Any new helper that talks to the board during a captured run must go through the shared handle.
+
+### Trap 32: A board that is pending verify refuses OTA, so recovery must be a reset (BL-067, 2026-09-25)
+- **Symptom:** after a `no_confirm` image booted, three restore-to-v1 OTAs failed, each stopping after 81,920 bytes served.
+- **Cause:** ESP-IDF will not start an OTA while the running image is still pending verify; only a reset (the bootloader then rolls the image back) helps.
+- **Resolution:** `_resync` and `LiveBackend.reset_to_v1` hard-reset a board that reports confirmed=0 and wait for the rollback before any OTA.
+
+### Trap 33: `labflash update` reports FAIL when the version it sends is already running (BL-069 AC5 / BL-067, 2026-09-25)
+- **Observation:** it recognises a finished install by the version changing, so re-sending the running version printed `[FAIL] slot flipped` even though
+  the board installed the image correctly (two false FAILs in the BL-069 AC5 run).
+- **Cause found in our own schedules:** BL-069's reversed second sweep starts with the image the first sweep ended on.
+- **Resolution:** `pool_schedule` swaps neighbouring pairs instead of reversing; `soak_model.plan` never picks the running version.
+
+### Trap 34: The board sometimes accepts an OTA trigger and never pulls the image (2026-09-25)
+- **Observation:** `host served: {}` with the trigger accepted (HTTP 202) and the board unchanged, seen three times in one day (the first gate R1
+  attempt, a failed restore, and the BL-067 restore); every immediate retry worked. Cause not found.
+- **Mitigation, not a fix:** `tests_hil/otaretry.send_with_retry` retries up to 3 times with a 20 s backoff, only when the whole image did not
+  reach the board AND the board's state is unchanged (a retry on top of a half-applied update would double-install); `reset_to_v1` retries 3 times.
+  Both count the retries in the report. In the 200-cycle BL-067 run it needed 0.
+
+### Trap 35: A Windows file lock on the update CLI's temp file aborted a long run once (BL-069 AC5, 2026-09-25)
+- **Symptom:** after 12 good WiFi installs and the WiFi `too_big` reject, three steps in a row failed within ~4 s, the first with
+  `PermissionError: [WinError 32] ... labflash-ota-...\update.bin`; a fresh process installed fine straight afterwards.
+- **Cause:** not proven (a handle left in the long-lived process, or antivirus scanning the just-written file). It did not recur in the resumed
+  run or in BL-067.
+- **Mitigation:** the retry wrapper above also covers host-side exceptions and writes the stack trace into `update.log`; if it returns, run each
+  update in its own process.
+
 ## 5. Zephyr Track Status Summary (as of 2026-09-23)
 
 | Item | Status |

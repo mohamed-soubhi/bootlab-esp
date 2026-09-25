@@ -28,6 +28,10 @@ VARIANT_DIRS = {
     "bad_sig": "build_bad_sig",
 }
 OK_MARKER = "UPDATE OK"
+PENDING_ROLLBACK_WAIT_S = 90.0
+RESTORE_ATTEMPTS = 3
+RESTORE_BACKOFF_S = 15.0
+RESTORE_SLEEP = time.sleep
 
 
 def _is_v1(app: str) -> bool:
@@ -168,7 +172,10 @@ class LiveBackend:
         return p
 
     def reset(self) -> None:
-        hard_reset(self.port)
+        if self.console_port is not None:          # the shared console already owns the COM port; a second open is refused
+            self.console_port.hard_reset()
+        else:
+            hard_reset(self.port)
 
     def wait_snapshot(self, wanted: Callable[[Snapshot], bool], timeout_s: float = 60.0, poll_s: float = 2.0,
                       sleep_fn: Callable[[float], None] | None = None) -> Snapshot | None:
@@ -307,7 +314,21 @@ class LiveBackend:
         s = self.snapshot()
         if _is_v1(s.app) and s.confirmed:
             return True
-        if not self.update("v1", transport, log_path):
+        if not s.confirmed:
+            # An image still pending verify (no_confirm, or a crash mid-test) makes the board refuse any OTA; only a reset
+            # helps, because the bootloader then rolls the unconfirmed image back.
+            self.reset()
+            rolled = self.wait_snapshot(lambda x: x.confirmed, PENDING_ROLLBACK_WAIT_S)
+            if rolled is not None and _is_v1(rolled.app):
+                return True
+        # The board sometimes accepts the trigger and never pulls the image (seen three times on 2026-09-25, always fine on the
+        # next try), so a restore gets a few attempts before it gives up.
+        for attempt in range(RESTORE_ATTEMPTS):
+            if self.update("v1", transport, log_path):
+                break
+            if attempt < RESTORE_ATTEMPTS - 1:
+                RESTORE_SLEEP(RESTORE_BACKOFF_S)
+        else:
             return False
         s = self.snapshot()
         return _is_v1(s.app) and s.confirmed

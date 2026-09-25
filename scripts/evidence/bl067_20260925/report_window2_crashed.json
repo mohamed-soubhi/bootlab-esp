@@ -1,0 +1,167 @@
+{
+  "mode": "live",
+  "seed": 20260925,
+  "plan": {
+    "seed": 20260925,
+    "cycles": 200,
+    "ble_share": 0.5,
+    "failure_cap": 2,
+    "manifest_sha256": "a67170f78f544f969efb58bb3d81fd603a3741667ae96177d2afd8a36e968bef",
+    "model_version": 2
+  },
+  "planned_cycles": 200,
+  "total_cycles": 53,
+  "passes": 51,
+  "failures": 2,
+  "pass_rate_pct": 96.23,
+  "target_pct": 99.0,
+  "aborted": false,
+  "stopped_early": false,
+  "final_state_confirmed": false,
+  "elapsed_s": 1314.4,
+  "resumed_from": 42,
+  "infra_retries": 0,
+  "plan_summary": {
+    "cycles": 200,
+    "by_kind": {
+      "failure": 39,
+      "fixed": 139,
+      "generated": 22
+    },
+    "by_transport": {
+      "ble": 89,
+      "wifi": 111
+    },
+    "by_image": {
+      "hang": 15,
+      "v4": 33,
+      "v3": 42,
+      "gen-bc23f981": 2,
+      "v2": 24,
+      "v1": 40,
+      "gen-ed4ae35d": 4,
+      "gen-d3ec723f": 1,
+      "bad_sig": 10,
+      "gen-477ee36e": 4,
+      "gen-0c23946e": 3,
+      "gen-8ddc7a9e": 3,
+      "no_confirm": 14,
+      "gen-a7e974e5": 2,
+      "gen-7ced4815": 3
+    }
+  },
+  "by_image": {
+    "hang": {
+      "total": 4,
+      "passes": 4
+    },
+    "v4": {
+      "total": 8,
+      "passes": 8
+    },
+    "v3": {
+      "total": 13,
+      "passes": 13
+    },
+    "gen-bc23f981": {
+      "total": 1,
+      "passes": 1
+    },
+    "v2": {
+      "total": 8,
+      "passes": 8
+    },
+    "v1": {
+      "total": 8,
+      "passes": 8
+    },
+    "gen-ed4ae35d": {
+      "total": 2,
+      "passes": 2
+    },
+    "gen-d3ec723f": {
+      "total": 1,
+      "passes": 1
+    },
+    "bad_sig": {
+      "total": 3,
+      "passes": 3
+    },
+    "gen-477ee36e": {
+      "total": 1,
+      "passes": 1
+    },
+    "gen-0c23946e": {
+      "total": 1,
+      "passes": 1
+    },
+    "gen-8ddc7a9e": {
+      "total": 1,
+      "passes": 1
+    },
+    "no_confirm": {
+      "total": 2,
+      "passes": 0
+    }
+  },
+  "by_transport": {
+    "ble": {
+      "total": 28,
+      "passes": 26
+    },
+    "wifi": {
+      "total": 25,
+      "passes": 25
+    }
+  },
+  "generated_slots": {
+    "gen-bc23f981": {
+      "ble": [
+        0
+      ]
+    },
+    "gen-ed4ae35d": {
+      "wifi": [
+        1
+      ],
+      "ble": [
+        1
+      ]
+    },
+    "gen-d3ec723f": {
+      "wifi": [
+        0
+      ]
+    },
+    "gen-477ee36e": {
+      "wifi": [
+        0
+      ]
+    },
+    "gen-0c23946e": {
+      "wifi": [
+        1
+      ]
+    },
+    "gen-8ddc7a9e": {
+      "wifi": [
+        0
+      ]
+    }
+  },
+  "failure_log": [
+    {
+      "cycle": 42,
+      "image": "no_confirm",
+      "transport": "ble",
+      "cause": "cycle raised SerialException: could not open port 'COM14': PermissionError(13, 'Access is denied.', None, 5)"
+    },
+    {
+      "cycle": 53,
+      "image": "no_confirm",
+      "transport": "ble",
+      "cause": "cycle raised SerialException: could not open port 'COM14': PermissionError(13, 'Access is denied.', None, 5)"
+    }
+  ],
+  "error": null
+}

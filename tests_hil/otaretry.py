@@ -64,3 +64,20 @@ def send_with_retry(backend, path: Path, transport: str, log_path: Path, timeout
             f.write(f"--- retry {used}/{retries} after host-side trouble ({cause or 'image never reached the board'}); "
                     f"waiting {backoff_s:.0f} s\n")
         sleep_fn(backoff_s)
+
+
+SNAPSHOT_ATTEMPTS = 6
+SNAPSHOT_WAIT_S = 5.0
+
+
+def snapshot_with_retry(backend, attempts: int = SNAPSHOT_ATTEMPTS, wait_s: float = SNAPSHOT_WAIT_S,
+                        sleep_fn: Callable[[float], None] = time.sleep):
+    """backend.snapshot(), riding out a re-enumerating USB port (Windows briefly refuses to reopen COM after a reboot)."""
+    for attempt in range(attempts):
+        try:
+            return backend.snapshot()
+        except Exception:
+            if attempt == attempts - 1:
+                raise
+            sleep_fn(wait_s)
+    raise AssertionError("unreachable")

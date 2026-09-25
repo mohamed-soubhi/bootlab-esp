@@ -182,3 +182,60 @@ def test_failure_image_versions_are_not_v1():
     from tests_hil.live_backend import _is_v1
     assert _is_v1("1.0.0") and _is_v1("1.2.3")
     assert not any(_is_v1(v) for v in ("1.0.0-hang", "1.0.0-badsig", "1.0.0-noconfirm", "2.0.0", "gen-abc"))
+
+
+def test_reset_to_v1_rolls_back_a_pending_image_with_a_reset_not_an_ota(tmp_path, monkeypatch):
+    import tests_hil.live_backend as lb
+    resets = []
+    monkeypatch.setattr(lb, "hard_reset", lambda port: resets.append(port))
+    be, calls = make(tmp_path, [snap("1.0.0-noconfirm", 1, False), snap("1.0.0", 0, True)])
+    assert be.reset_to_v1(tmp_path / "u.log") is True
+    assert resets == ["COM14"] and calls == []               # a pending image refuses OTA; the reset rolled it back
+
+
+def test_reset_to_v1_still_updates_when_the_rollback_lands_on_another_version(tmp_path, monkeypatch):
+    import tests_hil.live_backend as lb
+    monkeypatch.setattr(lb, "hard_reset", lambda port: None)
+    be, calls = make(tmp_path, [snap("1.0.0-noconfirm", 1, False), snap("2.0.0", 0, True), snap("1.0.0", 1, True)])
+    assert be.reset_to_v1(tmp_path / "u.log") is True and len(calls) == 1
+
+
+def test_reset_to_v1_retries_a_transfer_that_never_started(tmp_path, monkeypatch):
+    import tests_hil.live_backend as lb
+    sleeps = []
+    monkeypatch.setattr(lb, "RESTORE_SLEEP", sleeps.append)
+    be, calls = make(tmp_path, [snap("2.0.0", 1), snap("1.0.0", 0)])
+    results = iter([1, 1, 0])                                   # update fails twice, then works
+    be.update_fn = lambda args: _flaky(calls, results)
+    assert be.reset_to_v1(tmp_path / "u.log") is True and len(calls) == 3 and sleeps == [15.0, 15.0]
+
+
+def _flaky(calls, results):
+    calls.append(1)
+    rc = next(results)
+    print("UPDATE OK" if rc == 0 else "UPDATE FAILED")
+    return rc
+
+
+def test_reset_to_v1_gives_up_after_the_attempts(tmp_path, monkeypatch):
+    import tests_hil.live_backend as lb
+    monkeypatch.setattr(lb, "RESTORE_SLEEP", lambda s: None)
+    be, calls = make(tmp_path, [snap("2.0.0", 1)], rc=1, out="UPDATE FAILED\n")
+    assert be.reset_to_v1(tmp_path / "u.log") is False and len(calls) == lb.RESTORE_ATTEMPTS
+
+
+def test_reset_reuses_the_shared_console_port_instead_of_opening_a_second_handle(tmp_path, monkeypatch):
+    import tests_hil.live_backend as lb
+    opened, shared = [], []
+    monkeypatch.setattr(lb, "hard_reset", lambda port: opened.append(port))
+
+    class Shared:
+        def hard_reset(self):
+            shared.append(1)
+    be, _ = make(tmp_path, [])
+    be.console_port = Shared()
+    be.reset()
+    assert shared == [1] and opened == []
+    be.console_port = None
+    be.reset()
+    assert opened == ["COM14"]

@@ -27,6 +27,7 @@ from tests_hil.otaretry import (
     log_since,
     log_size,
     send_with_retry,
+    snapshot_with_retry,
     transfer_seen,
 )
 
@@ -62,11 +63,19 @@ def _read_records(path: Path, plan_id: dict) -> list[dict]:
     header = next((r["header"] for r in lines if "header" in r), None)
     if header != plan_id:
         raise SoakError(f"{path} was written for a different plan ({header}); refusing to resume it")
-    records = [r for r in lines if "cycle" in r]
-    cycles = [r["cycle"] for r in records if r["cycle"] >= 1]
-    if cycles != list(range(1, len(cycles) + 1)):
+    latest: dict[int, dict] = {}
+    warmup: list[dict] = []
+    for r in lines:
+        if "cycle" not in r:
+            continue
+        if r["cycle"] == 0:
+            warmup.append(r)
+        else:
+            latest[r["cycle"]] = r                    # a re-run of a cycle supersedes the earlier record
+    numbers = sorted(latest)
+    if numbers != list(range(1, len(numbers) + 1)):
         raise SoakError(f"{path}: cycle numbers are not contiguous from 1; refusing to resume it")
-    return records
+    return warmup + [latest[n] for n in numbers]
 
 
 def _append(path: Path, rec: dict) -> None:
@@ -87,7 +96,8 @@ def _hang_ran(update_log: str, console: str) -> bool:
     return "Task watchdog got triggered" in console or "[PASS] running the new image" in update_log
 
 
-def _check(backend, exp: sm.Expectation, pre, ok: bool, cause: str, evidence: dict) -> tuple[bool, str, dict]:
+def _check(backend, exp: sm.Expectation, pre, ok: bool, cause: str, evidence: dict,
+           snap: Callable = lambda b: b.snapshot()) -> tuple[bool, str, dict]:
     """Compare the board with what the model expects; returns (passed, cause, observed).
 
     A failure image only counts when its whole transfer was seen (a dead link looks like a refusal) and, for hang, when
@@ -98,12 +108,12 @@ def _check(backend, exp: sm.Expectation, pre, ok: bool, cause: str, evidence: di
     if exp.outcome != "installs" and not evidence["transferred"]:
         return False, "no complete transfer in the update log: the image never fully reached the board, so the outcome is unverified", {}
     if exp.outcome == "installs":
-        post = backend.snapshot()
+        post = snap(backend)
         good = ok and (post.app, post.slot, post.confirmed) == (exp.app, exp.slot, True)
         return good, "" if good else f"expected {exp.app} slot {exp.slot} confirmed (update ok={ok}), board reports {post}", \
             {"app": post.app, "slot": post.slot, "confirmed": post.confirmed}
     if exp.outcome == "rejected":
-        post = backend.snapshot()
+        post = snap(backend)
         good = (not ok) and _same(pre, post)
         return good, "" if good else f"a rejected image changed the board or was accepted (ok={ok}): {pre} -> {post}", \
             {"app": post.app, "slot": post.slot, "confirmed": post.confirmed}
@@ -111,7 +121,7 @@ def _check(backend, exp: sm.Expectation, pre, ok: bool, cause: str, evidence: di
         return False, "a failure image reported a successful update", {}
     observed: dict = {}
     if exp.check_pending:
-        pending = backend.snapshot()
+        pending = snap(backend)
         observed["pending"] = {"app": pending.app, "slot": pending.slot, "confirmed": pending.confirmed}
         if (pending.app, pending.slot, pending.confirmed) != (exp.pending_app, exp.pending_slot, False):
             return False, f"no_confirm did not boot unconfirmed: expected {exp.pending_app} slot {exp.pending_slot}, got {pending}", observed
@@ -125,15 +135,20 @@ def _check(backend, exp: sm.Expectation, pre, ok: bool, cause: str, evidence: di
     return True, "", observed
 
 
-def _resync(backend, log_path: Path) -> sm.State:
-    """After an unexpected outcome, believe the real board: a confirmed image as-is, otherwise restore v1."""
+def _resync(backend, log_path: Path, sleep_fn: Callable[[float], None] = time.sleep) -> sm.State:
+    """After an unexpected outcome, believe the real board: a confirmed image as-is; an image still pending verify is
+    rolled back with a hard reset (a pending board refuses OTA); anything else is restored to v1."""
     try:
-        s = backend.snapshot()
+        s = snapshot_with_retry(backend, sleep_fn=sleep_fn)
         if s.confirmed:
             return sm.State(s.app, s.slot, True)
+        backend.reset()
+        rolled = backend.wait_snapshot(lambda x: x.confirmed, ROLLBACK_TIMEOUT_S)
+        if rolled is not None:
+            return sm.State(rolled.app, rolled.slot, True)
     except Exception as err:  # noqa: BLE001 - falls through to the restore below, but say why
         with log_path.open("a", encoding="utf-8") as f:
-            f.write(f"--- resync: snapshot failed ({type(err).__name__}: {err}); restoring v1\n")
+            f.write(f"--- resync: snapshot or reset failed ({type(err).__name__}: {err}); restoring v1\n")
     if not backend.reset_to_v1(log_path):
         raise SoakError("board could not be brought back to a confirmed image")
     s = backend.snapshot()
@@ -143,7 +158,7 @@ def _resync(backend, log_path: Path) -> sm.State:
 def _cycle(backend, catalog: sm.Catalog, pool_dir: Path, pick: sm.Pick, state: sm.State, log_path: Path,
            timeout_s: float | None, console_log: Path | None, retries: int = INFRA_RETRIES,
            sleep_fn: Callable[[float], None] = time.sleep) -> tuple[dict, sm.Expectation | None]:
-    pre = backend.snapshot()
+    pre = snapshot_with_retry(backend, sleep_fn=sleep_fn)
     resynced = (pre.app, pre.slot, pre.confirmed) != (state.app, state.slot, state.confirmed)
     if resynced:                                                     # the board is not where the model thinks: trust the board
         if not pre.confirmed:
@@ -158,7 +173,8 @@ def _cycle(backend, catalog: sm.Catalog, pool_dir: Path, pick: sm.Pick, state: s
     update_log, console = log_since(log_path, log_offset), log_since(console_log, console_offset)
     evidence = {"transferred": transfer_seen(log_since(log_path, log_offset), pick.transport),
                 "hang_ran": _hang_ran(update_log, console)}
-    passed, cause, observed = _check(backend, exp, pre, ok, cause, evidence)
+    passed, cause, observed = _check(backend, exp, pre, ok, cause, evidence,
+                                     lambda b: snapshot_with_retry(b, sleep_fn=sleep_fn))
     rec = {"ok": passed, "cause": cause, "expected": {"outcome": exp.outcome, "app": exp.app, "slot": exp.slot},
            "observed": observed}
     if resynced:
@@ -194,7 +210,8 @@ def run_soak(backend, catalog: sm.Catalog, picks: list[sm.Pick], plan_id: dict, 
              pause_s: float = 5.0, resume: bool = False, timeout_s: float | None = None,
              max_consecutive_unexpected: int = MAX_CONSECUTIVE_UNEXPECTED, stop_after: int | None = None,
              sleep_fn: Callable[[float], None] = time.sleep, clock: Callable[[], float] = time.monotonic,
-             console_log: Path | None = None, infra_retries: int = INFRA_RETRIES) -> dict:
+             console_log: Path | None = None, infra_retries: int = INFRA_RETRIES,
+             rerun: tuple[int, ...] = ()) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
     jsonl, log_path = out_dir / "cycles.jsonl", out_dir / "update.log"
     if jsonl.exists() and not resume:
@@ -209,7 +226,7 @@ def run_soak(backend, catalog: sm.Catalog, picks: list[sm.Pick], plan_id: dict, 
     try:
         if not done and not backend.reset_to_v1(log_path):
             raise SoakError("precondition failed: could not bring the board to confirmed v1")
-        state = _resync(backend, log_path)
+        state = _resync(backend, log_path, sleep_fn)
         if not done:
             warm, state = _warmup(backend, catalog, pool_dir, state, log_path, timeout_s, console_log,
                                 infra_retries, sleep_fn)
@@ -217,10 +234,8 @@ def run_soak(backend, catalog: sm.Catalog, picks: list[sm.Pick], plan_id: dict, 
                 _append(jsonl, rec)
             done.extend(warm)
         consecutive = 0
-        for index in range(resumed_from, len(picks)):
-            if stop_after is not None and index - resumed_from >= stop_after:
-                state_box["stopped"] = True
-                break
+
+        def execute(index: int, rerun_flag: bool = False):
             pick, t_cycle = picks[index], clock()
             try:
                 rec, exp = _cycle(backend, catalog, pool_dir, pick, state, log_path, timeout_s, console_log,
@@ -233,8 +248,25 @@ def run_soak(backend, catalog: sm.Catalog, picks: list[sm.Pick], plan_id: dict, 
             rec.update({"cycle": index + 1, "image": pick.image.name, "kind": pick.image.kind,
                         "transport": pick.transport, "version": pick.image.version,
                         "duration_s": round(clock() - t_cycle, 1)})
+            if rerun_flag:
+                rec["rerun"] = True
             _append(jsonl, rec)
+            done[:] = [r for r in done if not (rerun_flag and r["cycle"] == index + 1)]
             done.append(rec)
+            return rec, exp
+
+        for cycle_no in rerun:
+            if not 1 <= cycle_no <= resumed_from:
+                raise SoakError(f"cannot re-run cycle {cycle_no}: only cycles 1..{resumed_from} have been run")
+            rec, exp = execute(cycle_no - 1, rerun_flag=True)
+            state = sm.next_state(exp) if rec["ok"] and exp is not None else _resync(backend, log_path, sleep_fn)
+            sleep_fn(pause_s)
+
+        for index in range(resumed_from, len(picks)):
+            if stop_after is not None and index - resumed_from >= stop_after:
+                state_box["stopped"] = True
+                break
+            rec, exp = execute(index)
             real = [r for r in done if r["cycle"] >= 1]
             _write_status(out_dir, {"mode": "live", "seed": plan_id["seed"], "cycle": index + 1, "of": len(picks),
                                     "passes": sum(r["ok"] for r in real)})
@@ -245,7 +277,7 @@ def run_soak(backend, catalog: sm.Catalog, picks: list[sm.Pick], plan_id: dict, 
                 if consecutive >= max_consecutive_unexpected:
                     state_box["aborted"] = True
                     break
-                state = _resync(backend, log_path)
+                state = _resync(backend, log_path, sleep_fn)
             sleep_fn(pause_s)
     except SoakError as err:
         state_box["error"] = str(err)
@@ -309,6 +341,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--max-consecutive-unexpected", type=int, default=MAX_CONSECUTIVE_UNEXPECTED)
     ap.add_argument("--infra-retries", type=int, default=INFRA_RETRIES,
                     help="retries for host-side send trouble while the board is unchanged (default 3)")
+    ap.add_argument("--rerun-cycles", default="",
+                    help="with --resume: comma-separated already-run cycle numbers to execute again first (for cycles that "
+                         "failed because of the runner, not the board); the latest record of a cycle counts")
     ap.add_argument("--port")
     ap.add_argument("--board-ip")
     ap.add_argument("--keys-dir")
@@ -339,8 +374,7 @@ def main(argv: list[str] | None = None) -> int:
         backend = LiveBackend.create(port=a.port, board_ip=a.board_ip,
                                      keys_dir=Path(a.keys_dir) if a.keys_dir else None, env_file=a.env_file,
                                      rig_path=a.rig_config,
-                                     console_log=None if a.no_console_log else out_dir / "console.log",
-                          infra_retries=a.infra_retries)
+                                     console_log=None if a.no_console_log else out_dir / "console.log")
     except LiveRigError as err:
         print(f"ERROR: {err}", file=sys.stderr)
         return 2
@@ -348,7 +382,8 @@ def main(argv: list[str] | None = None) -> int:
         report = run_soak(backend, catalog, picks, plan_id, pool_dir, out_dir, a.pause, a.resume,
                           max_consecutive_unexpected=a.max_consecutive_unexpected,
                           console_log=None if a.no_console_log else out_dir / "console.log",
-                          infra_retries=a.infra_retries)
+                          infra_retries=a.infra_retries,
+                          rerun=tuple(int(x) for x in a.rerun_cycles.split(",") if x.strip()))
     except SoakError as err:
         print(f"ERROR: {err}", file=sys.stderr)
         return 2

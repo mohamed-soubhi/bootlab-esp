@@ -1,0 +1,84 @@
+{
+  "mode": "live",
+  "seed": 20260925,
+  "plan": {
+    "seed": 20260925,
+    "cycles": 10,
+    "ble_share": 0.5,
+    "failure_cap": 2,
+    "manifest_sha256": "a67170f78f544f969efb58bb3d81fd603a3741667ae96177d2afd8a36e968bef",
+    "model_version": 2
+  },
+  "planned_cycles": 10,
+  "total_cycles": 10,
+  "passes": 10,
+  "failures": 0,
+  "pass_rate_pct": 100.0,
+  "target_pct": 99.0,
+  "aborted": false,
+  "stopped_early": false,
+  "final_state_confirmed": true,
+  "elapsed_s": 1556.0,
+  "resumed_from": 0,
+  "infra_retries": 0,
+  "plan_summary": {
+    "cycles": 10,
+    "by_kind": {
+      "failure": 1,
+      "fixed": 8,
+      "generated": 1
+    },
+    "by_transport": {
+      "ble": 10
+    },
+    "by_image": {
+      "hang": 1,
+      "v4": 3,
+      "v3": 3,
+      "gen-bc23f981": 1,
+      "v2": 1,
+      "v1": 1
+    }
+  },
+  "by_image": {
+    "hang": {
+      "total": 1,
+      "passes": 1
+    },
+    "v4": {
+      "total": 3,
+      "passes": 3
+    },
+    "v3": {
+      "total": 3,
+      "passes": 3
+    },
+    "gen-bc23f981": {
+      "total": 1,
+      "passes": 1
+    },
+    "v2": {
+      "total": 1,
+      "passes": 1
+    },
+    "v1": {
+      "total": 1,
+      "passes": 1
+    }
+  },
+  "by_transport": {
+    "ble": {
+      "total": 10,
+      "passes": 10
+    }
+  },
+  "generated_slots": {
+    "gen-bc23f981": {
+      "ble": [
+        0
+      ]
+    }
+  },
+  "failure_log": [],
+  "error": null
+}

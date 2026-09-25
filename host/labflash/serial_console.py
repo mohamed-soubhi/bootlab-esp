@@ -87,6 +87,19 @@ class SharedConsolePort:
             self._ser.write(data)
             self._ser.flush()
 
+    def hard_reset(self, hold_s: float = 0.1, sleep=time.sleep) -> None:
+        """Restart the chip into the application through the handle this object already holds.
+
+        Opening the same COM port a second time is refused on Windows ("Access is denied") while this port is open, so a
+        reset during a captured run must reuse this handle. Same esptool-style DTR/RTS sequence as tests_hil.live_backend.hard_reset."""
+        with self._write_lock:
+            self._ser.dtr, self._ser.rts = True, False
+            sleep(hold_s)
+            self._ser.dtr, self._ser.rts = False, True
+            sleep(hold_s)
+            self._ser.dtr, self._ser.rts = False, False
+            sleep(hold_s / 2)
+
     def close(self) -> None:
         """No-op: see class docstring. Use `shutdown()` to actually release the port."""
 

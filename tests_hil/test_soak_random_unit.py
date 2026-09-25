@@ -97,6 +97,10 @@ class FakeBoard:
                 return True
             return False
         if img.failure == "no_confirm":
+            if mode == "pending_then_raise":
+                self.prior = (self.app, self.slot)
+                self.app, self.slot, self.confirmed = img.version, self.slot ^ 1, False
+                raise OSError("could not open port COM14: Access is denied")
             if mode != "never_boots":
                 self.prior = (self.app, self.slot)
                 self.app, self.slot, self.confirmed = img.version, self.slot ^ 1, False
@@ -333,3 +337,85 @@ def test_an_unconfirmed_board_before_a_cycle_is_a_soak_error(tmp_path):
 def test_plan_id_carries_the_model_version(tmp_path):
     _, _, pid = _setup(tmp_path, 5)
     assert pid["model_version"] == sm.MODEL_VERSION
+
+
+def test_main_wires_a_real_run_end_to_end_with_a_fake_backend(tmp_path, monkeypatch):
+    """The CLI path (argument parsing -> LiveBackend.create -> run_soak -> exit code) with the board faked."""
+    m = _pool(tmp_path)
+    cat = sm.build_catalog(m)
+    board = FakeBoard(cat)
+    seen = {}
+
+    class FakeLive:
+        @staticmethod
+        def create(**kw):
+            seen.update(kw)
+            board.console = kw["console_log"]
+            board.shutdown = lambda: None
+            return board
+    import tests_hil.live_backend as lb
+    monkeypatch.setattr(lb, "LiveBackend", FakeLive)
+    monkeypatch.setattr(sr.time, "sleep", lambda s: None)
+    rc = sr.main(["--pool", str(tmp_path), "--out", str(tmp_path / "run"), "--cycles", "15", "--seed", "3",
+                  "--port", "COM1", "--board-ip", "1.2.3.4", "--pause", "0", "--infra-retries", "1"])
+    assert rc == 0 and seen["port"] == "COM1" and "infra_retries" not in seen
+    assert json.loads((tmp_path / "run" / "report.json").read_text())["total_cycles"] == 15
+
+
+def test_a_board_left_pending_verify_is_rolled_back_by_a_reset_not_an_ota(tmp_path):
+    cat, picks, pid = _setup(tmp_path, 200, seed=3)
+    idx = next(i for i, p in enumerate(picks) if p.image.failure == "no_confirm")
+
+    class CountsRestores(FakeBoard):
+        restores = 0
+
+        def reset_to_v1(self, log_path, transport=None):
+            self.restores += 1
+            return super().reset_to_v1(log_path, transport)
+    board = CountsRestores(cat, {2 + idx + 1: "pending_then_raise"})
+    rep = _run(tmp_path, board, cat, picks, pid)
+    assert rep["failures"] == 1 and not rep["aborted"] and rep["final_state_confirmed"]
+    assert board.resets >= 1
+    assert board.restores == 2          # the run's start and its end; the pending image was rolled back by a reset
+
+
+def test_a_serial_port_that_reopens_late_is_ridden_out(tmp_path):
+    cat, picks, pid = _setup(tmp_path, 30, seed=7)
+    slept = []
+
+    class Flaky(FakeBoard):
+        boom = 0
+
+        def snapshot(self):
+            if self.n >= 6 and self.boom < 3:
+                self.boom += 1
+                raise OSError("could not open port 'COM14': PermissionError(13, 'Access is denied.')")
+            return super().snapshot()
+    board = Flaky(cat)
+    board.console = tmp_path / "console.txt"
+    rep = sr.run_soak(board, cat, picks, pid, tmp_path, tmp_path / "out", pause_s=0, sleep_fn=slept.append,
+                      console_log=board.console, infra_retries=0)
+    assert rep["failures"] == 0 and rep["total_cycles"] == 30 and 5.0 in slept
+
+
+def test_rerun_replaces_a_runner_failure_and_the_report_counts_the_latest_record(tmp_path):
+    cat, picks, pid = _setup(tmp_path, 40, seed=3)
+    idx = next(i for i, p in enumerate(picks) if p.image.failure == "no_confirm")
+    b1 = FakeBoard(cat, {2 + idx + 1: "pending_then_raise"})
+    _run(tmp_path, b1, cat, picks, pid, stop_after=idx + 3)
+    cyc = idx + 1
+    first = [r for r in _records(tmp_path / "out") if r["cycle"] == cyc]
+    assert first and first[0]["ok"] is False
+    b2 = FakeBoard(cat)
+    b2.app, b2.slot = b1.app, b1.slot
+    rep = _run(tmp_path, b2, cat, picks, pid, resume=True, rerun=(cyc,))
+    assert rep["failures"] == 0 and rep["total_cycles"] == 40 and rep["pass_rate_pct"] == 100.0
+    both = [r for r in _records(tmp_path / "out") if r["cycle"] == cyc]
+    assert [r["ok"] for r in both] == [False, True] and both[1]["rerun"] is True
+
+
+def test_rerun_of_a_cycle_that_never_ran_is_refused(tmp_path):
+    cat, picks, pid = _setup(tmp_path, 20)
+    _run(tmp_path, FakeBoard(cat), cat, picks, pid, stop_after=5)
+    with pytest.raises(sr.SoakError, match="cannot re-run"):
+        _run(tmp_path, FakeBoard(cat), cat, picks, pid, resume=True, rerun=(15,))

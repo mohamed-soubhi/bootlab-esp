@@ -1,0 +1,158 @@
+{
+  "mode": "live",
+  "seed": 20260925,
+  "plan": {
+    "seed": 20260925,
+    "cycles": 200,
+    "ble_share": 0.5,
+    "failure_cap": 2,
+    "manifest_sha256": "a67170f78f544f969efb58bb3d81fd603a3741667ae96177d2afd8a36e968bef",
+    "model_version": 2
+  },
+  "planned_cycles": 200,
+  "total_cycles": 42,
+  "passes": 41,
+  "failures": 1,
+  "pass_rate_pct": 97.62,
+  "target_pct": 99.0,
+  "aborted": false,
+  "stopped_early": false,
+  "final_state_confirmed": false,
+  "elapsed_s": 5132.7,
+  "resumed_from": 0,
+  "infra_retries": 0,
+  "plan_summary": {
+    "cycles": 200,
+    "by_kind": {
+      "failure": 39,
+      "fixed": 139,
+      "generated": 22
+    },
+    "by_transport": {
+      "ble": 89,
+      "wifi": 111
+    },
+    "by_image": {
+      "hang": 15,
+      "v4": 33,
+      "v3": 42,
+      "gen-bc23f981": 2,
+      "v2": 24,
+      "v1": 40,
+      "gen-ed4ae35d": 4,
+      "gen-d3ec723f": 1,
+      "bad_sig": 10,
+      "gen-477ee36e": 4,
+      "gen-0c23946e": 3,
+      "gen-8ddc7a9e": 3,
+      "no_confirm": 14,
+      "gen-a7e974e5": 2,
+      "gen-7ced4815": 3
+    }
+  },
+  "by_image": {
+    "hang": {
+      "total": 2,
+      "passes": 2
+    },
+    "v4": {
+      "total": 6,
+      "passes": 6
+    },
+    "v3": {
+      "total": 10,
+      "passes": 10
+    },
+    "gen-bc23f981": {
+      "total": 1,
+      "passes": 1
+    },
+    "v2": {
+      "total": 7,
+      "passes": 7
+    },
+    "v1": {
+      "total": 8,
+      "passes": 8
+    },
+    "gen-ed4ae35d": {
+      "total": 1,
+      "passes": 1
+    },
+    "gen-d3ec723f": {
+      "total": 1,
+      "passes": 1
+    },
+    "bad_sig": {
+      "total": 2,
+      "passes": 2
+    },
+    "gen-477ee36e": {
+      "total": 1,
+      "passes": 1
+    },
+    "gen-0c23946e": {
+      "total": 1,
+      "passes": 1
+    },
+    "gen-8ddc7a9e": {
+      "total": 1,
+      "passes": 1
+    },
+    "no_confirm": {
+      "total": 1,
+      "passes": 0
+    }
+  },
+  "by_transport": {
+    "ble": {
+      "total": 23,
+      "passes": 22
+    },
+    "wifi": {
+      "total": 19,
+      "passes": 19
+    }
+  },
+  "generated_slots": {
+    "gen-bc23f981": {
+      "ble": [
+        0
+      ]
+    },
+    "gen-ed4ae35d": {
+      "wifi": [
+        1
+      ]
+    },
+    "gen-d3ec723f": {
+      "wifi": [
+        0
+      ]
+    },
+    "gen-477ee36e": {
+      "wifi": [
+        0
+      ]
+    },
+    "gen-0c23946e": {
+      "wifi": [
+        1
+      ]
+    },
+    "gen-8ddc7a9e": {
+      "wifi": [
+        0
+      ]
+    }
+  },
+  "failure_log": [
+    {
+      "cycle": 42,
+      "image": "no_confirm",
+      "transport": "ble",
+      "cause": "cycle raised SerialException: could not open port 'COM14': PermissionError(13, 'Access is denied.', None, 5)"
+    }
+  ],
+  "error": "board could not be brought back to a confirmed image"
+}

@@ -21,10 +21,12 @@ board over WiFi) `scripts/evidence/bl069_r1_2026-09-25/`; AC5 (all 12 valid imag
 `docs/BL069_IMAGE_POOL.md`; LESSONS Traps 25-30. Pool `bl069-2026-09-25` lives in `esp_idf/build_pool/` (gitignored; regenerate with
 `PYTHONPATH=host python -m labflash gen-images --out esp_idf/build_pool --seed-base bl069-2026-09-25`, ~17 min, WSL only).
 
-**BL-067 (todo until BL-069 is `done`):** built, not run. `tests_hil/soak_model.py` (seeded picker + expected-outcome model, never re-sends the running version),
-`tests_hil/soak_random.py` (runner: warm-up, transfer/hang evidence for failure images, model resync, restore in `finally`, `--resume`, `--dry-run`),
-`tests_hil/otaretry.py` (bounded retries for host-side trouble while the board is unchanged), v3/v4 in `IDF_VARIANTS` (CI builds 7 variants),
-runbook `docs/BL067_RANDOM_SOAK.md`. Next: dry-run the plan on Windows, 10-cycle smoke, then 200 cycles at 50 % BLE in `--resume` windows.
+**BL-067 (status `todo` only because BL-069 is not `done` yet; the work is finished):** 200/200 cycles matched the model on board 1 (seed 20260925, 111 WiFi + 89 BLE,
+139 fixed / 22 generated / 39 failure images), board restored to confirmed v1. Three windows: on first attempts 198/200 matched; the 2 misses (cycles 42 and 53, the first
+`no_confirm` cycles) were a runner bug (a second open of the COM port held by the console capture), fixed and re-run with `--rerun-cycles 42,53`; none was the board.
+Evidence `scripts/evidence/bl067_20260925/` (README has the honest account), smoke `scripts/evidence/bl067_smoke_20260925/`, runbook `docs/BL067_RANDOM_SOAK.md`, LESSONS Traps 31-35.
+Code: `tests_hil/soak_model.py`, `soak_random.py`, `otaretry.py`, v3/v4 in `IDF_VARIANTS`. Open follow-ups: the intermittent "trigger accepted, image never pulled" (Trap 34) is unexplained;
+BL-060 Zephyr soak, BL-072 (two boards in parallel; board 2 is ready), BL-070/071 are untouched.
 
 **Hardware how-to (native Windows, R14):** the WSL repo is synced into `C:\MSA\embedded-OS\bootlab-run` (code + images only; keys/credentials are read from
 `C:\MSA\embedded-OS\bootlab-esp`). From WSL: `cd /mnt/c/MSA/embedded-OS/bootlab-run && cmd.exe /c "set PYTHONPATH=host;.&& <Python312>\python.exe -m ..."`.
@@ -61,7 +63,7 @@ Candidate follow-up (owner's call): add `bleak` + `esp-idf-nvs-partition-gen` to
 (e.g. an optional `hil` group).
 
 NEXT (order as of 2026-09-25; nothing is blocked on the owner except BL-069's R1 board window):
-1. **BL-067**: dry-run, 10-cycle smoke on board 1, then the 200-cycle run (see its section above). BL-069 needs the owner's sign-off (`review` -> `done`).
+1. Owner sign-off for BL-069 (`review` -> `done`), then BL-067 can be closed. Next candidates: BL-072 (board 2 ready), BL-060 Zephyr soak, BL-070/071.
 2. **BL-067** randomized 200-cycle soak — consumes BL-069's manifest/pool, add `--seed`, 70/10/20
    variant mix, budget BLE at the *drifted* rate (~280 s/cycle), not the first-cycle ~190 s
    (`docs/LESSONS_LEARNED.md` Trap 24).
