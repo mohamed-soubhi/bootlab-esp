@@ -176,3 +176,9 @@ def test_stress_counts_good_answers(tmp_path):
 def test_abuse_framing_reports_no_reset_and_sane(tmp_path):
     r = _be_with(tmp_path, FakeDevice()).abuse_framing()
     assert "err_codes" in r and r["no_reset"] and r["version_ok"] and r["uid"] == "E072A1AA2390"
+
+
+def test_failure_image_versions_are_not_v1():
+    from tests_hil.live_backend import _is_v1
+    assert _is_v1("1.0.0") and _is_v1("1.2.3")
+    assert not any(_is_v1(v) for v in ("1.0.0-hang", "1.0.0-badsig", "1.0.0-noconfirm", "2.0.0", "gen-abc"))

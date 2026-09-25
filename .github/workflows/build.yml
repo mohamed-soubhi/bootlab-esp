@@ -106,7 +106,7 @@ jobs:
           . $IDF_PATH/export.sh
           pip install -e host pyyaml pyserial
 
-      - name: Build & verify all 5 IDF variants (PLAN R15)
+      - name: Build & verify all 7 IDF variants (PLAN R15, BL-067)
         run: |
           . $IDF_PATH/export.sh
           PYTHONPATH=host python3 -m labflash build idf
@@ -121,6 +121,8 @@ jobs:
             esp_idf/build/ota_data_initial.bin
             esp_idf/build/bootlab_idf_blink.bin
             esp_idf/build_v2/bootlab_idf_blink.bin
+            esp_idf/build_v3/bootlab_idf_blink.bin
+            esp_idf/build_v4/bootlab_idf_blink.bin
             esp_idf/build_no_confirm/bootlab_idf_blink.bin
             esp_idf/build_hang/bootlab_idf_blink.bin
             esp_idf/build_bad_sig/bootlab_idf_blink.bin

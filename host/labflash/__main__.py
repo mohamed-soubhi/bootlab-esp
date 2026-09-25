@@ -107,7 +107,7 @@ def build_parser() -> argparse.ArgumentParser:
     bld_p.add_argument("board", choices=["idf", "zephyr", "all"], help="board to build for")
     bld_p.add_argument(
         "--variant",
-        choices=["v1", "v2", "no_confirm", "hang", "bad_sig", "all"],
+        choices=["v1", "v2", "v3", "v4", "no_confirm", "hang", "bad_sig", "all"],
         default=None,
         help="variant to build (default: all)",
     )

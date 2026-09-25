@@ -7,7 +7,8 @@ from labflash import build as bld
 
 
 def test_variant_definitions():
-    assert set(bld.IDF_VARIANTS.keys()) == {"v1", "v2", "no_confirm", "hang", "bad_sig"}
+    assert set(bld.IDF_VARIANTS.keys()) == {"v1", "v2", "v3", "v4", "no_confirm", "hang", "bad_sig"}
+    assert len({c["project_ver"] for c in bld.IDF_VARIANTS.values()}) == len(bld.IDF_VARIANTS)   # distinct versions
     for cfg in bld.IDF_VARIANTS.values():
         assert "build_dir" in cfg
         assert "defaults" in cfg

@@ -42,6 +42,23 @@ IDF_VARIANTS: dict[str, dict] = {
         "signing_key": "keys/idf_sbv2.pem",
         "expected_sig_valid": True,
     },
+    # BL-067: two more valid fixed images with distinct versions (same code as v1 / v2, different app version).
+    "v3": {
+        "build_dir": "esp_idf/build_v3",
+        "defaults": "sdkconfig.defaults",
+        "project_ver": "3.0.0",
+        "kconfig_sym": "CONFIG_APP_VARIANT_V1=y",
+        "signing_key": "keys/idf_sbv2.pem",
+        "expected_sig_valid": True,
+    },
+    "v4": {
+        "build_dir": "esp_idf/build_v4",
+        "defaults": "sdkconfig.defaults;sdkconfig.v2",
+        "project_ver": "4.0.0",
+        "kconfig_sym": "CONFIG_APP_VARIANT_V2=y",
+        "signing_key": "keys/idf_sbv2.pem",
+        "expected_sig_valid": True,
+    },
     "no_confirm": {
         "build_dir": "esp_idf/build_no_confirm",
         "defaults": "sdkconfig.defaults;sdkconfig.no_confirm",
@@ -427,7 +444,7 @@ def build_idf_all(
     clean: bool = False,
     runner: Callable | None = None,
 ) -> dict[str, BuildResult]:
-    """Build all 5 IDF variants in order."""
+    """Build all IDF variants in order."""
     results = {}
     for var in IDF_VARIANTS:
         results[var] = build_idf_variant(var, repo_root=repo_root, clean=clean, runner=runner)

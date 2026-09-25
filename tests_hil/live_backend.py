@@ -21,11 +21,18 @@ IMAGE_NAME = "bootlab_idf_blink.bin"
 VARIANT_DIRS = {
     "v1": "build",
     "v2": "build_v2",
+    "v3": "build_v3",
+    "v4": "build_v4",
     "no_confirm": "build_no_confirm",
     "hang": "build_hang",
     "bad_sig": "build_bad_sig",
 }
 OK_MARKER = "UPDATE OK"
+
+
+def _is_v1(app: str) -> bool:
+    """A v1 release ("1.x.y"); the failure images ("1.0.0-hang", "-badsig", "-noconfirm") are NOT v1."""
+    return app.startswith("1.") and "-" not in app
 
 
 class LiveRigError(RuntimeError):
@@ -298,9 +305,9 @@ class LiveBackend:
         if transport is None:
             transport = "udp" if self.board == "zephyr" else "wifi"
         s = self.snapshot()
-        if s.app.startswith("1.") and s.confirmed:
+        if _is_v1(s.app) and s.confirmed:
             return True
         if not self.update("v1", transport, log_path):
             return False
         s = self.snapshot()
-        return s.app.startswith("1.") and s.confirmed
+        return _is_v1(s.app) and s.confirmed
