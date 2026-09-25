@@ -13,35 +13,29 @@ directory on this machine AND the Windows mirror -- a commit made here can catch
 from the other session (happened at least once, see commit `d308248`'s history); check `git status`
 and `git log -3` before assuming a clean starting point.
 
-## BL-069 — build phase DONE 2026-09-25; hardware phase (R1 + AC5) NOT done
+## BL-069 — DONE 2026-09-25 (status `review`, owner sign-off pending); BL-067 build phase done, run NOT started
 
-Ticket still `todo` (set `doing` when the board work starts). Plan: `/home/msoubhi/.claude/plans/zippy-conjuring-pie.md`
-(has the REPLAN and the confirmed decisions). Evidence: `scripts/evidence/bl069_pool_2026-09-25/` (README has every gate result).
-
-**Built (committed):** `host/labflash/{pinpolicy,imagefmt,imagegen,poolmanifest,genvariants}.py`, `gen-images` subcommand,
-`build.build_idf_image` (extracted from `build_idf_variant`), firmware overlay `CONFIG_APP_GEN_POOL` (Kconfig + `app_main.c` +
-CMake, nothing under LABID/WiFi/BLE-OTA/confirm), `tests_hil/pool_schedule.py` + `pool_install.py` (AC5 runner), `docs/BL069_IMAGE_POOL.md`,
-LESSONS Traps 25-30. Pool: 13 signed images (9 valid, 2 unaligned-trailer, 1 near_limit 4,132,864 B, 1 too_big 4,263,936 B), seed base
-`bl069-2026-09-25`, in `esp_idf/build_pool/` (gitignored; regenerate with
+**BL-069:** all six ACs met with evidence. Build phase `scripts/evidence/bl069_pool_2026-09-25/`; gate R1 (trailer images accepted by the real
+board over WiFi) `scripts/evidence/bl069_r1_2026-09-25/`; AC5 (all 12 valid images in both OTA slots, WiFi + BLE) `scripts/evidence/bl069_pool_install_2026-09-25/`
+(README explains the aborted first run, the Windows temp-file lock that did not recur, and two false FAILs from re-sending the running version). Guide
+`docs/BL069_IMAGE_POOL.md`; LESSONS Traps 25-30. Pool `bl069-2026-09-25` lives in `esp_idf/build_pool/` (gitignored; regenerate with
 `PYTHONPATH=host python -m labflash gen-images --out esp_idf/build_pool --seed-base bl069-2026-09-25`, ~17 min, WSL only).
 
-**Decisions (owner, 2026-09-25):** AC5 as ONE overnight run (WiFi first, then BLE); non-4096 sizes via post-signature trailer (gated on R1);
-reproducible build in the generated overlay only; commit manifest/README/seed, keep `.bin`s gitignored.
+**BL-067 (todo until BL-069 is `done`):** built, not run. `tests_hil/soak_model.py` (seeded picker + expected-outcome model, never re-sends the running version),
+`tests_hil/soak_random.py` (runner: warm-up, transfer/hang evidence for failure images, model resync, restore in `finally`, `--resume`, `--dry-run`),
+`tests_hil/otaretry.py` (bounded retries for host-side trouble while the board is unchanged), v3/v4 in `IDF_VARIANTS` (CI builds 7 variants),
+runbook `docs/BL067_RANDOM_SOAK.md`. Next: dry-run the plan on Windows, 10-cycle smoke, then 200 cycles at 50 % BLE in `--resume` windows.
 
-**Findings worth knowing:** RSA-PSS is salted, so whole-file sha256 changes every build; reproducibility is `content_sha256` (everything before the
-signature sector). Image size grows in 64 KiB steps (windows, not exact sizes). IDF's size-check error is on stdout. The fixed variants are NOT
-byte-identical after the firmware edit (date, hashes, signature, 3 `__LINE__` immediates) but same size and code paths; the plan's "byte-identical"
-R7 wording was wrong.
+**Hardware how-to (native Windows, R14):** the WSL repo is synced into `C:\MSA\embedded-OS\bootlab-run` (code + images only; keys/credentials are read from
+`C:\MSA\embedded-OS\bootlab-esp`). From WSL: `cd /mnt/c/MSA/embedded-OS/bootlab-run && cmd.exe /c "set PYTHONPATH=host;.&& <Python312>\python.exe -m ..."`.
+Board 1 = COM14 / 192.168.1.152 (UID E072A1AA2390). Board 2 = COM12 / 192.168.1.153 (UID ACA7042C3B04), running IDF v1 confirmed, idle (BL-072).
+Two runs must not overlap: the WiFi OTA server binds port 8443 and WiFi/BLE share the radio. Copy evidence back into the WSL repo; never commit from /mnt/c.
 
-**Still to do, needs the owner:** (1) R1: install `g03.bin` over WiFi on the board (native Windows, owner present), expect boot + `confirmed=1`, then
-restore v1; (2) confirm nothing is wired to GPIO1,2,4-18,21,47 (safe-pin list from the DevKitC-1 pin table); (3) one ~3.5 h overnight window:
-`python -m tests_hil.pool_install --pool <win>\esp_idf\build_pool --port COM14 --board-ip 192.168.1.152 --keys-dir keys --env-file credentials.env
---out scripts\evidence\bl069_pool_install_<date>` (verifies pool sha256 first; `--dry-run` prints the plan; `--resume` continues).
-
-**Cheap agent (owner-approved side tool):** git worktree `~/bootlab-esp-cheap` (branch `bl069-cheap`, `.agent/inbox|outbox`, rules in its
-`CLAUDE.local.md`). Drive it headless from here: `cd ~/bootlab-esp-cheap && ollama launch claude --model deepseek-v4.1-flash:cloud --yes -- -p
-"Read CLAUDE.local.md, then do task Tnn ..." --permission-mode acceptEdits --allowedTools Read Edit Write Bash --disallowedTools "Bash(git:*)" ...`.
-Cloud model: never put keys/`.local`/credentials in a task. Always review its diff and re-run tests before copying anything into the main repo.
+**Cheap agent** (owner-approved side tool): worktree `~/bootlab-esp-cheap` (branch `bl069-cheap`; `.agent/inbox|outbox`, rules in its `CLAUDE.local.md`).
+Drive it headless from here: `cd ~/bootlab-esp-cheap && ollama launch claude --model deepseek-v4.1-flash:cloud --yes -- -p "Read CLAUDE.local.md, then do
+task Tnn ..." --permission-mode acceptEdits --allowedTools Read Edit Write Bash --disallowedTools "Bash(git:*)" "Bash(rm:*)" ...`. Cloud model: never put
+keys/`.local`/credentials in a task. It implements tests-first specs only; always review its diff and re-run tests before copying into the main repo.
+It delivered T01-T07 so far (generator, manifest, sweep scheduler, pin doc, LESSONS traps, soak model, BL-067 runbook).
 
 The 2026-09-23d run finished and its artifacts were recovered on 2026-09-25 from the Windows scratch dir
 (`C:\MSA\embedded-OS\bootlab-esp\scripts\evidence\bl060_soak_2026-09-23d`) into
@@ -67,7 +61,7 @@ Candidate follow-up (owner's call): add `bleak` + `esp-idf-nvs-partition-gen` to
 (e.g. an optional `hil` group).
 
 NEXT (order as of 2026-09-25; nothing is blocked on the owner except BL-069's R1 board window):
-1. **BL-069** hardware phase (see its section above): gate R1, then the overnight AC5 install run.
+1. **BL-067**: dry-run, 10-cycle smoke on board 1, then the 200-cycle run (see its section above). BL-069 needs the owner's sign-off (`review` -> `done`).
 2. **BL-067** randomized 200-cycle soak — consumes BL-069's manifest/pool, add `--seed`, 70/10/20
    variant mix, budget BLE at the *drifted* rate (~280 s/cycle), not the first-cycle ~190 s
    (`docs/LESSONS_LEARNED.md` Trap 24).

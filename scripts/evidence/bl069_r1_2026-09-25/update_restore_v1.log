@@ -1,0 +1,12 @@
+--- update bootlab_idf_blink.bin via wifi rc=0
+Updating idf over wifi: esp_idf\build\bootlab_idf_blink.bin (1249280 bytes)
+  WiFi: board accepted the request; serving 1249280 bytes from 192.168.1.134:8443
+host served: {'update.bin': 1249280} (image was 1249280 bytes)
+image version 1.0.0; before: app=gen-6b593e13 slot=1; after: app=1.0.0 slot=0
+[PASS] running the new image: board reports '1.0.0', image is '1.0.0'
+[PASS] slot flipped: slot 1 -> 0
+[PASS] confirmed: self-test confirmed the image
+[PASS] identity (uid): board E072A1AA2390, expected E072A1AA2390
+[PASS] LABID == HTTPS version: LABID app=1.0.0 slot=0; HTTPS app=1.0.0 slot=0
+UPDATE OK
+

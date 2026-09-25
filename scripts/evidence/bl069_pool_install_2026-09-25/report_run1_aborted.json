@@ -1,0 +1,195 @@
+{
+  "mode": "live",
+  "seed_base": "bl069-2026-09-25",
+  "steps_total": 50,
+  "steps_done": 16,
+  "counts": {
+    "pass": 12,
+    "fail": 3,
+    "expected_reject": 1,
+    "skipped": 0
+  },
+  "coverage_gaps": [
+    [
+      "gen-0c23946e",
+      "ble",
+      0
+    ],
+    [
+      "gen-0c23946e",
+      "ble",
+      1
+    ],
+    [
+      "gen-0c23946e",
+      "wifi",
+      0
+    ],
+    [
+      "gen-0f8f7a30",
+      "ble",
+      0
+    ],
+    [
+      "gen-0f8f7a30",
+      "ble",
+      1
+    ],
+    [
+      "gen-0f8f7a30",
+      "wifi",
+      0
+    ],
+    [
+      "gen-477ee36e",
+      "ble",
+      0
+    ],
+    [
+      "gen-477ee36e",
+      "ble",
+      1
+    ],
+    [
+      "gen-477ee36e",
+      "wifi",
+      1
+    ],
+    [
+      "gen-6b593e13",
+      "wifi",
+      1
+    ],
+    [
+      "gen-7ced4815",
+      "ble",
+      0
+    ],
+    [
+      "gen-7ced4815",
+      "ble",
+      1
+    ],
+    [
+      "gen-7ced4815",
+      "wifi",
+      0
+    ],
+    [
+      "gen-8ddc7a9e",
+      "ble",
+      0
+    ],
+    [
+      "gen-8ddc7a9e",
+      "ble",
+      1
+    ],
+    [
+      "gen-8ddc7a9e",
+      "wifi",
+      0
+    ],
+    [
+      "gen-a7e974e5",
+      "ble",
+      0
+    ],
+    [
+      "gen-a7e974e5",
+      "ble",
+      1
+    ],
+    [
+      "gen-a7e974e5",
+      "wifi",
+      1
+    ],
+    [
+      "gen-bc23f981",
+      "ble",
+      0
+    ],
+    [
+      "gen-bc23f981",
+      "ble",
+      1
+    ],
+    [
+      "gen-bc23f981",
+      "wifi",
+      0
+    ],
+    [
+      "gen-d3ec723f",
+      "ble",
+      0
+    ],
+    [
+      "gen-d3ec723f",
+      "ble",
+      1
+    ],
+    [
+      "gen-d3ec723f",
+      "wifi",
+      1
+    ],
+    [
+      "gen-de2752f3",
+      "wifi",
+      1
+    ],
+    [
+      "gen-ed4ae35d",
+      "ble",
+      0
+    ],
+    [
+      "gen-ed4ae35d",
+      "ble",
+      1
+    ],
+    [
+      "gen-ed4ae35d",
+      "wifi",
+      1
+    ],
+    [
+      "gen-fcc50b7a",
+      "ble",
+      0
+    ],
+    [
+      "gen-fcc50b7a",
+      "ble",
+      1
+    ],
+    [
+      "gen-fcc50b7a",
+      "wifi",
+      0
+    ]
+  ],
+  "aborted": true,
+  "stopped_early": false,
+  "recovery_failures": 2,
+  "topup_installs": 0,
+  "final_state_v1": false,
+  "elapsed_s": 834.7,
+  "resumed_from": 0,
+  "failure_log": [
+    {
+      "key": "wifi:2:11",
+      "cause": "update raised PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\\\Users\\\\MSoubhi\\\\AppData\\\\Local\\\\Temp\\\\labflash-ota-o77_609e\\\\update.bin'"
+    },
+    {
+      "key": "wifi:2:10",
+      "cause": "expected gen-0f8f7a30 confirmed in slot 1, board reports gen-ed4ae35d confirmed=True slot=0 (update ok=False)"
+    },
+    {
+      "key": "wifi:2:9",
+      "cause": "expected gen-6b593e13 confirmed in slot 1, board reports gen-ed4ae35d confirmed=True slot=0 (update ok=False)"
+    }
+  ]
+}

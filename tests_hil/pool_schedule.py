@@ -64,6 +64,23 @@ def _step(
     )
 
 
+def _next_order(previous: list[dict]) -> list[dict]:
+    """The accepted images of the next sweep, given the previous sweep's order.
+
+    The board flips slot on every accepted install, so an image lands on the opposite slot next sweep exactly when its
+    install index moves by an odd amount. With an even count, swapping neighbouring pairs does that for every image;
+    with an odd count, repeating the order does (the previous sweep's length is the odd shift). Unlike reversing, neither
+    puts the last image of one sweep first in the next: `labflash update` recognises a finished install by the
+    version changing, so re-sending the version already running reports a false failure.
+    """
+    if len(previous) % 2:
+        return list(previous)
+    order = list(previous)
+    for k in range(0, len(order) - 1, 2):
+        order[k], order[k + 1] = order[k + 1], order[k]
+    return order
+
+
 def plan_sweeps(
     manifest: dict,
     transports: tuple[str, ...] = _TRANSPORTS,
@@ -72,27 +89,38 @@ def plan_sweeps(
 ) -> list[Step]:
     """The full schedule: every step of transport 1, then transport 2, sweeps within each transport.
 
-    Sweep 1 follows manifest order; every later sweep reverses the previous sweep's accepted images, so each
-    accepted image lands on the opposite slot in the next sweep. The predicted slot is carried across all steps,
-    flipped by an accepted install and left alone by a reject or a skip.
+    Sweep 1 follows manifest order (its first two accepted images swap if the first would repeat the image just
+    installed); every later sweep is `_next_order` of the previous one, so each accepted image lands on the opposite slot
+    and no image is ever sent twice in a row. The predicted slot is carried across all steps, flipped by an accepted
+    install and left alone by a reject or a skip.
     """
     images = manifest["images"]
     steps: list[Step] = []
     slot = start_slot
+    last_installed: dict | None = None
     for transport in transports:
         accepted = [e for e in images if _accepts(e, transport)]
         skipped = [e for e in images if _skippable(e, transport)]
         oversized = [e for e in images if e["role"] == _OVERSIZED_ROLE]
         accepted_ids = {e["index"] for e in accepted}
         planned_ids = accepted_ids | {e["index"] for e in skipped}
+        order = list(accepted)
         for sweep in range(1, sweeps + 1):
             if sweep == 1:
+                if last_installed is not None and len(order) > 1 and order[0]["index"] == last_installed["index"]:
+                    order[0], order[1] = order[1], order[0]
                 ordered = [e for e in images if e["index"] in planned_ids]
+                first_two = [e["index"] for e in order[:2]]
+                positions = [n for n, e in enumerate(ordered) if e["index"] in first_two]
+                if len(positions) == 2 and [ordered[n]["index"] for n in positions] != first_two:
+                    ordered[positions[0]], ordered[positions[1]] = ordered[positions[1]], ordered[positions[0]]
             else:
-                ordered = (accepted if sweep % 2 else list(reversed(accepted))) + skipped
+                order = _next_order(order)
+                ordered = order + skipped
             for entry in ordered:
                 if entry["index"] in accepted_ids:
                     slot ^= 1
+                    last_installed = entry
                     steps.append(
                         _step(
                             transport,

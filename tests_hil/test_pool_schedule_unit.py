@@ -1,6 +1,8 @@
 """BL-069 AC5: hardware-free tests for the pool install schedule. Owner: cheap agent implements, Claude wrote the spec."""
 from __future__ import annotations
 
+import itertools
+
 import pytest
 from labflash import imagefmt as fmt
 from labflash import imagegen as gen
@@ -150,3 +152,23 @@ def test_failed_results_do_not_count_toward_coverage():
     steps = ps.plan_sweeps(m)
     results = [_result(s, confirmed=False) for s in steps if not s.skip and s.expect_accept]
     assert ps.coverage_gaps(m, results)
+
+
+@pytest.mark.parametrize("start_slot", [0, 1])
+@pytest.mark.parametrize("sweeps", [1, 2, 3])
+def test_the_same_image_is_never_installed_twice_in_a_row(start_slot, sweeps):
+    steps = [s for s in ps.plan_sweeps(_manifest(), sweeps=sweeps, start_slot=start_slot) if s.expect_accept]
+    for a, b in itertools.pairwise(steps):
+        assert a.image_index != b.image_index, (a.key, b.key)
+    assert steps[0].expected_version != "1.0.0"
+
+
+def test_both_slots_are_still_covered_with_an_odd_number_of_accepted_images():
+    m = _manifest()
+    m["images"] = [e for e in m["images"] if e["index"] != 0]            # 11 accepted over wifi, odd
+    for e in m["images"]:
+        e["index"] -= 1
+    for start in (0, 1):
+        steps = ps.plan_sweeps(m, transports=("wifi",), sweeps=2, start_slot=start)
+        for e in (x for x in m["images"] if x["expected"]["wifi"]["accept"]):
+            assert {s.expected_slot for s in steps if s.image_index == e["index"] and s.expect_accept} == {0, 1}

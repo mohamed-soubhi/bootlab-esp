@@ -79,7 +79,7 @@ gantt
     BL-063b HTML presentation of the IDF track :crit, bl063b, 2026-10-16, 2d
     BL-066 GitHub Pages project showcase & presentation :done, bl066, 2026-09-16, 2d
     BL-067 [Advanced] Heavy randomized OTA soak 4 good + :bl067, 2026-10-14, 4d
-    BL-069 [Advanced] Random-variant image generator and :bl069, 2026-10-10, 4d
+    BL-069 [Advanced] Random-variant image generator and :active, bl069, 2026-10-10, 4d
     BL-072 [Advanced] Multi-board randomized OTA soak tw :bl072, 2026-10-18, 4d
 ```
 
@@ -95,7 +95,6 @@ gantt
 
 ### Ready to start — IDF track (todo, every dependency of this board done)
 
-- **BL-069** [L] [Advanced] Random-variant image generator and signed image pool (varied footprint, both OTA slots)
 - **BL-070** [L] hil.yml self-hosted runner on the development machine (workstation)
 
 ### Waiting-on — IDF track
@@ -107,8 +106,8 @@ gantt
 | BL-063 Final PLAN.md update | 🟥 blocked | — |
 | BL-063a IDF lessons learned (retrospective) | 🟥 blocked | BL-061[idf] 🟥, BL-062[idf] 🟥, BL-063[idf] 🟥, BL-071[idf] ⬜ |
 | BL-063b HTML presentation of the IDF track | 🟥 blocked | BL-063a[idf] 🟥 |
-| BL-067 [Advanced] Heavy randomized OTA soak 4 good + | ⬜ todo | BL-069[idf] ⬜ |
-| BL-069 [Advanced] Random-variant image generator and | ⬜ todo | — |
+| BL-067 [Advanced] Heavy randomized OTA soak 4 good + | ⬜ todo | BL-069[idf] 🟣 |
+| BL-069 [Advanced] Random-variant image generator and | 🟣 review | — |
 | BL-070 hil.yml self-hosted runner on the development | ⬜ todo | — |
 | BL-071 IDF acceptance re-run from the development ma | ⬜ todo | BL-070[idf] ⬜ |
 | BL-072 [Advanced] Multi-board randomized OTA soak tw | ⬜ todo | BL-067[idf] ⬜ |

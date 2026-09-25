@@ -14,8 +14,9 @@
 
 ```mermaid
 pie showData title Ticket status
-    "todo" : 6
+    "todo" : 5
     "doing" : 7
+    "review" : 1
     "blocked" : 5
     "done" : 42
 ```
@@ -999,7 +1000,7 @@ Machine version of BL-056a (canceled: RPi4 cannot be depended on). Re-run the ID
 | 🟥 | BL-063b | HTML presentation of the IDF track | M | host | BL-063a |  |
 | ✅ | BL-066 | GitHub Pages project showcase & presentation deck (Dual-OS, challenges, lessons learned) | M | host | — |  |
 | ⬜ | BL-067 | [Advanced] Heavy randomized OTA soak: 4 good + failure variants, random transport (200 cycles, IDF board 1) | L | idf | BL-060, BL-069 |  |
-| ⬜ | BL-069 | [Advanced] Random-variant image generator and signed image pool (varied footprint, both OTA slots) | L | idf | BL-060 |  |
+| 🟣 | BL-069 | [Advanced] Random-variant image generator and signed image pool (varied footprint, both OTA slots) | L | idf | BL-060 |  |
 | ⬜ | BL-072 | [Advanced] Multi-board randomized OTA soak: two boards in random parallel on one machine (400 cycles) | L | idf | BL-067 |  |
 
 <details><summary>🔵 <b>BL-060</b> — Overnight soak ×100</summary>
@@ -1150,15 +1151,15 @@ Follow-up to BL-060 (strict v1<->v2 alternation, wifi,wifi,ble,ble). Extend test
 
 </details>
 
-<details><summary>⬜ <b>BL-069</b> — [Advanced] Random-variant image generator and signed image pool (varied footprint, both OTA slots)</summary>
+<details><summary>🟣 <b>BL-069</b> — [Advanced] Random-variant image generator and signed image pool (varied footprint, both OTA slots)</summary>
 
 - **Size:** L (3–5 days)  
 - **Boards:** idf  
-- **Tracks:** IDF ⬜ todo  
+- **Tracks:** IDF 🟣 review  
 - **Depends on:** BL-060  
 - **Plan:** §8 P5
 
-Generate a pool of valid, signed IDF images whose footprint differs from the fixed v1/v2 images, to prove the two OTA slots accept arbitrary code and not just two known binaries. gen_variant(seed) produces build parameters deterministically; images are built OFFLINE on the workstation (WSL, where the toolchain and the board's signing key idf_sbv2.pem live), never live inside a soak run, so a compile or signing error cannot be mistaken for an OTA failure. The soak only consumes the pool through a manifest (seed, parameters, unique version string, size, sha256, expected outcome). Reproducible builds (CONFIG_APP_REPRODUCIBLE_BUILD) so the same seed gives the same sha256. Randomized: image size via random padding data, INCLUDING sizes that are not a multiple of the 4 KB flash sector or of the BLE OTA sector size (last-sector handling), one image just under the 4 MB slot limit (must succeed) and one image over it ('too_big', must be rejected); LED colour and blink frequency (GPIO 48, WS2812); and toggling of pins taken ONLY from a documented safe allowlist (output only). Never randomized: the OTA/connectivity path (LABID, WiFi, BLE OTA service, confirm logic), and any pin used by USB-Serial-JTAG (GPIO 19/20), strapping (0/3/45/46), or flash/octal PSRAM (26-37). Every generated valid image must still pass the health self-test and confirm. Findings from the design discussion: CI cannot build these because its ephemeral keys are not the board's trusted key.
+Generate a pool of valid, signed IDF images whose footprint differs from the fixed v1/v2 images, to prove the two OTA slots accept arbitrary code and not just two known binaries. gen_variant(seed) produces build parameters deterministically; images are built OFFLINE on the workstation (WSL, where the toolchain and the board's signing key idf_sbv2.pem live), never live inside a soak run, so a compile or signing error cannot be mistaken for an OTA failure. The soak only consumes the pool through a manifest (seed, parameters, unique version string, size, sha256, expected outcome). Reproducible builds (CONFIG_APP_REPRODUCIBLE_BUILD) so the same seed gives the same sha256. Randomized: image size via random padding data, INCLUDING sizes that are not a multiple of the 4 KB flash sector or of the BLE OTA sector size (last-sector handling), one image just under the 4 MB slot limit (must succeed) and one image over it ('too_big', must be rejected); LED colour and blink frequency (GPIO 48, WS2812); and toggling of pins taken ONLY from a documented safe allowlist (output only). Never randomized: the OTA/connectivity path (LABID, WiFi, BLE OTA service, confirm logic), and any pin used by USB-Serial-JTAG (GPIO 19/20), strapping (0/3/45/46), or flash/octal PSRAM (26-37). Every generated valid image must still pass the health self-test and confirm. Findings from the design discussion: CI cannot build these because its ephemeral keys are not the board's trusted key. [RESULT 2026-09-25: all six ACs met with evidence. Pool of 13 signed images (seed base bl069-2026-09-25): 9 valid, 2 with a 3,170/1,908-byte post-signature trailer (file size not a 4096 multiple; accepted by the real board over WiFi, gate R1, scripts/evidence/bl069_r1_2026-09-25/), 1 near_limit (4,132,864 B) and 1 too_big (4,263,936 B, refused by the board over WiFi and BLE). AC1 caveat: RSA-PSS is salted, so the whole-file sha256 differs per build; reproducibility is the manifest's content_sha256 (everything before the signature sector, identical across rebuilds). AC5: scripts/evidence/bl069_pool_install_2026-09-25/ (all 12 valid images in both slots over WiFi, the 10 BLE-accepting ones over BLE; two runs, the first aborted by a Windows temp-file lock, plus two false FAILs from re-sending the running version, both explained in its README). Build-phase evidence: scripts/evidence/bl069_pool_2026-09-25/. Guide: docs/BL069_IMAGE_POOL.md.]
 
 **Acceptance criteria**
 - [ ] gen_variant(seed) is deterministic and unit-tested; the same seed reproduces the same parameters and the same image sha256
@@ -1266,7 +1267,7 @@ flowchart TB
         BL063b["BL-063b"]:::blocked
         BL066["BL-066"]:::done
         BL067["BL-067"]:::todo
-        BL069["BL-069"]:::todo
+        BL069["BL-069"]:::doing
         BL072["BL-072"]:::todo
     end
     BL001 --> BL002

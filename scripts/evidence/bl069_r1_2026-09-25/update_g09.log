@@ -1,0 +1,12 @@
+--- update g09.bin via wifi rc=0
+Updating idf over wifi: esp_idf\build_pool\g09.bin (1841012 bytes)
+  WiFi: board accepted the request; serving 1841012 bytes from 192.168.1.134:8443
+host served: {'update.bin': 1841012} (image was 1841012 bytes)
+image version gen-6b593e13; before: app=gen-de2752f3 slot=0; after: app=gen-6b593e13 slot=1
+[PASS] running the new image: board reports 'gen-6b593e13', image is 'gen-6b593e13'
+[PASS] slot flipped: slot 0 -> 1
+[PASS] confirmed: self-test confirmed the image
+[PASS] identity (uid): board E072A1AA2390, expected E072A1AA2390
+[PASS] LABID == HTTPS version: LABID app=gen-6b593e13 slot=1; HTTPS app=gen-6b593e13 slot=1
+UPDATE OK
+

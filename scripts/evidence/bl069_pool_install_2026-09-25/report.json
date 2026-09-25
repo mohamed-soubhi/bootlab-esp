@@ -1,0 +1,31 @@
+{
+  "mode": "live",
+  "seed_base": "bl069-2026-09-25",
+  "steps_total": 50,
+  "steps_done": 60,
+  "infra_retries": 0,
+  "counts": {
+    "pass": 52,
+    "fail": 2,
+    "expected_reject": 2,
+    "skipped": 4
+  },
+  "coverage_gaps": [],
+  "aborted": false,
+  "stopped_early": false,
+  "recovery_failures": 0,
+  "topup_installs": 10,
+  "final_state_v1": true,
+  "elapsed_s": 8704.2,
+  "resumed_from": 16,
+  "failure_log": [
+    {
+      "key": "ble:1:0",
+      "cause": "expected gen-fcc50b7a confirmed in slot 1, board reports gen-fcc50b7a confirmed=True slot=1 (update ok=False)"
+    },
+    {
+      "key": "ble:2:11",
+      "cause": "expected gen-ed4ae35d confirmed in slot 0, board reports gen-ed4ae35d confirmed=True slot=0 (update ok=False)"
+    }
+  ]
+}

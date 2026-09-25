@@ -23,6 +23,7 @@ from pathlib import Path
 from labflash import poolmanifest
 
 from tests_hil import pool_schedule as ps
+from tests_hil.otaretry import INFRA_RETRIES, send_with_retry
 
 DEFAULT_REJECT_TIMEOUT_S = 120.0
 MAX_CONSECUTIVE_UNEXPECTED = 3
@@ -58,7 +59,15 @@ def _read_results(path: Path, manifest: dict) -> list[dict]:
     """Result records of a previous run, latest record per step key; refuses another pool's file."""
     if not path.is_file():
         return []
-    lines = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    raw = [x for x in path.read_text().splitlines() if x.strip()]
+    lines = []
+    for n, text in enumerate(raw):
+        try:
+            lines.append(json.loads(text))
+        except json.JSONDecodeError:
+            if n != len(raw) - 1:
+                raise PoolError(f"{path}: line {n + 1} is not valid JSON") from None
+            path.write_text("".join(x + "\n" for x in raw[:-1]))       # a torn last line (killed mid-write): drop it
     header = next((r["header"] for r in lines if "header" in r), None)
     if header != _manifest_id(manifest):
         raise PoolError(f"{path} belongs to a different pool ({header}); refusing to resume it")
@@ -80,7 +89,8 @@ def _failed(cause: str, expected_slot: int | None = None) -> dict:
 
 
 def _do_step(backend, step: ps.Step, entry: dict, pool_dir: Path, log_path: Path,
-             timeout_s: float | None, reject_timeout_s: float, transport_proven: bool) -> dict:
+             timeout_s: float | None, reject_timeout_s: float, transport_proven: bool,
+             retries: int = INFRA_RETRIES, sleep_fn: Callable[[float], None] = time.sleep) -> dict:
     try:
         pre = backend.snapshot()
     except Exception as err:  # noqa: BLE001 - an unreadable board is a recorded failure, not a crashed run
@@ -89,12 +99,12 @@ def _do_step(backend, step: ps.Step, entry: dict, pool_dir: Path, log_path: Path
     if not step.expect_accept and not transport_proven:
         return _failed(f"reject of {step.file} over {step.transport} is unverified: no install over it has passed yet, "
                        "so a dead link would look identical to a refusal", step.expected_slot)
+    ok, err_cause, retries_used = send_with_retry(backend, pool_dir / step.file, step.transport, log_path,
+                                                  timeout_s if step.expect_accept else reject_timeout_s,
+                                                  retries=retries, sleep_fn=sleep_fn)
+    if err_cause:
+        return {**_failed(err_cause, step.expected_slot), "infra_retries": retries_used}
     cause = ""
-    try:
-        ok = bool(backend.update_image_path(pool_dir / step.file, step.transport, log_path,
-                                            timeout_s if step.expect_accept else reject_timeout_s))
-    except Exception as err:  # noqa: BLE001 - a failing install must be recorded, not crash the run
-        return _failed(f"update raised {type(err).__name__}: {err}", step.expected_slot)
     try:
         post = backend.snapshot()
     except Exception as err:  # noqa: BLE001
@@ -107,7 +117,8 @@ def _do_step(backend, step: ps.Step, entry: dict, pool_dir: Path, log_path: Path
     if verdict == "fail" and not cause:
         cause = (f"expected {step.expected_version} confirmed in slot {step.expected_slot}, board reports "
                  f"{post.app} confirmed={post.confirmed} slot={post.slot} (update ok={ok})")
-    return {**result, "verdict": verdict, "cause": cause, "expected_slot": step.expected_slot}
+    return {**result, "verdict": verdict, "cause": cause, "expected_slot": step.expected_slot,
+            "infra_retries": retries_used}
 
 
 def _topup_step(manifest: dict, results: list[dict], real_slot: int, round_no: int) -> ps.Step | None:
@@ -149,6 +160,7 @@ def run_pool_install(backend, manifest: dict, pool_dir: Path, out_dir: Path, tra
                      sweeps: int = 2, pause_s: float = 5.0, resume: bool = False, timeout_s: float | None = None,
                      reject_timeout_s: float = DEFAULT_REJECT_TIMEOUT_S,
                      max_consecutive_unexpected: int = MAX_CONSECUTIVE_UNEXPECTED, stop_after: int | None = None,
+                     infra_retries: int = INFRA_RETRIES,
                      sleep_fn: Callable[[float], None] = time.sleep,
                      clock: Callable[[], float] = time.monotonic) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -178,7 +190,7 @@ def run_pool_install(backend, manifest: dict, pool_dir: Path, out_dir: Path, tra
                    "slot": None, "version": None, "expected_slot": None}
         else:
             rec = _do_step(backend, step, entry, pool_dir, log_path, timeout_s, reject_timeout_s,
-                           step.transport in proven)
+                           step.transport in proven, infra_retries, sleep_fn)
         rec.update({"key": step.key, "sweep": step.sweep, "transport": step.transport, "image_index": step.image_index,
                     "file": step.file, "expected_version": step.expected_version, "duration_s": round(clock() - t_step, 1)})
         _append(jsonl, rec)
@@ -220,7 +232,7 @@ def run_pool_install(backend, manifest: dict, pool_dir: Path, out_dir: Path, tra
         topups += 1
         t_step = clock()
         rec = _do_step(backend, step, manifest["images"][step.image_index], pool_dir, log_path, timeout_s,
-                       reject_timeout_s, True)
+                       reject_timeout_s, True, infra_retries, sleep_fn)
         rec.update({"key": f"{step.transport}:top{topups}:{step.image_index}", "sweep": step.sweep,
                     "transport": step.transport, "image_index": step.image_index, "file": step.file,
                     "expected_version": step.expected_version, "duration_s": round(clock() - t_step, 1),
@@ -245,7 +257,7 @@ def run_pool_install(backend, manifest: dict, pool_dir: Path, out_dir: Path, tra
             final_v1 = False
     counts, coverage = _summarize(manifest, steps, results)
     report = {
-        "mode": "live", "seed_base": manifest["seed_base"], "steps_total": len(steps), "steps_done": len(results),
+        "mode": "live", "seed_base": manifest["seed_base"], "steps_total": len(steps), "steps_done": len(results), "infra_retries": sum(r.get("infra_retries", 0) for r in results),
         "counts": counts, "coverage_gaps": [list(g) for g in ps.coverage_gaps(manifest, results)],
         "aborted": aborted, "stopped_early": stopped, "recovery_failures": recovery_failures, "topup_installs": topups, "final_state_v1": final_v1,
         "elapsed_s": round(clock() - t0, 1), "resumed_from": resumed_from,
@@ -270,6 +282,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--pause", type=float, default=5.0)
     ap.add_argument("--reject-timeout", type=float, default=DEFAULT_REJECT_TIMEOUT_S)
     ap.add_argument("--max-consecutive-unexpected", type=int, default=MAX_CONSECUTIVE_UNEXPECTED)
+    ap.add_argument("--infra-retries", type=int, default=INFRA_RETRIES,
+                    help="retries for host-side send trouble while the board is unchanged (default 3)")
     ap.add_argument("--resume", action="store_true")
     ap.add_argument("--dry-run", action="store_true", help="print the plan; no board, no writes")
     ap.add_argument("--no-console-log", action="store_true")
@@ -300,7 +314,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         report = run_pool_install(backend, manifest, pool_dir, out_dir, transports, a.sweeps, a.pause, a.resume,
                                   reject_timeout_s=a.reject_timeout,
-                                  max_consecutive_unexpected=a.max_consecutive_unexpected)
+                                  max_consecutive_unexpected=a.max_consecutive_unexpected,
+                                  infra_retries=a.infra_retries)
     finally:
         backend.shutdown()
     print(json.dumps(report, indent=2))

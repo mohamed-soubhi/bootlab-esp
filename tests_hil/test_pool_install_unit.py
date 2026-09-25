@@ -59,6 +59,7 @@ class FakeBoard:
 def _run(tmp_path, board, m, **kw):
     kw.setdefault("sweeps", 2)
     out = tmp_path / kw.pop("out_name", "out")
+    kw.setdefault("infra_retries", 0)               # the fakes below model board behaviour, not host trouble
     return pi.run_pool_install(board, m, tmp_path, out, pause_s=0, sleep_fn=lambda s: None, **kw)
 
 
@@ -189,7 +190,7 @@ def test_an_exception_during_a_reject_is_a_failure_not_an_expected_reject(tmp_pa
 
 def test_an_unreadable_board_before_an_update_is_recorded_not_fatal(tmp_path):
     m = _make_pool(tmp_path)
-    rep = _run(tmp_path, ExplodingBoard(m, boom_snapshot={3}), m)
+    rep = _run(tmp_path, ExplodingBoard(m, boom_snapshot={2}), m)
     assert rep["counts"]["fail"] >= 1 and any("unreadable" in f["cause"] for f in rep["failure_log"])
     assert (tmp_path / "out" / "report.json").is_file()
 
@@ -245,3 +246,15 @@ def test_topup_is_bounded_when_a_transport_is_dead(tmp_path):
 def test_clean_run_needs_no_topup(tmp_path):
     m = _make_pool(tmp_path)
     assert _run(tmp_path, FakeBoard(m), m)["topup_installs"] == 0
+
+
+def test_a_torn_last_line_does_not_break_resume(tmp_path):
+    m = _make_pool(tmp_path)
+    b1 = FakeBoard(m)
+    _run(tmp_path, b1, m, stop_after=6)
+    with (tmp_path / "out" / "results.jsonl").open("a") as f:
+        f.write('{"key": "wifi:1:')                              # killed mid-write
+    b2 = FakeBoard(m, start_slot=b1.slot)
+    b2.app = b1.app
+    rep = _run(tmp_path, b2, m, resume=True)
+    assert rep["counts"]["fail"] == 0
