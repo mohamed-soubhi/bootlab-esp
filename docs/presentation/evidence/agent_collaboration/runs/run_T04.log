@@ -1,0 +1,24 @@
+⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors
+[claude-code:unrecognized_model] {"model":"deepseek-v4.1-flash:cloud","query_source":"sdk"}
+T04 done. Stopping.
+
+**Files changed**
+- `docs/BL069_IMAGE_POOL.md` (new) — 6 sections; group names/reasons and all 19 safe pins copied verbatim from current `pinpolicy.py`, no invented pins.
+- `.agent/outbox/T04.md` (report).
+
+**Verified**
+```
+pytest host/tests/test_pinpolicy.py -q              -> 26 passed in 0.05s
+pytest all 4 BL-069 test files -q                    -> 71 passed in 1.77s
+```
+Doc test `test_doc_lists_every_group_and_every_safe_pin` passes. No test or `host/labflash/*` file touched.
+
+**One doubt flagged to lead (not a deviation)**
+Task section 6 says note that `.bin` files are gitignored — but `.gitignore` has **no `*.bin` rule** (labflash block ends at `coverage/`; later entries are `tests_hil/reports/`). Doc therefore documents an invariant repo does not enforce, and pool images would be untracked. Did not edit `.gitignore` (task named only the doc). Suggested fix, in the labflash block:
+
+```
+# BL-069 generated image pool (rebuild from the seed; see docs/BL069_IMAGE_POOL.md)
+*.bin
+```
+
+Say word and I add it.

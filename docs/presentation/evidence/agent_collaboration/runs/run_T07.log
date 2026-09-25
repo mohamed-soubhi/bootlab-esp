@@ -1,0 +1,9 @@
+⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors
+[claude-code:unrecognized_model] {"model":"deepseek-v4.1-flash:cloud","query_source":"sdk"}
+T07 done. Stopped per protocol.
+
+**Wrote:** `docs/BL067_RANDOM_SOAK.md` (192 lines, 9 sections: purpose, images/mix, outcome model, `_check` per cycle, determinism, running it + `report.json` fields, time budget, pass criteria, hardware rules). Plus `.agent/outbox/T07.md`.
+
+**No other file touched.** No pytest/ruff/mypy applicable — docs-only; used `wc -l` + grep checks instead (non-ASCII = 3 em dashes, matching BL060 style; no emoji).
+
+**Flagged doubts in outbox:** BLE "~170 s" is my rounding of Trap 24's 165.9 s min; doc says manifest "is loaded" not "validated" (`soak_random.main` calls `load_manifest`, not `validate_manifest`); `stopped_early` has no CLI flag (`stop_after` is library-only); warm-up failure exits 2, not 1.

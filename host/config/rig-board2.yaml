@@ -1,0 +1,21 @@
+# bootlab-esp — rig file for the SECOND physical board running the IDF app (BL-072).
+# The rig identifies boards by name; this file maps the name "idf" to the second board (ex-Zephyr hardware), so a run pinned to it with
+# --rig-config verifies identity against ITS uid and pins its BLE scan by ITS mac. Same hardware model as board 1 (see rig.yaml).
+boards:
+  idf:
+    board_name: lab-esp-idf-2
+    mcu: esp32s3
+    hw: esp32s3_devkitc
+    usb_serial: "AC:A7:04:2C:3B:04"      # derived from the chip MAC
+    mac: "ac:a7:04:2c:3b:04"             # LABID uid is this MAC without colons; the BLE address is MAC+2 (AC:A7:04:2C:3B:06)
+    ble_mac: "AC:A7:04:2C:3B:06"
+    ip: "192.168.1.153"
+    flash_mb: 16
+    flash_mode: quad
+    psram_mb: 8
+    psram_mode: octal                    # eFuses identical to board 1 (AP_3v3); booted an IDF octal build on board 1, inferred here
+    rev: v0.2
+    secure_boot: off
+    flash_encryption: off
+    led_gpio: 48
+    led_strip: worldsemi_ws2812

@@ -1,0 +1,17 @@
+⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors
+[claude-code:unrecognized_model] {"model":"deepseek-v4.1-flash:cloud","query_source":"sdk"}
+T02 done. Stop.
+
+**Files changed**
+- `host/labflash/poolmanifest.py` (new, 152 lines) — `SCHEMA`, `ManifestError`, `expected_outcomes`, `make_entry`, `make_manifest`, `validate_manifest`, `write_manifest`, `load_manifest`
+- `.agent/outbox/T02.md` (report)
+
+**Evidence**
+- `pytest host/tests/test_poolmanifest.py -q` → 18 passed
+- `pytest host/tests/test_imagegen.py host/tests/test_poolmanifest.py -q` → 31 passed
+- `ruff check` → All checks passed
+- `mypy` → Success: no issues found
+
+No test file touched. No deviation from spec. Two notes flagged in outbox: `_check_size` also rejects `bool` (tighter than spec), and `trailer_len` used only in the `unaligned_trailer` reason.
+
+Waiting; not starting T03.

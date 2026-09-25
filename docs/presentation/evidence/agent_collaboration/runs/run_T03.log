@@ -1,0 +1,14 @@
+⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors
+[claude-code:unrecognized_model] {"model":"deepseek-v4.1-flash:cloud","query_source":"sdk"}
+T03 done. Stopping.
+
+**Changed:** `tests_hil/pool_schedule.py` (new) — `Step` frozen dataclass + `plan_sweeps`, `remaining`, `classify`, `coverage_gaps`. `pinpolicy.py` untouched (not imported by me; only `imagegen` uses it).
+
+**Verified:**
+- `pytest tests_hil/test_pool_schedule_unit.py -q` → 14 passed
+- `ruff check` → All checks passed
+- `mypy` → no issues
+
+**Report:** `.agent/outbox/T03.md`.
+
+Two notes for lead: skipped-step placement within a sweep is test-unconstrained (sweep 1 interleaved in manifest order, later sweeps accepted-then-skipped); reversal guarantees opposite slots only for an even accepted count (12 wifi / 10 ble here) — no test covers odd counts.

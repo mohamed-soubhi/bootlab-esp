@@ -1,0 +1,7 @@
+⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors
+[claude-code:unrecognized_model] {"model":"deepseek-v4.1-flash:cloud","query_source":"sdk"}
+T06 done. Stop here.
+
+- New file only: `tests_hil/soak_model.py` (168 lines). No test touched.
+- `pytest tests_hil/test_soak_model_unit.py -q` → **23 passed in 0.96s**; `ruff check` → All checks passed; `mypy` → Success, no issues.
+- Report written to `.agent/outbox/T06.md`. One doubt flagged: failure-image `file` = its own name (`bad_sig`/`hang`/`no_confirm`) — spec tests don't pin it.

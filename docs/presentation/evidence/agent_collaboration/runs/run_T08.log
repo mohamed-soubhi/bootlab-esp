@@ -1,0 +1,16 @@
+⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors
+[claude-code:unrecognized_model] {"model":"deepseek-v4.1-flash:cloud","query_source":"sdk"}
+T08 done. Stopped.
+
+**Files:**
+- `tests_hil/compare_boards.py` — new, 166 lines: `load_run`, `summarize`, `compare`, `render_markdown`
+- `.agent/outbox/T08.md` — report
+
+**Checks:**
+```
+pytest tests_hil/test_compare_boards_unit.py -q  →  8 passed in 0.09s
+ruff check tests_hil/compare_boards.py           →  All checks passed!
+mypy tests_hil/compare_boards.py                 →  Success: no issues found in 1 source file
+```
+
+Test file untouched. No git, no board, no new deps. Doubts listed in outbox (warmup ignored by stats; zero-baseline `inf` guard; strict `>` on tolerance; no contiguity validation in `load_run`).

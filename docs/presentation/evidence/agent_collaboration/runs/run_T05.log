@@ -1,0 +1,16 @@
+⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors
+[claude-code:unrecognized_model] {"model":"deepseek-v4.1-flash:cloud","query_source":"sdk"}
+T05 done. Stop.
+
+**Changed:** `docs/LESSONS_LEARNED.md` only — traps 25-30 at lines 289-338, after Trap 24, before `## 5`.
+**Report:** `.agent/outbox/T05.md`.
+
+Details:
+- Headings match Trap 24 format, each tagged `(BL-069, 2026-09-25)`.
+- Bullets use task's labels: **Symptom/Observation**, **Cause**, **Resolution / How to avoid**.
+- Trap lengths 9/9/8/8/7/8 lines — inside 5-9.
+- Trap 26 states plainly NOT YET CONFIRMED ON HARDWARE, Gate R1 pending.
+- Only facts from inbox used; no new numbers/paths/claims.
+- No pytest/ruff/mypy — docs only, no Python touched.
+
+Doubt flagged: Trap 24 not actually at file bottom (sections 5-7 follow). Inserted after Trap 24 to keep trap list contiguous. Also used task-specified labels rather than Trap 24's literal label style.

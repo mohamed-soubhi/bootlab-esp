@@ -1,0 +1,31 @@
+--- update bootlab_idf_blink.bin via ble rc=0
+Updating idf over ble: esp_idf\build\bootlab_idf_blink.bin (1249280 bytes)
+  BLE: found nimble-ble-ota at AC:A7:04:2C:3B:06
+  BLE: sector 1/305
+  BLE: sector 17/305
+  BLE: sector 33/305
+  BLE: sector 49/305
+  BLE: sector 65/305
+  BLE: sector 81/305
+  BLE: sector 97/305
+  BLE: sector 113/305
+  BLE: sector 129/305
+  BLE: sector 145/305
+  BLE: sector 161/305
+  BLE: sector 177/305
+  BLE: sector 193/305
+  BLE: sector 209/305
+  BLE: sector 225/305
+  BLE: sector 241/305
+  BLE: sector 257/305
+  BLE: sector 273/305
+  BLE: sector 289/305
+  BLE: sector 305/305
+image version 1.0.0; before: app=2.0.0 slot=1; after: app=1.0.0 slot=0
+[PASS] running the new image: board reports '1.0.0', image is '1.0.0'
+[PASS] slot flipped: slot 1 -> 0
+[PASS] confirmed: self-test confirmed the image
+[PASS] identity (uid): board ACA7042C3B04, expected ACA7042C3B04
+[PASS] LABID == HTTPS version: LABID app=1.0.0 slot=0; HTTPS app=1.0.0 slot=0
+UPDATE OK
+
