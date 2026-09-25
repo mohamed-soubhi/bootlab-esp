@@ -31,10 +31,16 @@
 #include "app_wifi.h"
 #include "labid_port.h"
 #include "led_strip.h"
+#if CONFIG_APP_GEN_POOL
+#include "driver/gpio.h"
+#endif
 #define APP_LED_GPIO CONFIG_APP_LED_GPIO /* UNCONFIRMED, see Kconfig.projbuild */
 
 /* Configured LED rate reported over LABID: v2 blinks at 4 Hz, all others 1 Hz. */
-#if CONFIG_APP_VARIANT_V2
+#if CONFIG_APP_GEN_POOL
+/* BL-069 pool image: the generator computes the real rate from CONFIG_APP_GEN_BLINK_MS. */
+#define APP_BLINK_HZ_STR CONFIG_APP_GEN_BLINK_HZ
+#elif CONFIG_APP_VARIANT_V2
 #define APP_BLINK_HZ_STR "4"
 #else
 #define APP_BLINK_HZ_STR "1"
@@ -106,7 +112,9 @@ static void blink_task(void *arg)
     /* Kconfig choice macros for unselected options aren't defined as 0 --
      * they're simply undeclared, so CONFIG_APP_VARIANT_V2 can only be used
      * inside a preprocessor conditional, not passed as a runtime value. */
-#if CONFIG_APP_VARIANT_V2
+#if CONFIG_APP_GEN_POOL
+    const TickType_t half_period = pdMS_TO_TICKS(CONFIG_APP_GEN_BLINK_MS);
+#elif CONFIG_APP_VARIANT_V2
     const TickType_t half_period = pdMS_TO_TICKS(app_blink_half_period_ms(1));
 #else
     const TickType_t half_period = pdMS_TO_TICKS(app_blink_half_period_ms(0));
@@ -121,7 +129,13 @@ static void blink_task(void *arg)
     for (;;) {
         on = !on;
         if (on) {
+#if CONFIG_APP_GEN_POOL
+            /* Keep the amber "not yet confirmed" cue; the confirmed colour is generated, scaled /8 to stay dim like the fixed variants. */
+            const app_rgb_t c = app_is_confirmed() ? (app_rgb_t){ CONFIG_APP_GEN_LED_R / 8, CONFIG_APP_GEN_LED_G / 8, CONFIG_APP_GEN_LED_B / 8 }
+                                                   : app_blink_color(app_variant_id(), false);
+#else
             const app_rgb_t c = app_blink_color(app_variant_id(), app_is_confirmed());
+#endif
             (void)led_strip_set_pixel(strip, 0, c.r, c.g, c.b);
             (void)led_strip_refresh(strip);
         } else {
@@ -156,6 +170,39 @@ static void health_task(void *arg)
 }
 #endif
 
+#if CONFIG_APP_GEN_POOL
+/* BL-069: padding blob linked by CMakeLists.txt (-DGEN_PAD_FILE). Referencing it keeps it in the image. */
+extern const uint8_t s_gen_pad_start[] asm("_binary_pad_bin_start");
+extern const uint8_t s_gen_pad_end[] asm("_binary_pad_bin_end");
+
+/* Compile-time copy of host/labflash/pinpolicy.py SAFE_OUTPUT_PINS (a host test keeps the two in sync): a pin outside
+ * it cannot compile, so a hand-edited defaults file can never drive a strapping, USB, flash or console pin. */
+#define GEN_PIN_OK(p) ((p) == 1 || (p) == 2 || ((p) >= 4 && (p) <= 18) || (p) == 21 || (p) == 47)
+_Static_assert(GEN_PIN_OK(CONFIG_APP_GEN_PIN_A) && GEN_PIN_OK(CONFIG_APP_GEN_PIN_B),
+               "CONFIG_APP_GEN_PIN_A/B must be in pinpolicy.SAFE_OUTPUT_PINS");
+
+/* Toggle two allowlisted spare pins at the LED rate. Not subscribed to the task watchdog; it always yields. */
+static void gen_pins_task(void *arg)
+{
+    (void)arg;
+    const gpio_config_t io = {
+        .pin_bit_mask = (1ULL << CONFIG_APP_GEN_PIN_A) | (1ULL << CONFIG_APP_GEN_PIN_B),
+        .mode = GPIO_MODE_OUTPUT,
+    };
+    ESP_ERROR_CHECK(gpio_config(&io));
+    const size_t pad_len = (size_t)(s_gen_pad_end - s_gen_pad_start);
+    ESP_LOGI("gen_pool", "pad=%u bytes (configured %d), pins %d/%d", (unsigned)pad_len, CONFIG_APP_GEN_PAD_BYTES,
+             CONFIG_APP_GEN_PIN_A, CONFIG_APP_GEN_PIN_B);
+    int level = 0;
+    for (;;) {
+        level = !level;
+        gpio_set_level(CONFIG_APP_GEN_PIN_A, level);
+        gpio_set_level(CONFIG_APP_GEN_PIN_B, !level);
+        vTaskDelay(pdMS_TO_TICKS(CONFIG_APP_GEN_BLINK_MS));
+    }
+}
+#endif
+
 void app_main(void)
 {
     led_strip_config_t strip_config = {
@@ -170,6 +217,9 @@ void app_main(void)
     led_strip_clear(strip);
 
     xTaskCreate(blink_task, "blink", 4096, strip, 5, NULL);
+#if CONFIG_APP_GEN_POOL
+    xTaskCreate(gen_pins_task, "gen_pins", 3072, NULL, 2, NULL);
+#endif
 
 #if !CONFIG_APP_VARIANT_NO_CONFIRM && !CONFIG_APP_VARIANT_HANG
     xTaskCreate(health_task, "health", 3072, NULL, 3, NULL);

@@ -35,4 +35,64 @@ menu "bootlab-esp app config (BL-020)"
             power-cycle, not a USB reset (esptool/idf_monitor resets are
             unreliable on this host, see R14).
 
+    config APP_GEN_POOL
+        bool "Generated pool image (BL-069)"
+        default n
+        help
+            Set only by host/labflash/genvariants.py through a generated
+            sdkconfig.defaults. Overrides the blink rate and LED colour of the
+            v1 variant, drives two allowlisted spare output pins and links a
+            padding blob so the image size differs. Never selects a new
+            variant, so the 5 fixed builds are unchanged when this is n.
+            Pin policy: host/labflash/pinpolicy.py.
+
+    config APP_GEN_PAD_BYTES
+        int "Length of the linked padding blob (informational check)"
+        depends on APP_GEN_POOL
+        default 0
+        range 0 3000000
+
+    config APP_GEN_BLINK_MS
+        int "LED half-period in ms"
+        depends on APP_GEN_POOL
+        default 500
+        range 100 1000
+
+    config APP_GEN_BLINK_HZ
+        string "Blink rate reported over LABID, in Hz"
+        depends on APP_GEN_POOL
+        default "1"
+        help
+            Computed by the generator as 500 / APP_GEN_BLINK_MS; only reported, never used to time anything.
+
+    config APP_GEN_LED_R
+        int "LED red"
+        depends on APP_GEN_POOL
+        default 1
+        range 0 255
+
+    config APP_GEN_LED_G
+        int "LED green"
+        depends on APP_GEN_POOL
+        default 1
+        range 0 255
+
+    config APP_GEN_LED_B
+        int "LED blue"
+        depends on APP_GEN_POOL
+        default 1
+        range 0 255
+
+    config APP_GEN_PIN_A
+        int "Spare output pin A (must be in pinpolicy.SAFE_OUTPUT_PINS)"
+        depends on APP_GEN_POOL
+        default 4
+        range 0 48
+
+    config APP_GEN_PIN_B
+        int "Spare output pin B (must be in pinpolicy.SAFE_OUTPUT_PINS)"
+        depends on APP_GEN_POOL
+        default 5
+        range 0 48
+
 endmenu

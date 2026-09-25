@@ -1,0 +1,13 @@
+g00 valid              gen-fcc50b7a pad=756290 blink=402ms rgb=(163, 7, 106) pins=(13, 16) trailer=0 target=None
+g01 valid              gen-477ee36e pad=2026259 blink=613ms rgb=(197, 192, 253) pins=(17, 11) trailer=0 target=None
+g02 valid              gen-8ddc7a9e pad=1908006 blink=452ms rgb=(205, 32, 82) pins=(16, 15) trailer=0 target=None
+g03 unaligned_trailer  gen-de2752f3 pad=60706 blink=562ms rgb=(202, 114, 209) pins=(9, 14) trailer=3170 target=None
+g04 valid              gen-0c23946e pad=1707645 blink=634ms rgb=(19, 24, 23) pins=(18, 5) trailer=0 target=None
+g05 valid              gen-d3ec723f pad=2406291 blink=359ms rgb=(175, 5, 150) pins=(13, 10) trailer=0 target=None
+g06 near_limit         gen-bc23f981 pad=0 blink=646ms rgb=(99, 75, 118) pins=(8, 47) trailer=0 target=4194304
+g07 valid              gen-a7e974e5 pad=1728010 blink=932ms rgb=(127, 24, 177) pins=(21, 15) trailer=0 target=None
+g08 valid              gen-7ced4815 pad=640743 blink=269ms rgb=(210, 141, 10) pins=(15, 11) trailer=0 target=None
+g09 unaligned_trailer  gen-6b593e13 pad=584027 blink=577ms rgb=(136, 7, 151) pins=(21, 1) trailer=1908 target=None
+g10 valid              gen-0f8f7a30 pad=604689 blink=319ms rgb=(189, 117, 133) pins=(7, 11) trailer=0 target=None
+g11 valid              gen-ed4ae35d pad=813379 blink=361ms rgb=(119, 115, 114) pins=(5, 47) trailer=0 target=None
+g12 too_big            gen-a8156d35 pad=0 blink=643ms rgb=(86, 121, 113) pins=(21, 16) trailer=0 target=4198400

@@ -277,3 +277,68 @@ def test_build_zephyr_bad_sig_mocked(tmp_path):
     assert "refused by primary key" in res.details
 
 
+
+
+def _fake_idf(tmp_path, cmds):
+    (tmp_path / "esp_idf").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "keys").mkdir(exist_ok=True)
+    (tmp_path / "keys" / "idf_sbv2.pem").write_text("K")
+
+    def runner(cmd, cwd=None):
+        cmds.append(list(cmd))
+        if cmd[0] == "idf.py":
+            b = next(a for i, a in enumerate(cmd) if cmd[i - 1] == "-B")
+            from pathlib import Path
+            Path(b).mkdir(parents=True, exist_ok=True)
+            (Path(b) / "sdkconfig").write_text("CONFIG_APP_VARIANT_V1=y\nCONFIG_APP_GEN_POOL=y\n")
+            (Path(b) / bld.BINARY_NAME).write_bytes(b"\xE9" + b"\0" * 4095)
+        return subprocess.CompletedProcess(cmd, 0, "OK", "")
+    return runner
+
+
+def test_build_idf_image_passes_build_dir_version_defaults_and_extra_defs(tmp_path):
+    cmds: list = []
+    out = tmp_path / "esp_idf" / "build_pool" / "g00"
+    res = bld.build_idf_image(
+        build_dir=out, project_ver="gen-0000abcd",
+        defaults="sdkconfig.defaults;/abs/pool.defaults",
+        kconfig_sym="CONFIG_APP_VARIANT_V1=y", repo_root=tmp_path,
+        runner=_fake_idf(tmp_path, cmds), extra_cmake_defs=("-DGEN_PAD_FILE=/abs/pad.bin",), label="g00",
+    )
+    build_cmd = next(c for c in cmds if c[0] == "idf.py")
+    assert str(out) in build_cmd and "-DPROJECT_VER=gen-0000abcd" in build_cmd
+    assert "-DSDKCONFIG_DEFAULTS=sdkconfig.defaults;/abs/pool.defaults" in build_cmd
+    assert "-DGEN_PAD_FILE=/abs/pad.bin" in build_cmd and build_cmd[-1] == "build"
+    assert res.variant == "g00" and res.build_dir == out and res.project_ver == "gen-0000abcd"
+    assert res.verified_signature
+
+
+def test_build_idf_image_still_runs_the_three_gates(tmp_path):
+    cmds: list = []
+    good = _fake_idf(tmp_path, cmds)
+
+    def wrong_symbol(cmd, cwd=None):
+        r = good(cmd, cwd)
+        if cmd[0] == "idf.py":
+            (tmp_path / "esp_idf" / "b" / "sdkconfig").write_text("nothing\n")
+        return r
+    with pytest.raises(bld.BuildError, match="Variant verification failed"):
+        bld.build_idf_image(build_dir=tmp_path / "esp_idf" / "b", project_ver="x", defaults="d",
+                            kconfig_sym="CONFIG_APP_VARIANT_V1=y", repo_root=tmp_path, runner=wrong_symbol)
+
+    def bad_sig(cmd, cwd=None):
+        r = good(cmd, cwd)
+        return subprocess.CompletedProcess(cmd, 1, "", "invalid") if cmd[0].startswith("espsecure") else r
+    with pytest.raises(bld.BuildError, match="Signature verification FAILED"):
+        bld.build_idf_image(build_dir=tmp_path / "esp_idf" / "b2", project_ver="x", defaults="d",
+                            kconfig_sym="CONFIG_APP_VARIANT_V1=y", repo_root=tmp_path, runner=bad_sig)
+
+
+def test_build_idf_variant_command_is_unchanged_by_the_refactor(tmp_path):
+    cmds: list = []
+    bld.build_idf_variant("v1", repo_root=tmp_path, runner=_fake_idf(tmp_path, cmds))
+    build_cmd = next(c for c in cmds if c[0] == "idf.py")
+    esp = tmp_path / "esp_idf"
+    assert build_cmd == ["idf.py", "-C", str(esp), "-B", str(esp / "build"),
+                         f"-DSDKCONFIG={esp / 'build' / 'sdkconfig'}",
+                         "-DSDKCONFIG_DEFAULTS=sdkconfig.defaults", "-DPROJECT_VER=1.0.0", "build"]

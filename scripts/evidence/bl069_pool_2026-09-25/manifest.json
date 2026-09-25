@@ -1,0 +1,462 @@
+{
+  "images": [
+    {
+      "content_sha256": "2151478b5e26060297b1bd6f0e4809f1ce598a35302b0a906ec719fb243c2031",
+      "expected": {
+        "ble": {
+          "accept": true,
+          "reason": "sector-aligned image fits the slot"
+        },
+        "wifi": {
+          "accept": true,
+          "reason": "sector-aligned image fits the slot"
+        }
+      },
+      "file": "g00.bin",
+      "index": 0,
+      "params": {
+        "blink_ms": 402,
+        "led_rgb": [
+          163,
+          7,
+          106
+        ],
+        "pad_bytes": 756290,
+        "pins": [
+          13,
+          16
+        ]
+      },
+      "role": "valid",
+      "seed": 2748932957610517847,
+      "sha256": "dfad6deaacca00e91ff7a0277c335eed8e8b95858ec98ea53e0445954efe9d6d",
+      "signed_len": 2035712,
+      "size": 2035712,
+      "trailer_len": 0,
+      "version": "gen-fcc50b7a"
+    },
+    {
+      "content_sha256": "3e46c5198d3edbf4807a41e75f397b8db88014521d4f0c1212da2e43fedaf8c5",
+      "expected": {
+        "ble": {
+          "accept": true,
+          "reason": "sector-aligned image fits the slot"
+        },
+        "wifi": {
+          "accept": true,
+          "reason": "sector-aligned image fits the slot"
+        }
+      },
+      "file": "g01.bin",
+      "index": 1,
+      "params": {
+        "blink_ms": 613,
+        "led_rgb": [
+          197,
+          192,
+          253
+        ],
+        "pad_bytes": 2026259,
+        "pins": [
+          17,
+          11
+        ]
+      },
+      "role": "valid",
+      "seed": 8928451124249463723,
+      "sha256": "ad8196396d592a6a678dbd2dc56c385c387126e0efa91386abd327c8c503dd77",
+      "signed_len": 3280896,
+      "size": 3280896,
+      "trailer_len": 0,
+      "version": "gen-477ee36e"
+    },
+    {
+      "content_sha256": "b8aa44489ce9d957df70f988e7bb101e2b161a52fd7bcc2679e114f260cc52da",
+      "expected": {
+        "ble": {
+          "accept": true,
+          "reason": "sector-aligned image fits the slot"
+        },
+        "wifi": {
+          "accept": true,
+          "reason": "sector-aligned image fits the slot"
+        }
+      },
+      "file": "g02.bin",
+      "index": 2,
+      "params": {
+        "blink_ms": 452,
+        "led_rgb": [
+          205,
+          32,
+          82
+        ],
+        "pad_bytes": 1908006,
+        "pins": [
+          16,
+          15
+        ]
+      },
+      "role": "valid",
+      "seed": 7161192740548480517,
+      "sha256": "f8a0e2eef0b50fe29c162709477f808cfa458e547e212343ddf016c7b3ea967d",
+      "signed_len": 3149824,
+      "size": 3149824,
+      "trailer_len": 0,
+      "version": "gen-8ddc7a9e"
+    },
+    {
+      "content_sha256": "ef53606cb5cdf078d8c2385fa69c19f18df576cedfd10e3f3f53bf9343cff649",
+      "expected": {
+        "ble": {
+          "accept": false,
+          "reason": "3170-byte trailer leaves the image not 4096-aligned"
+        },
+        "wifi": {
+          "accept": true,
+          "reason": "bootloader never reads the bytes after the signature sector"
+        }
+      },
+      "file": "g03.bin",
+      "index": 3,
+      "params": {
+        "blink_ms": 562,
+        "led_rgb": [
+          202,
+          114,
+          209
+        ],
+        "pad_bytes": 60706,
+        "pins": [
+          9,
+          14
+        ]
+      },
+      "role": "unaligned_trailer",
+      "seed": 5368354124429361486,
+      "sha256": "cfd1ce8d1aecc57e20766c790049357f3fb1523b526c5e80e710309851148f3f",
+      "signed_len": 1314816,
+      "size": 1317986,
+      "trailer_len": 3170,
+      "version": "gen-de2752f3"
+    },
+    {
+      "content_sha256": "c29995d68a05fcdb0300d551e01aa4a03297a9026740a3bb184c11ba9b602552",
+      "expected": {
+        "ble": {
+          "accept": true,
+          "reason": "sector-aligned image fits the slot"
+        },
+        "wifi": {
+          "accept": true,
+          "reason": "sector-aligned image fits the slot"
+        }
+      },
+      "file": "g04.bin",
+      "index": 4,
+      "params": {
+        "blink_ms": 634,
+        "led_rgb": [
+          19,
+          24,
+          23
+        ],
+        "pad_bytes": 1707645,
+        "pins": [
+          18,
+          5
+        ]
+      },
+      "role": "valid",
+      "seed": 918501266604510043,
+      "sha256": "a7a6b5d50d4586d61f4589ee500678c07c578f08fab574bea1aae0cb05c9a85b",
+      "signed_len": 2953216,
+      "size": 2953216,
+      "trailer_len": 0,
+      "version": "gen-0c23946e"
+    },
+    {
+      "content_sha256": "6d753e0ba24e8f1363ad4f1b666cf1a7bcf1a268eb1eb624eb1a0f68a1d3f56e",
+      "expected": {
+        "ble": {
+          "accept": true,
+          "reason": "sector-aligned image fits the slot"
+        },
+        "wifi": {
+          "accept": true,
+          "reason": "sector-aligned image fits the slot"
+        }
+      },
+      "file": "g05.bin",
+      "index": 5,
+      "params": {
+        "blink_ms": 359,
+        "led_rgb": [
+          175,
+          5,
+          150
+        ],
+        "pad_bytes": 2406291,
+        "pins": [
+          13,
+          10
+        ]
+      },
+      "role": "valid",
+      "seed": 15073017041502288238,
+      "sha256": "db6ac8b6bcf217f11b0bee13ad9f2c16cc31109fc20916713262fd9af87f9001",
+      "signed_len": 3674112,
+      "size": 3674112,
+      "trailer_len": 0,
+      "version": "gen-d3ec723f"
+    },
+    {
+      "content_sha256": "a26cc86be0bb6e69a24ec27aec288af5b0ec69a7b62227b2118fac0a6440cc0d",
+      "expected": {
+        "ble": {
+          "accept": true,
+          "reason": "image within 64 KiB of the slot limit and still fits"
+        },
+        "wifi": {
+          "accept": true,
+          "reason": "image within 64 KiB of the slot limit and still fits"
+        }
+      },
+      "file": "g06.bin",
+      "index": 6,
+      "params": {
+        "blink_ms": 646,
+        "led_rgb": [
+          99,
+          75,
+          118
+        ],
+        "pad_bytes": 2879488,
+        "pins": [
+          8,
+          47
+        ]
+      },
+      "role": "near_limit",
+      "seed": 5402709864507579668,
+      "sha256": "e1324fcd4875e2db261038aaff7153a6af7f667283db0c61e5da6148f9c9f426",
+      "signed_len": 4132864,
+      "size": 4132864,
+      "trailer_len": 0,
+      "version": "gen-bc23f981"
+    },
+    {
+      "content_sha256": "2c6e4203585b60e324279954c76b84b3eecf8575de95029f4d994660f8d207c2",
+      "expected": {
+        "ble": {
+          "accept": true,
+          "reason": "sector-aligned image fits the slot"
+        },
+        "wifi": {
+          "accept": true,
+          "reason": "sector-aligned image fits the slot"
+        }
+      },
+      "file": "g07.bin",
+      "index": 7,
+      "params": {
+        "blink_ms": 932,
+        "led_rgb": [
+          127,
+          24,
+          177
+        ],
+        "pad_bytes": 1728010,
+        "pins": [
+          21,
+          15
+        ]
+      },
+      "role": "valid",
+      "seed": 7313944068274196459,
+      "sha256": "288c0bf098f1695d4e56e682a2b27d5c1a0070a4ebbef467907ff6f156c97930",
+      "signed_len": 2953216,
+      "size": 2953216,
+      "trailer_len": 0,
+      "version": "gen-a7e974e5"
+    },
+    {
+      "content_sha256": "2ba006193f129c96a499ba322e591d4d4897360310d3caa7bd958a06ae0e6643",
+      "expected": {
+        "ble": {
+          "accept": true,
+          "reason": "sector-aligned image fits the slot"
+        },
+        "wifi": {
+          "accept": true,
+          "reason": "sector-aligned image fits the slot"
+        }
+      },
+      "file": "g08.bin",
+      "index": 8,
+      "params": {
+        "blink_ms": 269,
+        "led_rgb": [
+          210,
+          141,
+          10
+        ],
+        "pad_bytes": 640743,
+        "pins": [
+          15,
+          11
+        ]
+      },
+      "role": "valid",
+      "seed": 11986311368319166508,
+      "sha256": "6eca42fc0d9854fa06a8602081b85641bb1d167e2d001c87e55849cff2548abc",
+      "signed_len": 1904640,
+      "size": 1904640,
+      "trailer_len": 0,
+      "version": "gen-7ced4815"
+    },
+    {
+      "content_sha256": "804365585d8b7a0be20ca268c11715c1152a2ebca87584d59f1691186f19766b",
+      "expected": {
+        "ble": {
+          "accept": false,
+          "reason": "1908-byte trailer leaves the image not 4096-aligned"
+        },
+        "wifi": {
+          "accept": true,
+          "reason": "bootloader never reads the bytes after the signature sector"
+        }
+      },
+      "file": "g09.bin",
+      "index": 9,
+      "params": {
+        "blink_ms": 577,
+        "led_rgb": [
+          136,
+          7,
+          151
+        ],
+        "pad_bytes": 584027,
+        "pins": [
+          21,
+          1
+        ]
+      },
+      "role": "unaligned_trailer",
+      "seed": 6834347541492248421,
+      "sha256": "7f95ff641bf95eab24c20f5cc717927ab2e2fb24f6a63deadfda9066c87b9229",
+      "signed_len": 1839104,
+      "size": 1841012,
+      "trailer_len": 1908,
+      "version": "gen-6b593e13"
+    },
+    {
+      "content_sha256": "18b3b5372c190b5fb749ccc3635206b8f7997f4f4b0073a2c9e1ac1ffc39fb8b",
+      "expected": {
+        "ble": {
+          "accept": true,
+          "reason": "sector-aligned image fits the slot"
+        },
+        "wifi": {
+          "accept": true,
+          "reason": "sector-aligned image fits the slot"
+        }
+      },
+      "file": "g10.bin",
+      "index": 10,
+      "params": {
+        "blink_ms": 319,
+        "led_rgb": [
+          189,
+          117,
+          133
+        ],
+        "pad_bytes": 604689,
+        "pins": [
+          7,
+          11
+        ]
+      },
+      "role": "valid",
+      "seed": 15514083693563915811,
+      "sha256": "19ea1a4dcd4bd4ef8d2c80718b4f789f0c06aef42122201baa10d6369c93d49e",
+      "signed_len": 1839104,
+      "size": 1839104,
+      "trailer_len": 0,
+      "version": "gen-0f8f7a30"
+    },
+    {
+      "content_sha256": "b64cf83cd1ef73ec2542709541c681888863d9028a32d05e9c4784a8465e162d",
+      "expected": {
+        "ble": {
+          "accept": true,
+          "reason": "sector-aligned image fits the slot"
+        },
+        "wifi": {
+          "accept": true,
+          "reason": "sector-aligned image fits the slot"
+        }
+      },
+      "file": "g11.bin",
+      "index": 11,
+      "params": {
+        "blink_ms": 361,
+        "led_rgb": [
+          119,
+          115,
+          114
+        ],
+        "pad_bytes": 813379,
+        "pins": [
+          5,
+          47
+        ]
+      },
+      "role": "valid",
+      "seed": 1111170089014220323,
+      "sha256": "ac8f9cdec0e64b5d84ae1f04122a963a05a3a2fe00f95d4d6c089045eabff876",
+      "signed_len": 2101248,
+      "size": 2101248,
+      "trailer_len": 0,
+      "version": "gen-ed4ae35d"
+    },
+    {
+      "content_sha256": "e359d3b6962768559e21a4910526442031d1d427f7a17de9a0aa52b5ff594bfb",
+      "expected": {
+        "ble": {
+          "accept": false,
+          "reason": "image is larger than the slot"
+        },
+        "wifi": {
+          "accept": false,
+          "reason": "image is larger than the slot"
+        }
+      },
+      "file": "g12.bin",
+      "index": 12,
+      "params": {
+        "blink_ms": 643,
+        "led_rgb": [
+          86,
+          121,
+          113
+        ],
+        "pad_bytes": 2981888,
+        "pins": [
+          21,
+          16
+        ]
+      },
+      "role": "too_big",
+      "seed": 9322626465952121051,
+      "sha256": "75083c1d7bafbadc625e4383bcb801acd8479455c9b773867a3e76a7c71ae784",
+      "signed_len": 4263936,
+      "size": 4263936,
+      "trailer_len": 0,
+      "version": "gen-a8156d35"
+    }
+  ],
+  "schema": 1,
+  "seed_base": "bl069-2026-09-25",
+  "slot_size": 4194304
+}

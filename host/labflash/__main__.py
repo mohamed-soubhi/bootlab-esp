@@ -113,6 +113,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     bld_p.add_argument("--clean", action="store_true", help="clean build directory before building")
 
+    gen_p = add_cmd(
+        "gen-images",
+        help="build the BL-069 signed image pool offline (WSL only)",
+        description="Generates deterministic signed IDF images that differ in size, LED behaviour and spare pins, "
+                    "and writes manifest.json next to them.",
+    )
+    gen_p.add_argument("--out", required=True, help="output directory (e.g. esp_idf/build_pool)")
+    gen_p.add_argument("--seed-base", required=True, help="name that seeds the whole pool (recorded in the manifest)")
+    gen_p.add_argument("--limit", type=int, default=None, help="build only the first N images (no manifest)")
+    gen_p.add_argument("--only", default=None, help="comma-separated image indices to build (no manifest)")
+    gen_p.add_argument("--dry-run", action="store_true", help="print the plan without building")
+
     gui_p = add_cmd(
         "gui",
         help="launch the bootlab-esp web operations console",
@@ -146,6 +158,8 @@ def main(argv=None):
         return run_update(args)
     if cmd == "build":
         return _build_cmd(args)
+    if cmd == "gen-images":
+        return _gen_images_cmd(args)
     if cmd == "identify":
         return _identify_cmd(args)
     if cmd == "info":
@@ -247,6 +261,21 @@ def _build_cmd(args) -> int:
         print(f"[BLOCKED] {e}", file=sys.stderr)
         return 2
     except BuildError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        return 1
+
+
+def _gen_images_cmd(args) -> int:
+    from pathlib import Path
+
+    from labflash.build import BuildError
+    from labflash.genvariants import GenError, run
+    from labflash.poolmanifest import ManifestError
+
+    try:
+        only = [int(x) for x in args.only.split(",")] if args.only else None
+        return run(Path(args.out), args.seed_base, limit=args.limit, dry_run=args.dry_run, only=only)
+    except (BuildError, GenError, ManifestError) as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 1
 

@@ -286,6 +286,57 @@ Every project risk defined in PLAN §9 was evaluated and verified against real t
   still drifts, watch `esp_ble` connection-interval / MTU negotiation in `console.log` and the host-side
   notification timing. Evidence for this run: `scripts/evidence/bl060_soak_2026-09-23d/`.
 
+### Trap 25: Signed images are always a multiple of 4096 bytes (BL-069, 2026-09-25)
+- **Symptom/Observation:** a signed IDF app image is always sector aligned. `espsecure` pads the data to a 4096
+  multiple and appends a whole 4096-byte signature sector, so v1 is 1,249,280 B = 305 sectors. The bootloader reads
+  only up to `ALIGN_UP(end,4096)` plus the signature block.
+- **Cause:** the signing step rounds the data up and always reserves a full sector for the signature, so no normal
+  build can emit an image whose size is not a 4096 multiple.
+- **Resolution / How to avoid:** BLE OTA refuses non-aligned images host-side (`host/labflash/update.py`), and
+  "non-aligned" test images cannot come from a normal build — they have to be synthesized deliberately.
+
+### Trap 26: A post-signature trailer is invisible to the bootloader but `espsecure` refuses it (BL-069, 2026-09-25)
+- **Symptom/Observation:** bytes appended after the signature sector are never read by the bootloader, so a trailer
+  yields a valid image whose file size is not a 4096 multiple. `espsecure verify-signature` refuses such a file.
+- **Cause:** the bootloader stops at `ALIGN_UP(end,4096)` plus the signature block, while `espsecure` validates the
+  whole file, so trailing bytes break verification of an otherwise good image.
+- **Resolution / How to avoid:** `labflash.imagefmt.verify_device_signature` strips the trailer before verifying.
+  **NOT YET CONFIRMED ON HARDWARE** — Gate R1 (append 4096 B to v1, install over WiFi, expect boot + `confirmed=1`)
+  is still pending, so treat this as design intent rather than verified behavior.
+
+### Trap 27: An over-limit image fails in three places and the BLE symptom is silent (BL-069, 2026-09-25)
+- **Symptom/Observation:** an over-limit image is rejected by BLE `ota_begin` (`fw_len` > partition size), by WiFi
+  `esp_ota_begin`, and by the bootloader (FAIL_LOAD). Over BLE the transport still ACKs sectors, so there is no error
+  message: the symptom is no reboot and a host-side timeout.
+- **Cause:** the failure happens above the transport, so an ACKed sector carries no information about the rejection.
+- **Resolution / How to avoid:** use a short timeout for images expected to be rejected, so the missing reboot shows
+  up quickly instead of after the normal transfer budget.
+
+### Trap 28: IDF's own size check refuses an over-partition build, and its error is on stdout (BL-069, 2026-09-25)
+- **Symptom/Observation:** `check_sizes.py` fails the build when the signed image exceeds the 4 MB app partition, with
+  the message "All app partitions are too small for binary ... size 0x...". That line goes to the build's STDOUT log
+  while stderr only holds Kconfig notes.
+- **Cause:** an error message assembled from stderr alone therefore hides the real cause of the build failure.
+- **Resolution / How to avoid:** the too_big pool image is built against a temporary 5 MB partition table
+  (`genvariants.BIG_PARTITIONS`), and `build_idf_image` now includes the last 40 stdout lines in `BuildError`.
+
+### Trap 29: Image size grows in 64 KiB steps, so an exact byte target is not reachable (BL-069, 2026-09-25)
+- **Symptom/Observation:** flash-mapped segments are 64 KiB aligned; a 4096-byte pad increase produced the same
+  signed size (observed: pad 2,879,488 and 2,883,584 both gave 4,132,864 B).
+- **Cause:** alignment rounds the pad away, so most requested byte sizes collapse onto the same image size.
+- **Resolution / How to avoid:** the near_limit image targets a window just under 4 MiB (built: 4,132,864 B) and
+  too_big a window just over (built: 4,263,936 B), via `genvariants.solve_pad` with `SIZE_WINDOW` = 64 KiB.
+
+### Trap 30: Same seed, same image: compare `content_sha256`, not `sha256` (BL-069, 2026-09-25)
+- **Symptom/Observation:** RSA-PSS signatures are salted, so two builds of the same seed differ in the signature
+  sector only. Rebuilding pool image g00 into a different output directory gave byte-identical content for the first
+  2,031,616 bytes and 388 differing bytes inside the signature sector.
+- **Cause:** salted signing is non-deterministic by design, so whole-file `sha256` can never be reproducible.
+- **Resolution / How to avoid:** the manifest carries `sha256` (whole file) and `content_sha256` (everything before
+  the signature sector), and reproducibility is judged on `content_sha256`. Related trap found in the same work:
+  `idf.py` runs from `esp_idf/`, so a relative `--out` path resolved against the wrong directory until
+  `genvariants.run` made it absolute.
+
 ## 5. Zephyr Track Status Summary (as of 2026-09-23)
 
 | Item | Status |

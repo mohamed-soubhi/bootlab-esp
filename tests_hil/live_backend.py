@@ -244,7 +244,12 @@ class LiveBackend:
         return hz, passed
 
     def update(self, variant: str, transport: str, log_path: Path, timeout_s: float | None = None) -> bool:
-        image = self.image_for(variant)
+        return self.update_image_path(self.image_for(variant), transport, log_path, timeout_s, label=variant)
+
+    def update_image_path(self, image: Path, transport: str, log_path: Path, timeout_s: float | None = None,
+                          label: str | None = None) -> bool:
+        """Install the image at `image` (any signed file, e.g. a BL-069 pool image) via `transport`."""
+        variant = label or image.name
         args = Namespace(
             board=self.board, image=str(image), transport=transport, labid_port=self.port, no_labid=False,
             board_mac=None, address=None, scan_timeout=10.0, board_ip=self.board_ip, host_ip=None, http_port=8443,

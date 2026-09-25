@@ -293,19 +293,20 @@ def verify_sdkconfig_variant(sdkconfig_path: Path, expected_symbol: str) -> bool
     return expected_symbol in content
 
 
-def build_idf_variant(
-    variant: str,
+def build_idf_image(
+    build_dir: Path,
+    project_ver: str,
+    defaults: str,
+    kconfig_sym: str,
     repo_root: Path | None = None,
-    clean: bool = False,
     runner: Callable | None = None,
+    extra_cmake_defs: Sequence[str] = (),
+    expected_sig_valid: bool = True,
+    label: str = "image",
+    need_foreign: bool = False,
 ) -> BuildResult:
-    """Build a single IDF variant according to PLAN R15."""
+    """Build one IDF image into build_dir and run the PLAN R15 gates (variant symbol, binary, signature)."""
     root = (repo_root or DEFAULT_REPO_ROOT).resolve()
-    if variant not in IDF_VARIANTS:
-        raise BuildError(f"Unknown IDF variant '{variant}'. Valid: {list(IDF_VARIANTS.keys())}")
-
-    var_cfg = IDF_VARIANTS[variant]
-    build_dir = root / var_cfg["build_dir"]
     esp_idf_dir = root / "esp_idf"
     stale_sdkconfig = esp_idf_dir / "sdkconfig"
 
@@ -317,16 +318,11 @@ def build_idf_variant(
             raise BuildError(f"Could not remove stale {stale_sdkconfig}: {e}")
 
     # Ensure signing keys exist
-    ensure_keys(root, need_foreign=(variant == "bad_sig"), runner=runner)
-
-    # Clean if requested
-    if clean and build_dir.exists():
-        shutil.rmtree(build_dir, ignore_errors=True)
+    ensure_keys(root, need_foreign=need_foreign, runner=runner)
 
     build_dir.mkdir(parents=True, exist_ok=True)
     target_sdkconfig = build_dir / "sdkconfig"
 
-    # If clean or sdkconfig missing/stale, ensure it gets generated from defaults
     cmd = [
         "idf.py",
         "-C",
@@ -334,20 +330,22 @@ def build_idf_variant(
         "-B",
         str(build_dir),
         f"-DSDKCONFIG={target_sdkconfig}",
-        f"-DSDKCONFIG_DEFAULTS={var_cfg['defaults']}",
-        f"-DPROJECT_VER={var_cfg['project_ver']}",
+        f"-DSDKCONFIG_DEFAULTS={defaults}",
+        f"-DPROJECT_VER={project_ver}",
+        *extra_cmake_defs,
         "build",
     ]
 
     res = run_command(cmd, cwd=esp_idf_dir, use_idf_env=True, runner=runner)
     if res.returncode != 0:
-        raise BuildError(f"Build failed for variant '{variant}':\n{res.stderr or res.stdout}")
+        stdout_tail = "\n".join((res.stdout or "").splitlines()[-40:])
+        raise BuildError(f"Build failed for variant '{label}':\n{res.stderr or ''}\n{stdout_tail}".rstrip())
 
     # Post-build verification per PLAN R15
     # 1. Variant symbol in sdkconfig
-    if not verify_sdkconfig_variant(target_sdkconfig, var_cfg["kconfig_sym"]):
+    if not verify_sdkconfig_variant(target_sdkconfig, kconfig_sym):
         raise BuildError(
-            f"Variant verification failed: {target_sdkconfig} does not contain {var_cfg['kconfig_sym']}"
+            f"Variant verification failed: {target_sdkconfig} does not contain {kconfig_sym}"
         )
 
     # 2. Binary existence & non-zero size
@@ -362,9 +360,9 @@ def build_idf_variant(
     primary_key = root / "keys" / "idf_sbv2.pem"
     primary_verified = verify_signature(binary_path, primary_key, runner=runner)
 
-    if var_cfg["expected_sig_valid"]:
+    if expected_sig_valid:
         if not primary_verified:
-            raise BuildError(f"Signature verification FAILED against {primary_key} for variant {variant}")
+            raise BuildError(f"Signature verification FAILED against {primary_key} for variant {label}")
         sig_ok = True
         sig_detail = "verified with primary key (keys/idf_sbv2.pem)"
     else:
@@ -383,14 +381,44 @@ def build_idf_variant(
 
     return BuildResult(
         board="idf",
-        variant=variant,
+        variant=label,
         build_dir=build_dir,
         binary_path=binary_path,
         binary_size=size,
-        project_ver=var_cfg["project_ver"],
+        project_ver=project_ver,
         verified_variant=True,
         verified_signature=sig_ok,
         details=sig_detail,
+    )
+
+
+def build_idf_variant(
+    variant: str,
+    repo_root: Path | None = None,
+    clean: bool = False,
+    runner: Callable | None = None,
+) -> BuildResult:
+    """Build a single IDF variant according to PLAN R15."""
+    root = (repo_root or DEFAULT_REPO_ROOT).resolve()
+    if variant not in IDF_VARIANTS:
+        raise BuildError(f"Unknown IDF variant '{variant}'. Valid: {list(IDF_VARIANTS.keys())}")
+
+    var_cfg = IDF_VARIANTS[variant]
+    build_dir = root / var_cfg["build_dir"]
+    # Clean if requested
+    if clean and build_dir.exists():
+        shutil.rmtree(build_dir, ignore_errors=True)
+
+    return build_idf_image(
+        build_dir=build_dir,
+        project_ver=var_cfg["project_ver"],
+        defaults=var_cfg["defaults"],
+        kconfig_sym=var_cfg["kconfig_sym"],
+        repo_root=root,
+        runner=runner,
+        expected_sig_valid=var_cfg["expected_sig_valid"],
+        label=variant,
+        need_foreign=(variant == "bad_sig"),
     )
 
 

@@ -13,51 +13,35 @@ directory on this machine AND the Windows mirror -- a commit made here can catch
 from the other session (happened at least once, see commit `d308248`'s history); check `git status`
 and `git log -3` before assuming a clean starting point.
 
-## BL-069 — designed and planned 2026-09-25; implementation NOT started
+## BL-069 — build phase DONE 2026-09-25; hardware phase (R1 + AC5) NOT done
 
-Ticket still `todo`. The full plan is approved and saved at
-`/home/msoubhi/.claude/plans/zippy-conjuring-pie.md` — read that file first; it has the design,
-file-by-file changes, TDD order, gates and risks. Summary for orientation:
+Ticket still `todo` (set `doing` when the board work starts). Plan: `/home/msoubhi/.claude/plans/zippy-conjuring-pie.md`
+(has the REPLAN and the confirmed decisions). Evidence: `scripts/evidence/bl069_pool_2026-09-25/` (README has every gate result).
 
-**Goal:** a pure-Python generator + a pool of *signed* images whose footprint differs from the two
-known bins (varied size, LED behaviour, allowlisted spare pins), with a `manifest.json` giving each
-image's expected outcome on each transport, so BL-067's randomized soak consumes the pool instead
-of hardcoded v1/v2. Generated images = V1 variant + generated overlay gated by `CONFIG_APP_GEN_POOL`;
-`IDF_VARIANTS` stays exactly 5 keys so `host/tests/test_build.py:10` and the CI upload list stay true.
-Pool = 12 valid + 1 `too_big`; AC5 ≈ 43 installs ≈ 3 h (WiFi pass ~20 min, BLE pass staged/resumable).
+**Built (committed):** `host/labflash/{pinpolicy,imagefmt,imagegen,poolmanifest,genvariants}.py`, `gen-images` subcommand,
+`build.build_idf_image` (extracted from `build_idf_variant`), firmware overlay `CONFIG_APP_GEN_POOL` (Kconfig + `app_main.c` +
+CMake, nothing under LABID/WiFi/BLE-OTA/confirm), `tests_hil/pool_schedule.py` + `pool_install.py` (AC5 runner), `docs/BL069_IMAGE_POOL.md`,
+LESSONS Traps 25-30. Pool: 13 signed images (9 valid, 2 unaligned-trailer, 1 near_limit 4,132,864 B, 1 too_big 4,263,936 B), seed base
+`bl069-2026-09-25`, in `esp_idf/build_pool/` (gitignored; regenerate with
+`PYTHONPATH=host python -m labflash gen-images --out esp_idf/build_pool --seed-base bl069-2026-09-25`, ~17 min, WSL only).
 
-**Image-format facts pinned this session from source + real artifacts** (do not re-derive):
-- A signed image = data padded to a 4096 multiple + a **whole 4096-byte signature sector**
-  (`espsecure/__init__.py:604-612`) ⇒ **signed images are always 4096-aligned**; v1 = 1,249,280 B
-  (305 sectors), `end` = 1,245,184, sig at `ALIGN_UP(end,4096)`, SBv2 magic `0xE7`,
-  `sha256(file[:sig_at])`.
-- Bootloader accepts only if `end + (ALIGN_UP(end,4096)-end) + ~1216 <= part_len`
-  (`esp_image_format.c:1021-1060`), else `FAIL_LOAD`. It reads only `[:ALIGN_UP(end,4096))` + the sig
-  block ⇒ bytes appended **after** the sig sector are never read; that post-signature trailer is the
-  *only* way to make a file whose size is not a 4096 multiple, and `espsecure verify-signature` then
-  refuses such a file. **Not HW-confirmed yet — that is gate R1.**
-- Over-limit is rejected in three places (BLE `ota_begin` `app_ble_ota.c:64`, WiFi `esp_ota_begin`,
-  bootloader); over BLE the transport still ACKs sectors ⇒ symptom is a silent no-reboot + host timeout.
-- `labflash update idf --image <path> --transport wifi|ble` already exists ⇒ AC5 runner is a thin loop.
+**Decisions (owner, 2026-09-25):** AC5 as ONE overnight run (WiFi first, then BLE); non-4096 sizes via post-signature trailer (gated on R1);
+reproducible build in the generated overlay only; commit manifest/README/seed, keep `.bin`s gitignored.
 
-**Four decisions defaulted in the plan, still open to the owner:** (1) AC5 staged (WiFi first, then
-BLE) — default; (2) non-4096 sizes via post-signature trailer, gated on R1; (3) reproducible build
-(`CONFIG_APP_REPRODUCIBLE_BUILD=y`) in the generated overlay only, so the 5 existing bins stay
-byte-identical; (4) commit manifest/README/seed, keep `.bin`s gitignored (`esp_idf/build*/` is ignored).
+**Findings worth knowing:** RSA-PSS is salted, so whole-file sha256 changes every build; reproducibility is `content_sha256` (everything before the
+signature sector). Image size grows in 64 KiB steps (windows, not exact sizes). IDF's size-check error is on stdout. The fixed variants are NOT
+byte-identical after the firmware edit (date, hashes, signature, 3 `__LINE__` immediates) but same size and code paths; the plan's "byte-identical"
+R7 wording was wrong.
 
-**Blocking pre-code gate R1:** ~5 min owner-approved board window — append 4096 B to the v1 bin,
-install over WiFi, confirm boot + `confirmed=1`. Whole trailer design rests on it. If it fails:
-redefine "non-sector-aligned" as the *declared* length, drop the trailer from valid images, keep it
-only for `too_big`, and say so in the AC note.
+**Still to do, needs the owner:** (1) R1: install `g03.bin` over WiFi on the board (native Windows, owner present), expect boot + `confirmed=1`, then
+restore v1; (2) confirm nothing is wired to GPIO1,2,4-18,21,47 (safe-pin list from the DevKitC-1 pin table); (3) one ~3.5 h overnight window:
+`python -m tests_hil.pool_install --pool <win>\esp_idf\build_pool --port COM14 --board-ip 192.168.1.152 --keys-dir keys --env-file credentials.env
+--out scripts\evidence\bl069_pool_install_<date>` (verifies pool sha256 first; `--dry-run` prints the plan; `--resume` continues).
 
-**Also updated this session (both LOCAL, gitignored via `.git/info/exclude:18`, NOT committed):**
-`.local/email_to_tech_lead.md` (BL-060 soak numbers folded in: 100/100, 0 failures, target ≥99 %,
-50 HTTPS + 50 BLE, final v1, 3 h 48 m; sign-off now Mohamed Soubhi / eng.mohamed.soubhi@gmail.com;
-BLE ~7× slower and +45 % drift and the Pi under-voltage run kept as honest open findings) and
-`.local/bootloader_cheatsheet.md` (new §2b image-layout section, tag legend fixed, soak row in §3,
-new Q&A, two new unknowns).
-
-
+**Cheap agent (owner-approved side tool):** git worktree `~/bootlab-esp-cheap` (branch `bl069-cheap`, `.agent/inbox|outbox`, rules in its
+`CLAUDE.local.md`). Drive it headless from here: `cd ~/bootlab-esp-cheap && ollama launch claude --model deepseek-v4.1-flash:cloud --yes -- -p
+"Read CLAUDE.local.md, then do task Tnn ..." --permission-mode acceptEdits --allowedTools Read Edit Write Bash --disallowedTools "Bash(git:*)" ...`.
+Cloud model: never put keys/`.local`/credentials in a task. Always review its diff and re-run tests before copying anything into the main repo.
 
 The 2026-09-23d run finished and its artifacts were recovered on 2026-09-25 from the Windows scratch dir
 (`C:\MSA\embedded-OS\bootlab-esp\scripts\evidence\bl060_soak_2026-09-23d`) into
@@ -83,8 +67,7 @@ Candidate follow-up (owner's call): add `bleak` + `esp-idf-nvs-partition-gen` to
 (e.g. an optional `hil` group).
 
 NEXT (order as of 2026-09-25; nothing is blocked on the owner except BL-069's R1 board window):
-1. **BL-069** (see its section above): resolve the 4 defaulted decisions, run gate R1 on the board,
-   then implement per `/home/msoubhi/.claude/plans/zippy-conjuring-pie.md`.
+1. **BL-069** hardware phase (see its section above): gate R1, then the overnight AC5 install run.
 2. **BL-067** randomized 200-cycle soak — consumes BL-069's manifest/pool, add `--seed`, 70/10/20
    variant mix, budget BLE at the *drifted* rate (~280 s/cycle), not the first-cycle ~190 s
    (`docs/LESSONS_LEARNED.md` Trap 24).
