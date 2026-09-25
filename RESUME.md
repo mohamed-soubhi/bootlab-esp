@@ -1,4 +1,4 @@
-# RESUME — bootlab-esp (checkpoint 2026-09-22, post-restart)
+# RESUME — bootlab-esp (checkpoint 2026-09-25)
 
 Work and commit ONLY in `/home/msoubhi/bootlab-esp`. The owner's Windows copy
 (`C:\MSA\embedded-OS\bootlab-esp`) is a scratch dir; never edit or push from it.
@@ -13,7 +13,51 @@ directory on this machine AND the Windows mirror -- a commit made here can catch
 from the other session (happened at least once, see commit `d308248`'s history); check `git status`
 and `git log -3` before assuming a clean starting point.
 
-## BL-060 — IDF track DONE 2026-09-24 (100/100); Zephyr track still open
+## BL-069 — designed and planned 2026-09-25; implementation NOT started
+
+Ticket still `todo`. The full plan is approved and saved at
+`/home/msoubhi/.claude/plans/zippy-conjuring-pie.md` — read that file first; it has the design,
+file-by-file changes, TDD order, gates and risks. Summary for orientation:
+
+**Goal:** a pure-Python generator + a pool of *signed* images whose footprint differs from the two
+known bins (varied size, LED behaviour, allowlisted spare pins), with a `manifest.json` giving each
+image's expected outcome on each transport, so BL-067's randomized soak consumes the pool instead
+of hardcoded v1/v2. Generated images = V1 variant + generated overlay gated by `CONFIG_APP_GEN_POOL`;
+`IDF_VARIANTS` stays exactly 5 keys so `host/tests/test_build.py:10` and the CI upload list stay true.
+Pool = 12 valid + 1 `too_big`; AC5 ≈ 43 installs ≈ 3 h (WiFi pass ~20 min, BLE pass staged/resumable).
+
+**Image-format facts pinned this session from source + real artifacts** (do not re-derive):
+- A signed image = data padded to a 4096 multiple + a **whole 4096-byte signature sector**
+  (`espsecure/__init__.py:604-612`) ⇒ **signed images are always 4096-aligned**; v1 = 1,249,280 B
+  (305 sectors), `end` = 1,245,184, sig at `ALIGN_UP(end,4096)`, SBv2 magic `0xE7`,
+  `sha256(file[:sig_at])`.
+- Bootloader accepts only if `end + (ALIGN_UP(end,4096)-end) + ~1216 <= part_len`
+  (`esp_image_format.c:1021-1060`), else `FAIL_LOAD`. It reads only `[:ALIGN_UP(end,4096))` + the sig
+  block ⇒ bytes appended **after** the sig sector are never read; that post-signature trailer is the
+  *only* way to make a file whose size is not a 4096 multiple, and `espsecure verify-signature` then
+  refuses such a file. **Not HW-confirmed yet — that is gate R1.**
+- Over-limit is rejected in three places (BLE `ota_begin` `app_ble_ota.c:64`, WiFi `esp_ota_begin`,
+  bootloader); over BLE the transport still ACKs sectors ⇒ symptom is a silent no-reboot + host timeout.
+- `labflash update idf --image <path> --transport wifi|ble` already exists ⇒ AC5 runner is a thin loop.
+
+**Four decisions defaulted in the plan, still open to the owner:** (1) AC5 staged (WiFi first, then
+BLE) — default; (2) non-4096 sizes via post-signature trailer, gated on R1; (3) reproducible build
+(`CONFIG_APP_REPRODUCIBLE_BUILD=y`) in the generated overlay only, so the 5 existing bins stay
+byte-identical; (4) commit manifest/README/seed, keep `.bin`s gitignored (`esp_idf/build*/` is ignored).
+
+**Blocking pre-code gate R1:** ~5 min owner-approved board window — append 4096 B to the v1 bin,
+install over WiFi, confirm boot + `confirmed=1`. Whole trailer design rests on it. If it fails:
+redefine "non-sector-aligned" as the *declared* length, drop the trailer from valid images, keep it
+only for `too_big`, and say so in the AC note.
+
+**Also updated this session (both LOCAL, gitignored via `.git/info/exclude:18`, NOT committed):**
+`.local/email_to_tech_lead.md` (BL-060 soak numbers folded in: 100/100, 0 failures, target ≥99 %,
+50 HTTPS + 50 BLE, final v1, 3 h 48 m; sign-off now Mohamed Soubhi / eng.mohamed.soubhi@gmail.com;
+BLE ~7× slower and +45 % drift and the Pi under-voltage run kept as honest open findings) and
+`.local/bootloader_cheatsheet.md` (new §2b image-layout section, tag legend fixed, soak row in §3,
+new Q&A, two new unknowns).
+
+
 
 The 2026-09-23d run finished and its artifacts were recovered on 2026-09-25 from the Windows scratch dir
 (`C:\MSA\embedded-OS\bootlab-esp\scripts\evidence\bl060_soak_2026-09-23d`) into
@@ -38,12 +82,16 @@ manual `iptables -I INPUT ... 8443` rule (redundant with ufw), `rig-pi.yaml` (un
 Candidate follow-up (owner's call): add `bleak` + `esp-idf-nvs-partition-gen` to `host/pyproject.toml`
 (e.g. an optional `hil` group).
 
-NEXT (nothing is blocked on the owner now):
-1. BL-060 Zephyr scope: run the equivalent soak on the Zephyr board (ble + udp). Untouched.
-2. BL-067's 200-cycle randomized soak should budget BLE at the *drifted* rate (~280 s/cycle), not the
-   first-cycle ~190 s — see `docs/LESSONS_LEARNED.md` Trap 24.
-3. Settle the BLE drift question with a BLE-only soak (no WiFi interleaved); see Trap 24 for the method.
-4. Pi + second board stays BLOCKED on Pi under-voltage (`0x50005`); not part of BL-060's IDF acceptance.
+NEXT (order as of 2026-09-25; nothing is blocked on the owner except BL-069's R1 board window):
+1. **BL-069** (see its section above): resolve the 4 defaulted decisions, run gate R1 on the board,
+   then implement per `/home/msoubhi/.claude/plans/zippy-conjuring-pie.md`.
+2. **BL-067** randomized 200-cycle soak — consumes BL-069's manifest/pool, add `--seed`, 70/10/20
+   variant mix, budget BLE at the *drifted* rate (~280 s/cycle), not the first-cycle ~190 s
+   (`docs/LESSONS_LEARNED.md` Trap 24).
+3. **BL-070**, **BL-071** — not started.
+4. BL-060 Zephyr scope: run the equivalent soak on the Zephyr board (ble + udp). Untouched.
+5. Settle the BLE drift question with a BLE-only soak (no WiFi interleaved); see Trap 24 for the method.
+6. Pi + second board stays BLOCKED on Pi under-voltage (`0x50005`); not part of BL-060's IDF acceptance.
    Leftovers there: manual `iptables -I INPUT ... 8443` rule (redundant with ufw), untracked `rig-pi.yaml`.
 
 ## BL-055[zephyr] — DONE 2026-09-24 (green CI run 35943848028); the history below is kept for context
