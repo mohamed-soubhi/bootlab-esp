@@ -7,7 +7,7 @@
 
 ## Progress
 
-- **IDF track:** `████████████████████████░░░░░░` **37/47 done**
+- **IDF track:** `████████████████████████░░░░░░` **38/47 done**
 - **Zephyr track:** `█████████████████████░░░░░░░░░` **29/41 done**
 
 | Epic | Phase | IDF | Zephyr |
@@ -18,7 +18,7 @@
 | E2 ESP32-S3 #1 — Zephyr | P2 | — | `█████████░` 10/11 |
 | E3 labflash CLI | P3 | `██████████` 6/6 | `██████████` 6/6 |
 | E4 HIL tests + CI | P4 | `████████░░` 8/10 | `██░░░░░░░░` 2/9 |
-| E5 Soak, docs, handover | P5 | `██░░░░░░░░` 2/10 | `██░░░░░░░░` 1/5 |
+| E5 Soak, docs, handover | P5 | `███░░░░░░░` 3/10 | `██░░░░░░░░` 1/5 |
 
 ## Gantt — IDF track
 
@@ -78,8 +78,8 @@ gantt
     BL-063a IDF lessons learned (retrospective) :crit, bl063a, 2026-10-15, 1d
     BL-063b HTML presentation of the IDF track :crit, bl063b, 2026-10-16, 2d
     BL-066 GitHub Pages project showcase & presentation :done, bl066, 2026-09-16, 2d
-    BL-067 [Advanced] Heavy randomized OTA soak 4 good + :bl067, 2026-10-14, 4d
-    BL-069 [Advanced] Random-variant image generator and :active, bl069, 2026-10-10, 4d
+    BL-067 [Advanced] Heavy randomized OTA soak 4 good + :active, bl067, 2026-10-14, 4d
+    BL-069 [Advanced] Random-variant image generator and :done, bl069, 2026-10-10, 4d
     BL-072 [Advanced] Multi-board randomized OTA soak tw :bl072, 2026-10-18, 4d
 ```
 
@@ -106,11 +106,10 @@ gantt
 | BL-063 Final PLAN.md update | 🟥 blocked | — |
 | BL-063a IDF lessons learned (retrospective) | 🟥 blocked | BL-061[idf] 🟥, BL-062[idf] 🟥, BL-063[idf] 🟥, BL-071[idf] ⬜ |
 | BL-063b HTML presentation of the IDF track | 🟥 blocked | BL-063a[idf] 🟥 |
-| BL-067 [Advanced] Heavy randomized OTA soak 4 good + | ⬜ todo | BL-069[idf] 🟣 |
-| BL-069 [Advanced] Random-variant image generator and | 🟣 review | — |
+| BL-067 [Advanced] Heavy randomized OTA soak 4 good + | 🟣 review | — |
 | BL-070 hil.yml self-hosted runner on the development | ⬜ todo | — |
 | BL-071 IDF acceptance re-run from the development ma | ⬜ todo | BL-070[idf] ⬜ |
-| BL-072 [Advanced] Multi-board randomized OTA soak tw | ⬜ todo | BL-067[idf] ⬜ |
+| BL-072 [Advanced] Multi-board randomized OTA soak tw | ⬜ todo | BL-067[idf] 🟣 |
 
 ## Gantt — Zephyr track
 

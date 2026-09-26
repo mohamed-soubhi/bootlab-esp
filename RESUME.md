@@ -13,7 +13,7 @@ directory on this machine AND the Windows mirror -- a commit made here can catch
 from the other session (happened at least once, see commit `d308248`'s history); check `git status`
 and `git log -3` before assuming a clean starting point.
 
-## BL-069 — DONE 2026-09-25 (status `review`, owner sign-off pending); BL-067 build phase done, run NOT started
+## BL-069 — DONE and signed off by the owner 2026-09-26; BL-067 `review`, BL-072 `todo` (waits for BL-067 to be `done`)
 
 **BL-069:** all six ACs met with evidence. Build phase `scripts/evidence/bl069_pool_2026-09-25/`; gate R1 (trailer images accepted by the real
 board over WiFi) `scripts/evidence/bl069_r1_2026-09-25/`; AC5 (all 12 valid images in both OTA slots, WiFi + BLE) `scripts/evidence/bl069_pool_install_2026-09-25/`
@@ -21,14 +21,14 @@ board over WiFi) `scripts/evidence/bl069_r1_2026-09-25/`; AC5 (all 12 valid imag
 `docs/BL069_IMAGE_POOL.md`; LESSONS Traps 25-30. Pool `bl069-2026-09-25` lives in `esp_idf/build_pool/` (gitignored; regenerate with
 `PYTHONPATH=host python -m labflash gen-images --out esp_idf/build_pool --seed-base bl069-2026-09-25`, ~17 min, WSL only).
 
-**BL-067 (status `todo` only because BL-069 is not `done` yet; the work is finished):** 200/200 cycles matched the model on board 1 (seed 20260925, 111 WiFi + 89 BLE,
+**BL-067 (status `review`, awaiting the owner; the work is finished):** 200/200 cycles matched the model on board 1 (seed 20260925, 111 WiFi + 89 BLE,
 139 fixed / 22 generated / 39 failure images), board restored to confirmed v1. Three windows: on first attempts 198/200 matched; the 2 misses (cycles 42 and 53, the first
 `no_confirm` cycles) were a runner bug (a second open of the COM port held by the console capture), fixed and re-run with `--rerun-cycles 42,53`; none was the board.
 Evidence `scripts/evidence/bl067_20260925/` (README has the honest account), smoke `scripts/evidence/bl067_smoke_20260925/`, runbook `docs/BL067_RANDOM_SOAK.md`, LESSONS Traps 31-35.
 Code: `tests_hil/soak_model.py`, `soak_random.py`, `otaretry.py`, v3/v4 in `IDF_VARIANTS`. Follow-up: the intermittent "trigger accepted, image never pulled" was root-caused and fixed on 2026-09-26 (serial open reset the board mid-OTA; Traps 34-35);
 BL-060 Zephyr soak and BL-070/071 are untouched.
 
-**BL-072 (todo only because BL-067 is not done; the work is finished):** 400 cycles, 200 per board in parallel, same seed; 200/200 on both boards, identical outcomes, 0 retries; evidence
+**BL-072 (`todo` only because BL-067 is not `done` yet; the work is finished):** 400 cycles, 200 per board in parallel, same seed; 200/200 on both boards, identical outcomes, 0 retries; evidence
 `scripts/evidence/bl072_two_boards_2026-09-26/`. New flags: `--http-port`, `--ble-lock`, `--rig-config` (board 2: `host/config/rig-board2.yaml`); BLE transfers take turns via `tests_hil/filelock.py`.
 One small open question: WiFi is ~13-15 % faster on board 2, root cause not determined.
 
@@ -67,7 +67,7 @@ Candidate follow-up (owner's call): add `bleak` + `esp-idf-nvs-partition-gen` to
 (e.g. an optional `hil` group).
 
 NEXT (order as of 2026-09-25; nothing is blocked on the owner except BL-069's R1 board window):
-1. Owner sign-off for BL-069 (`review` -> `done`), then BL-067 can be closed. Next candidates: BL-072 (board 2 ready), BL-060 Zephyr soak, BL-070/071.
+1. Owner review of BL-067 (`review` -> `done`), then BL-072 can go to `review`. Open items from the BL-069 sign-off: physical LED colour and the two spare pins never observed. Next candidates: BL-060 Zephyr soak, BL-070/071.
 2. **BL-067** randomized 200-cycle soak — consumes BL-069's manifest/pool, add `--seed`, 70/10/20
    variant mix, budget BLE at the *drifted* rate (~280 s/cycle), not the first-cycle ~190 s
    (`docs/LESSONS_LEARNED.md` Trap 24).
