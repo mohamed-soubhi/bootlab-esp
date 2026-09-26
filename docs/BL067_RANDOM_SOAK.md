@@ -198,3 +198,16 @@ pass rate.
 - The runner restores v1 at the end of the run itself, also after an error or Ctrl-C; the board must be on a confirmed image when the run starts.
 - Evidence is written to the Windows-side `--out` directory and stays there until it is copied into the repo
   checkout.
+
+## Options added by later runs
+
+| Flag | Use |
+|---|---|
+| `--infra-retries N` (default 3) | retries for host-side send trouble (a host exception, or an image that never reached the board) while the board is unchanged; counted as `infra_retries` |
+| `--rerun-cycles 42,53` (with `--resume`) | executes already-run cycles again first, for cycles that failed because of the runner rather than the board; the log keeps both records and the report counts the latest per cycle |
+| `--http-port N` (default 8443) | local HTTPS port for WiFi OTAs; give every parallel run its own |
+| `--ble-lock FILE` | one lock file shared by parallel runs so their BLE transfers take turns on the single adapter |
+| `--rig-config FILE` | rig file for the run; `host/config/rig-board2.yaml` pins a run to the second board (uid, mac, ip, BLE scan) |
+
+Running two boards at once (BL-072): one process per board with its own `--port`, `--board-ip`, `--rig-config`, `--out` and `--http-port`, the same `--seed` and `--cycles`, and the same `--ble-lock`.
+Evidence: `scripts/evidence/bl072_two_boards_2026-09-26/`. Board-vs-board report: `tests_hil/compare_boards.py`.

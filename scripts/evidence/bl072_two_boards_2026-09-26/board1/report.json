@@ -1,0 +1,188 @@
+{
+  "mode": "live",
+  "seed": 20260925,
+  "plan": {
+    "seed": 20260925,
+    "cycles": 200,
+    "ble_share": 0.5,
+    "failure_cap": 2,
+    "manifest_sha256": "a67170f78f544f969efb58bb3d81fd603a3741667ae96177d2afd8a36e968bef",
+    "model_version": 2
+  },
+  "planned_cycles": 200,
+  "total_cycles": 200,
+  "passes": 200,
+  "failures": 0,
+  "pass_rate_pct": 100.0,
+  "target_pct": 99.0,
+  "aborted": false,
+  "stopped_early": false,
+  "final_state_confirmed": true,
+  "elapsed_s": 28141.2,
+  "resumed_from": 0,
+  "infra_retries": 0,
+  "plan_summary": {
+    "cycles": 200,
+    "by_kind": {
+      "failure": 39,
+      "fixed": 139,
+      "generated": 22
+    },
+    "by_transport": {
+      "ble": 89,
+      "wifi": 111
+    },
+    "by_image": {
+      "hang": 15,
+      "v4": 33,
+      "v3": 42,
+      "gen-bc23f981": 2,
+      "v2": 24,
+      "v1": 40,
+      "gen-ed4ae35d": 4,
+      "gen-d3ec723f": 1,
+      "bad_sig": 10,
+      "gen-477ee36e": 4,
+      "gen-0c23946e": 3,
+      "gen-8ddc7a9e": 3,
+      "no_confirm": 14,
+      "gen-a7e974e5": 2,
+      "gen-7ced4815": 3
+    }
+  },
+  "by_image": {
+    "hang": {
+      "total": 15,
+      "passes": 15
+    },
+    "v4": {
+      "total": 33,
+      "passes": 33
+    },
+    "v3": {
+      "total": 42,
+      "passes": 42
+    },
+    "gen-bc23f981": {
+      "total": 2,
+      "passes": 2
+    },
+    "v2": {
+      "total": 24,
+      "passes": 24
+    },
+    "v1": {
+      "total": 40,
+      "passes": 40
+    },
+    "gen-ed4ae35d": {
+      "total": 4,
+      "passes": 4
+    },
+    "gen-d3ec723f": {
+      "total": 1,
+      "passes": 1
+    },
+    "bad_sig": {
+      "total": 10,
+      "passes": 10
+    },
+    "gen-477ee36e": {
+      "total": 4,
+      "passes": 4
+    },
+    "gen-0c23946e": {
+      "total": 3,
+      "passes": 3
+    },
+    "gen-8ddc7a9e": {
+      "total": 3,
+      "passes": 3
+    },
+    "no_confirm": {
+      "total": 14,
+      "passes": 14
+    },
+    "gen-a7e974e5": {
+      "total": 2,
+      "passes": 2
+    },
+    "gen-7ced4815": {
+      "total": 3,
+      "passes": 3
+    }
+  },
+  "by_transport": {
+    "ble": {
+      "total": 89,
+      "passes": 89
+    },
+    "wifi": {
+      "total": 111,
+      "passes": 111
+    }
+  },
+  "generated_slots": {
+    "gen-bc23f981": {
+      "ble": [
+        0,
+        1
+      ]
+    },
+    "gen-ed4ae35d": {
+      "wifi": [
+        0
+      ],
+      "ble": [
+        1
+      ]
+    },
+    "gen-d3ec723f": {
+      "wifi": [
+        1
+      ]
+    },
+    "gen-477ee36e": {
+      "wifi": [
+        0,
+        1
+      ],
+      "ble": [
+        0,
+        1
+      ]
+    },
+    "gen-0c23946e": {
+      "wifi": [
+        0,
+        1
+      ],
+      "ble": [
+        1
+      ]
+    },
+    "gen-8ddc7a9e": {
+      "wifi": [
+        0,
+        1
+      ]
+    },
+    "gen-a7e974e5": {
+      "ble": [
+        0,
+        1
+      ]
+    },
+    "gen-7ced4815": {
+      "ble": [
+        0,
+        1
+      ],
+      "wifi": [
+        0
+      ]
+    }
+  },
+  "failure_log": [],
+  "error": null
+}

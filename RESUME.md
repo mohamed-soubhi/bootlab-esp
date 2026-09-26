@@ -26,7 +26,11 @@ board over WiFi) `scripts/evidence/bl069_r1_2026-09-25/`; AC5 (all 12 valid imag
 `no_confirm` cycles) were a runner bug (a second open of the COM port held by the console capture), fixed and re-run with `--rerun-cycles 42,53`; none was the board.
 Evidence `scripts/evidence/bl067_20260925/` (README has the honest account), smoke `scripts/evidence/bl067_smoke_20260925/`, runbook `docs/BL067_RANDOM_SOAK.md`, LESSONS Traps 31-35.
 Code: `tests_hil/soak_model.py`, `soak_random.py`, `otaretry.py`, v3/v4 in `IDF_VARIANTS`. Open follow-ups: the intermittent "trigger accepted, image never pulled" (Trap 34) is unexplained;
-BL-060 Zephyr soak, BL-072 (two boards in parallel; board 2 is ready), BL-070/071 are untouched.
+BL-060 Zephyr soak and BL-070/071 are untouched.
+
+**BL-072 (todo only because BL-067 is not done; the work is finished):** 400 cycles, 200 per board in parallel, same seed; 200/200 on both boards, identical outcomes, 0 retries; evidence
+`scripts/evidence/bl072_two_boards_2026-09-26/`. New flags: `--http-port`, `--ble-lock`, `--rig-config` (board 2: `host/config/rig-board2.yaml`); BLE transfers take turns via `tests_hil/filelock.py`.
+One small open question: WiFi is ~13-15 % faster on board 2, root cause not determined.
 
 **Hardware how-to (native Windows, R14):** the WSL repo is synced into `C:\MSA\embedded-OS\bootlab-run` (code + images only; keys/credentials are read from
 `C:\MSA\embedded-OS\bootlab-esp`). From WSL: `cd /mnt/c/MSA/embedded-OS/bootlab-run && cmd.exe /c "set PYTHONPATH=host;.&& <Python312>\python.exe -m ..."`.

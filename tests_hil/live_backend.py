@@ -113,11 +113,13 @@ class LiveBackend:
     timeout_s: float = 240.0
     transport_factory: Callable[[], object] | None = None
     console_port: object | None = None   # SharedConsolePort, when console_log was passed to create()
+    http_port: int = 8443                # local HTTPS port the board pulls WiFi OTAs from (one per run when boards run in parallel)
+    ble_lock: Path | None = None         # shared lock file: one BLE adapter serves every board, so BLE transfers take turns
 
     @classmethod
     def create(cls, port: str, board_ip: str, images_dir: Path | None = None, keys_dir: Path | None = None,
                env_file: str | None = None, rig_path: str | None = None, board: str = "idf",
-               console_log: Path | None = None) -> LiveBackend:
+               console_log: Path | None = None, http_port: int = 8443, ble_lock: Path | None = None) -> LiveBackend:
         """`console_log`, when given, opens ONE persistent SharedConsolePort for the whole backend's
         life (BL-060 follow-up): every LABID query and the board's raw ESP_LOG console output share
         it, so console.log captures continuously instead of only during brief per-query opens. Call
@@ -137,7 +139,8 @@ class LiveBackend:
                    keys_dir=keys_dir, env_file=env_file, rig_path=rig_path,
                    snapshot_fn=_default_snapshot_fn(port, transport_factory), update_fn=run_update,
                    measure_fn=_default_measure_fn(port, transport_factory),
-                   transport_factory=transport_factory, console_port=console_port)
+                   transport_factory=transport_factory, console_port=console_port,
+                   http_port=http_port, ble_lock=ble_lock)
 
     def shutdown(self) -> None:
         """Release the shared console port, if `console_log` was passed to `create()`. Call once, at
@@ -260,19 +263,26 @@ class LiveBackend:
     def update(self, variant: str, transport: str, log_path: Path, timeout_s: float | None = None) -> bool:
         return self.update_image_path(self.image_for(variant), transport, log_path, timeout_s, label=variant)
 
+    def _transport_turn(self, transport: str):
+        """BLE transfers hold the shared lock (one adapter, several boards); every other transport runs freely."""
+        if transport == "ble" and self.ble_lock is not None:
+            from tests_hil.filelock import file_lock
+            return file_lock(self.ble_lock)
+        return contextlib.nullcontext()
+
     def update_image_path(self, image: Path, transport: str, log_path: Path, timeout_s: float | None = None,
                           label: str | None = None) -> bool:
         """Install the image at `image` (any signed file, e.g. a BL-069 pool image) via `transport`."""
         variant = label or image.name
         args = Namespace(
             board=self.board, image=str(image), transport=transport, labid_port=self.port, no_labid=False,
-            board_mac=None, address=None, scan_timeout=10.0, board_ip=self.board_ip, host_ip=None, http_port=8443,
+            board_mac=None, address=None, scan_timeout=10.0, board_ip=self.board_ip, host_ip=None, http_port=self.http_port,
             udp_port=1337, confirm_timeout=30.0,
             keys=str(self.keys_dir) if self.keys_dir else None, ca_cert=None, server_cert=None, server_key=None,
             token=None, env_file=self.env_file or "credentials.env", rig=self.rig_path, timeout=timeout_s or self.timeout_s)
         args.transport_factory = self.transport_factory   # shares the SharedConsolePort, if one is open (BL-060)
         buf = io.StringIO()
-        with contextlib.redirect_stdout(buf):
+        with contextlib.redirect_stdout(buf), self._transport_turn(transport):
             rc = self.update_fn(args)
         out = buf.getvalue()
         log_path.parent.mkdir(parents=True, exist_ok=True)

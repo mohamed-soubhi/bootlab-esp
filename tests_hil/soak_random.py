@@ -349,6 +349,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--keys-dir")
     ap.add_argument("--env-file")
     ap.add_argument("--rig-config")
+    ap.add_argument("--http-port", type=int, default=8443,
+                    help="local HTTPS port for WiFi OTAs; give each parallel run its own (default 8443)")
+    ap.add_argument("--ble-lock", default=None,
+                    help="lock file shared by parallel runs so their BLE transfers take turns on the one adapter")
     ap.add_argument("--resume", action="store_true")
     ap.add_argument("--dry-run", action="store_true", help="print the seeded plan; no board, no writes")
     ap.add_argument("--no-console-log", action="store_true")
@@ -374,6 +378,7 @@ def main(argv: list[str] | None = None) -> int:
         backend = LiveBackend.create(port=a.port, board_ip=a.board_ip,
                                      keys_dir=Path(a.keys_dir) if a.keys_dir else None, env_file=a.env_file,
                                      rig_path=a.rig_config,
+                                     http_port=a.http_port, ble_lock=Path(a.ble_lock) if a.ble_lock else None,
                                      console_log=None if a.no_console_log else out_dir / "console.log")
     except LiveRigError as err:
         print(f"ERROR: {err}", file=sys.stderr)

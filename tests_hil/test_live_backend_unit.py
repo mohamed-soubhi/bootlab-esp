@@ -239,3 +239,27 @@ def test_reset_reuses_the_shared_console_port_instead_of_opening_a_second_handle
     be.console_port = None
     be.reset()
     assert opened == ["COM14"]
+
+
+def test_wifi_updates_use_the_configured_http_port(tmp_path):
+    be, calls = make(tmp_path, [])
+    be.http_port = 8444
+    be.update("v1", "wifi", tmp_path / "u.log")
+    assert calls[0].http_port == 8444
+
+
+def test_ble_updates_take_the_shared_lock_and_wifi_updates_do_not(tmp_path):
+    be, _ = make(tmp_path, [])
+    be.ble_lock = tmp_path / "ble.lock"
+    held = []
+    real = be._transport_turn
+
+    def spy(transport):
+        held.append(transport)
+        return real(transport)
+    be._transport_turn = spy
+    be.update("v1", "ble", tmp_path / "u.log")
+    be.update("v1", "wifi", tmp_path / "u.log")
+    assert held == ["ble", "wifi"] and (tmp_path / "ble.lock").exists()
+    be.ble_lock = None
+    assert type(real("ble")).__name__ == "nullcontext"
