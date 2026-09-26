@@ -44,3 +44,5 @@ re-opening port; `reset_to_v1` retries 3 times. See `docs/LESSONS_LEARNED.md` Tr
 `cycles.jsonl` (header, warm-up, one record per cycle, re-runs), `report.json`, `report_window1_aborted.json`, `report_window2_crashed.json`,
 `status.json`, `update.log.gz`, `console.log.gz`. The 10-cycle smoke run before it: `scripts/evidence/bl067_smoke_20260925/` (10/10, all BLE, includes a hang).
 Runbook: `docs/BL067_RANDOM_SOAK.md`. `elapsed_s` in `report.json` covers the last window only.
+
+**Update 2026-09-26:** the intermittent "trigger accepted, image never pulled" seen around this run has a proven root cause and a fix (`docs/LESSONS_LEARNED.md` Trap 34; evidence `scripts/evidence/bl069_followup_ota_root_cause_2026-09-26/`). This run used shared console capture, which never opens the port fresh, and needed 0 retries.

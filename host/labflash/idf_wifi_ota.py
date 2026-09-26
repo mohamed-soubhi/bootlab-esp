@@ -35,8 +35,18 @@ TRIGGER_RETRY_PAUSE_S = 1.0
 COPY_CHUNK = 16384
 
 
+HANDLER_TIMEOUT_S = 60.0     # per-connection socket timeout: a stalled TLS handshake or an idle keep-alive connection is dropped
+
+
+class _Server(http.server.ThreadingHTTPServer):
+    """Handler threads are daemons and shutdown never joins them, so one stuck connection cannot hang stop()."""
+    daemon_threads = True
+    block_on_close = False
+
+
 class _Handler(http.server.SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
+    timeout = HANDLER_TIMEOUT_S
 
     def log_message(self, fmt, *args):   # keep the CLI output readable
         return
@@ -90,8 +100,10 @@ class OtaServer:
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         ctx.load_cert_chain(self.certfile, self.keyfile)
         handler = functools.partial(_Handler, directory=str(self.directory))
-        self._server = http.server.ThreadingHTTPServer((self.bind, self._port), handler)
-        self._server.socket = ctx.wrap_socket(self._server.socket, server_side=True)
+        self._server = _Server((self.bind, self._port), handler)
+        # Handshake in the handler thread, under the handler timeout, not inside accept() on the one serving thread: a client
+        # whose handshake stalls (the board's "read error -0x0050") must not block every other connection and shutdown.
+        self._server.socket = ctx.wrap_socket(self._server.socket, server_side=True, do_handshake_on_connect=False)
         self._server.served = self.served
         self._server.abort_after_bytes = self.abort_after_bytes
         self._server.aborted = 0

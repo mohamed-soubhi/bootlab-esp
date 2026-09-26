@@ -25,7 +25,7 @@ board over WiFi) `scripts/evidence/bl069_r1_2026-09-25/`; AC5 (all 12 valid imag
 139 fixed / 22 generated / 39 failure images), board restored to confirmed v1. Three windows: on first attempts 198/200 matched; the 2 misses (cycles 42 and 53, the first
 `no_confirm` cycles) were a runner bug (a second open of the COM port held by the console capture), fixed and re-run with `--rerun-cycles 42,53`; none was the board.
 Evidence `scripts/evidence/bl067_20260925/` (README has the honest account), smoke `scripts/evidence/bl067_smoke_20260925/`, runbook `docs/BL067_RANDOM_SOAK.md`, LESSONS Traps 31-35.
-Code: `tests_hil/soak_model.py`, `soak_random.py`, `otaretry.py`, v3/v4 in `IDF_VARIANTS`. Open follow-ups: the intermittent "trigger accepted, image never pulled" (Trap 34) is unexplained;
+Code: `tests_hil/soak_model.py`, `soak_random.py`, `otaretry.py`, v3/v4 in `IDF_VARIANTS`. Follow-up: the intermittent "trigger accepted, image never pulled" was root-caused and fixed on 2026-09-26 (serial open reset the board mid-OTA; Traps 34-35);
 BL-060 Zephyr soak and BL-070/071 are untouched.
 
 **BL-072 (todo only because BL-067 is not done; the work is finished):** 400 cycles, 200 per board in parallel, same seed; 200/200 on both boards, identical outcomes, 0 retries; evidence

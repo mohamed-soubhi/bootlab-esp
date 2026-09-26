@@ -43,3 +43,5 @@ version. This run used the OLD schedule; it was not repeated because coverage is
 ## Files
 `results.jsonl` (header + every step record, retried steps appear twice, latest wins), `report.json`, `report_run1_aborted.json`,
 `slot_coverage.json` (version -> transport -> slots confirmed), `status.json`, `update.log.gz`, `console.log.gz` (raw board console).
+
+**Update 2026-09-26:** the Windows file lock and the "trigger accepted, image never pulled" failures now have a proven root cause (a fresh serial open resetting the board mid-download, and a server that waited forever on the dead connection): `docs/LESSONS_LEARNED.md` Traps 34 and 35, evidence `scripts/evidence/bl069_followup_ota_root_cause_2026-09-26/`.

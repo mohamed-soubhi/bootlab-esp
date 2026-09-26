@@ -35,7 +35,16 @@ class SerialLineTransport:
 
     def __init__(self, port: str, baudrate: int = 115200, timeout: float = 0.02):
         import serial
-        ser = serial.Serial(port, baudrate=baudrate, timeout=timeout, write_timeout=1.0)
+        ser = serial.Serial()
+        ser.port = port
+        ser.baudrate = baudrate
+        ser.timeout = timeout
+        ser.write_timeout = 1.0
+        # R14: pyserial asserts DTR/RTS on open, which resets the chip on the USB-Serial-JTAG port. A LABID read during an OTA
+        # rebooted the board mid-download ("trigger accepted, image never pulled"), so both lines go inactive BEFORE the open.
+        ser.dtr = False
+        ser.rts = False
+        ser.open()
         ser.reset_input_buffer()
         self._ser = ser
         self._buf = bytearray()

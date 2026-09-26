@@ -355,20 +355,29 @@ Every project risk defined in PLAN §9 was evaluated and verified against real t
 - **Cause found in our own schedules:** BL-069's reversed second sweep starts with the image the first sweep ended on.
 - **Resolution:** `pool_schedule` swaps neighbouring pairs instead of reversing; `soak_model.plan` never picks the running version.
 
-### Trap 34: The board sometimes accepts an OTA trigger and never pulls the image (2026-09-25)
-- **Observation:** `host served: {}` with the trigger accepted (HTTP 202) and the board unchanged, seen three times in one day (the first gate R1
-  attempt, a failed restore, and the BL-067 restore); every immediate retry worked. Cause not found.
-- **Mitigation, not a fix:** `tests_hil/otaretry.send_with_retry` retries up to 3 times with a 20 s backoff, only when the whole image did not
-  reach the board AND the board's state is unchanged (a retry on top of a half-applied update would double-install); `reset_to_v1` retries 3 times.
-  Both count the retries in the report. In the 200-cycle BL-067 run it needed 0.
+### Trap 34: A LABID read that opens the serial port fresh can reset the board in the middle of an OTA (BL-069 follow-up, 2026-09-26; was "board accepts the trigger and never pulls")
+- **Symptom:** `host served: {}` with the trigger accepted (HTTP 202) and the board unchanged, seen four times in two days (the first gate R1 attempt, a failed restore, two
+  measurement runs), always fine on the next try; once the update process then hung for 7 hours.
+- **Cause (proven):** `SerialLineTransport` opened the COM port with pyserial's defaults, which assert DTR/RTS on open, and on the USB-Serial-JTAG port that can reset the chip
+  (PLAN R14). `labflash update` reads the board over serial WHILE the image downloads, so a reset mid-download killed the pull. The runners with the shared console port open
+  (SharedConsolePort sets both lines inactive before opening) never showed it, which is why the failures clustered on the one-shot paths.
+- **Fix and proof:** `SerialLineTransport` sets DTR/RTS inactive before the open (test first). The script that had failed every install then completed 4/4 with 0 retries.
+- **Also fixed (Trap 35):** a reset leaves a half-open connection on the host; the OTA server used to wait on it forever.
+- **Rule:** any code that opens the board's serial port must set dtr and rts to False before open().
 
-### Trap 35: A Windows file lock on the update CLI's temp file aborted a long run once (BL-069 AC5, 2026-09-25)
-- **Symptom:** after 12 good WiFi installs and the WiFi `too_big` reject, three steps in a row failed within ~4 s, the first with
-  `PermissionError: [WinError 32] ... labflash-ota-...\update.bin`; a fresh process installed fine straight afterwards.
-- **Cause:** not proven (a handle left in the long-lived process, or antivirus scanning the just-written file). It did not recur in the resumed
-  run or in BL-067.
-- **Mitigation:** the retry wrapper above also covers host-side exceptions and writes the stack trace into `update.log`; if it returns, run each
-  update in its own process.
+### Trap 35: The local OTA server hung forever on a connection whose TLS handshake never finished (BL-069 AC5 and follow-up, 2026-09-25/26)
+- **Symptom:** an update process hung for 7 hours (the board held an ESTABLISHED connection, the log stayed silent); earlier, after 12 good installs, three steps in a row failed within
+  seconds with `PermissionError: [WinError 32] ... update.bin` (a stuck handler kept the file open) and aborted the first AC5 run.
+- **Cause:** the server handshook TLS inside `accept()` on its single serving thread with no timeout, and `stop()` joined every handler thread, so one dead connection blocked all
+  others and shutdown. The dead connection came from Trap 34 (a rebooted board leaves no FIN).
+- **Fix:** handshake in the per-connection thread (`do_handshake_on_connect=False`) under a 60 s handler timeout, daemon handler threads, and no join on shutdown; a test with a
+  client that connects and never speaks TLS reproduced the hang and now passes.
+- **Mitigation kept:** `tests_hil/otaretry` still retries host-side trouble while the board is unchanged, and writes the traceback into `update.log`.
+
+### Trap 36: The LED blink rate is quantized by the FreeRTOS tick (BL-069 follow-up, 2026-09-26)
+- **Observation:** a pool image configured for a 269 ms half-period measured 1.917 Hz, not the nominal 1.859 Hz reported over LABID.
+- **Cause:** `vTaskDelay(pdMS_TO_TICKS(ms))` at `CONFIG_FREERTOS_HZ=100` rounds down to 10 ms ticks, so 269 ms runs as 260 ms (1.923 Hz); measured rates follow that within ~1 %.
+- **Consequence:** the `blink_hz` a generated image reports is up to ~3 % off for short periods; `labflash measure` with a tight tolerance can flag it. Not changed, documented.
 
 ## 5. Zephyr Track Status Summary (as of 2026-09-23)
 

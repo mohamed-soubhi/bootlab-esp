@@ -158,3 +158,39 @@ def test_query_skips_unsolicited_frame_of_a_different_type():
     assert fields["app"] == "2.0.0"
     assert fields["confirmed"] == "1"
 
+
+
+def test_serial_line_transport_opens_with_dtr_and_rts_inactive():
+    """R14: pyserial asserts DTR/RTS on open by default, and on the USB-Serial-JTAG port that resets the chip. A LABID read during
+    an OTA reset the board mid-download (found live 2026-09-26), so the lines must be set inactive BEFORE the port is opened."""
+    from unittest.mock import MagicMock, patch
+
+    from labflash.identify import SerialLineTransport
+
+    events = []
+
+    class FakeSerial:
+        in_waiting = 0
+
+        def __init__(self, *args, **kwargs):
+            events.append(("init", args, kwargs))
+
+        def __setattr__(self, name, value):
+            if name in ("dtr", "rts", "port"):
+                events.append(("set", name, value))
+            object.__setattr__(self, name, value)
+
+        def open(self):
+            events.append(("open",))
+
+        def reset_input_buffer(self):
+            events.append(("flush",))
+
+        close = MagicMock()
+
+    with patch("serial.Serial", FakeSerial):
+        SerialLineTransport("COM14")
+    names = [e[:2] if e[0] == "set" else e[:1] for e in events]
+    assert ("set", "dtr") in names and ("set", "rts") in names and ("open",) in names
+    assert [e for e in events if e[0] == "set" and e[1] in ("dtr", "rts") and e[2] is not False] == []
+    assert names.index(("open",)) > max(names.index(("set", "dtr")), names.index(("set", "rts")))

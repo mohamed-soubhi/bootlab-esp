@@ -50,3 +50,38 @@ def test_abort_after_bytes_cuts_short_but_declares_full_length(tmp_path, cert):
         assert declared == 100_000
         assert 0 < got < 100_000
         assert srv.aborted == 1
+
+
+def test_a_stalled_tls_handshake_neither_blocks_other_transfers_nor_shutdown(tmp_path, cert):
+    """Found live 2026-09-26: the board opened the connection, its TLS handshake stalled, and the server (which handshook inside
+    accept() on its one serving thread) blocked forever, and so did stop(); the update process hung for 7 hours."""
+    import socket
+    import threading
+    import time
+
+    (tmp_path / "update.bin").write_bytes(b"x" * 100_000)
+    srv = OtaServer(tmp_path, 0, *cert).start()
+    stalled = socket.create_connection(("127.0.0.1", srv.port), timeout=5)      # TCP connects, no TLS bytes ever follow
+    try:
+        declared, got = _get(srv.port)                                           # a real transfer must still work
+        assert declared == got == 100_000
+        done = threading.Event()
+        threading.Thread(target=lambda: (srv.stop(), done.set()), daemon=True).start()
+        start = time.monotonic()
+        assert done.wait(10), "stop() hung on a connection that never finished its TLS handshake"
+        assert time.monotonic() - start < 10
+    finally:
+        stalled.close()
+
+
+def test_an_idle_keep_alive_connection_is_dropped_after_the_handler_timeout(tmp_path, cert):
+    import socket
+    import time
+
+    (tmp_path / "update.bin").write_bytes(b"x" * 1000)
+    from labflash import idf_wifi_ota as ow
+    with OtaServer(tmp_path, 0, *cert) as srv:
+        assert ow._Handler.timeout and ow._Handler.timeout > 0
+        s = socket.create_connection(("127.0.0.1", srv.port), timeout=5)
+        time.sleep(0.2)
+        s.close()

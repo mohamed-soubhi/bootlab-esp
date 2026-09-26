@@ -92,8 +92,9 @@ Entry keys, from `poolmanifest.make_entry`:
 
 ## 5. Budget
 
-Budget placeholder: ~3.5 h single overnight run, BLE budgeted at the drifted ~280 s/cycle
-(`docs/LESSONS_LEARNED.md` Trap 24). Not measured for this pool; see Trap 24 for the method.
+Measured (AC5, `scripts/evidence/bl069_pool_install_2026-09-25/`): the resumed run of 50 steps took 2 h 25 m. WiFi installs 31.8 / 46.4 / 68.8 s
+(min / median / max), BLE installs 154 / 264 / 359 s; the 4.13 MB near_limit image took 357 s over BLE and 67 s over WiFi; the over-limit image was refused after 154 s (WiFi) and 484 s (BLE).
+BLE times are close to the drift figure in `docs/LESSONS_LEARNED.md` Trap 24.
 
 ## 6. What is committed
 
