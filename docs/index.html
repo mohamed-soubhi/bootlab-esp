@@ -980,6 +980,10 @@
           <span>👤</span> Portfolio
         </a>
 
+        <a href="presentation.html" class="btn-pill" title="Standalone Acceptance Slide Deck">
+          <span>🖥️</span> Standalone Deck
+        </a>
+
         <button id="themeToggle" class="btn-pill" title="Toggle Theme">
           <span class="theme-icon">☀️</span>
           <span class="theme-text">Light</span>
@@ -999,7 +1003,7 @@
       <div class="hero-eyebrow">
         <div class="hero-status-pill">
           <span class="pulse-dot"></span>
-          <span>Target Silicon Verified &bull; ESP32-S3</span>
+          <span>Target Silicon Verified &bull; Dual ESP32-S3 Rig</span>
         </div>
       </div>
 
@@ -1065,8 +1069,11 @@
 
       <div class="contact-bar">
         <button class="btn-pill primary" style="padding: 8px 20px; font-size: 13px;" onclick="launchDeck()">
-          ▶ Start Presentation Deck [P]
+          ▶ Start Interactive Deck [P]
         </button>
+        <a href="presentation.html" class="btn-pill" style="padding: 8px 18px; font-size: 13px;">
+          🖥️ Standalone Acceptance Deck &rarr;
+        </a>
         <a href="#challenges" class="btn-pill">
           Read Engineering War Stories &darr;
         </a>
@@ -1078,8 +1085,8 @@
       <!-- Executive Stat Strip -->
       <div class="hero-stat-strip">
         <div class="stat-item">
-          <span class="stat-highlight">39 / 56</span>
-          <span class="stat-detail">Tickets Target-Verified</span>
+          <span class="stat-highlight">400 Cycles</span>
+          <span class="stat-detail">200/200 Dual-Board Parallel</span>
         </div>
         <span class="stat-sep">/</span>
         <div class="stat-item">
@@ -1098,8 +1105,8 @@
         </div>
         <span class="stat-sep">/</span>
         <div class="stat-item">
-          <span class="stat-highlight">91%</span>
-          <span class="stat-detail">Host CLI Test Coverage</span>
+          <span class="stat-highlight">35 Traps</span>
+          <span class="stat-detail">Documented &amp; Defended</span>
         </div>
       </div>
     </section>
@@ -1336,6 +1343,30 @@
             <p style="margin-top:8px;"><strong>The Fix:</strong> Banned server-side counters as acceptance evidence. Every rejection must be proven directly by on-target firmware logs (e.g. <code>Secure boot signature failed</code>) and verified slot stability.</p>
           </div>
         </div>
+
+        <!-- TRAP 7 -->
+        <div class="challenge-card" onclick="toggleCard(this)">
+          <span class="card-trap-tag">TRAP 07 &bull; SERIAL HARDWARE</span>
+          <h3 class="card-title">Serial DTR/RTS Reset Mid-OTA (Trap 34)</h3>
+          <p class="card-snippet">A fresh serial port open or telemetry query pulsed DTR/RTS, instantly rebooting the ESP32-S3 during active 1.25 MB downloads.</p>
+          <div class="expand-cta">Read War Story &rarr;</div>
+          <div class="card-deepdive">
+            <p><strong>The Trap:</strong> Opening Windows COM ports without explicit control line disabling causes the USB-Serial-JTAG chip to pulse DTR/RTS, triggering a hardware reset mid-download that caused intermittent 7-hour OTA stalls.</p>
+            <p style="margin-top:8px;"><strong>The Fix:</strong> Explicitly suppressed control lines (<code>dtr=False, rts=False</code>) across all host tools and forbade fresh serial opens while background OTA transfers stream bytes. Verified with 4/4 clean installs.</p>
+          </div>
+        </div>
+
+        <!-- TRAP 8 -->
+        <div class="challenge-card" onclick="toggleCard(this)">
+          <span class="card-trap-tag">TRAP 08 &bull; CRYPTOGRAPHY</span>
+          <h3 class="card-title">Salted RSA-PSS Signatures (Trap 30)</h3>
+          <p class="card-snippet">Identical source code and private keys yielded different whole-file SHA-256 hashes across identical rebuilds, confounding CI.</p>
+          <div class="expand-cta">Read War Story &rarr;</div>
+          <div class="card-deepdive">
+            <p><strong>The Trap:</strong> ESP-IDF Secure Boot v2 signs images with salted RSA-PSS. Because the salt is cryptographically random per signing invocation, whole-file hashes always differ even for identical binaries.</p>
+            <p style="margin-top:8px;"><strong>The Fix:</strong> Separated payload content hashes from signature verification: our verification tools compute SHA-256 strictly across payload segments excluding the appended signature trailer.</p>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -1443,7 +1474,7 @@
           </div>
           <div class="slide-subcard">
             <h5>Verified Results</h5>
-            <p>39 tickets verified on target hardware, 0 eFuses burned, 91% unit test coverage, and 3x consecutive green live HIL stability gate.</p>
+            <p>400 parallel soak cycles across dual ESP32-S3 boards (100% pass, 0 retries), 200/200 randomized soak, 0 eFuses burned, 91% host test coverage, and 35 documented engineering traps.</p>
           </div>
         </div>
       </div>
@@ -1620,7 +1651,7 @@
         <div class="slide-cards-grid">
           <div class="slide-subcard">
             <h5>Live Test Pyramid</h5>
-            <p>&bull; <strong>Unit Tests:</strong> 173 mocked tests in host suite (ruff/mypy clean).<br>&bull; <strong>HIL Tests:</strong> T01–T15 test suites executing real resets, rollbacks, and OTAs.<br>&bull; <strong>Stability Gate:</strong> 3x consecutive green whole-suite live runs (BL-057a).</p>
+            <p>&bull; <strong>Unit Tests:</strong> 173 mocked tests in host suite (ruff/mypy clean).<br>&bull; <strong>HIL Tests:</strong> T01–T15 test suites executing real resets, rollbacks, and OTAs.<br>&bull; <strong>Soak Stress:</strong> 400 parallel cycles (BL-072: 200/200 on dual boards simultaneously with 0 retries); 200/200 randomized soak (BL-067).</p>
           </div>
           <div class="slide-subcard">
             <h5>RPi4 Self-Hosted Runner</h5>
@@ -1774,11 +1805,11 @@
         <div class="slide-cards-grid">
           <div class="slide-subcard">
             <h5>Current Verified State</h5>
-            <p>&bull; 39/56 tickets completed with evidence.<br>&bull; ESP-IDF track fully complete and 3x green.<br>&bull; Zephyr MCUboot BLE and UDP SMP verified.<br>&bull; Multi-agent swarm (RPi4 + Hermes + Claude + Antigravity) verified.</p>
+            <p>&bull; 400 parallel soak cycles across dual boards (100% pass, 0 retries).<br>&bull; ESP-IDF track fully complete and hardware verified.<br>&bull; Zephyr RTOS track green in CI (5/5 matrix jobs, MCUboot, SMP).<br>&bull; Multi-agent swarm (workstation AI + edge runners) cataloged 35 engineering traps.</p>
           </div>
           <div class="slide-subcard">
-            <h5>Upcoming Milestones</h5>
-            <p>&bull; Close BL-064 &amp; BL-065 Zephyr coexistence nuances.<br>&bull; 100-cycle live overnight soak test.<br>&bull; Expand modular application components on RPi4.<br>&bull; Deploy to customer field pilot.</p>
+            <h5>Production Ready Highlights</h5>
+            <p>&bull; Zero eFuse risk: 100% reversible software recovery.<br>&bull; Full negative testing: corrupt images, bad signatures, and watchdog hangs roll back.<br>&bull; Single-command host orchestration via `labflash`.<br>&bull; Reproducible signed image pools across both slots.</p>
           </div>
         </div>
       </div>

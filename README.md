@@ -1,6 +1,60 @@
-# bootlab-esp — Dual-OS ESP32-S3 Bootloader & OTA Lab
+# bootlab-esp — Dual-OS ESP32-S3 Bootloader & Resilient OTA Testbed
 
-A dual-stack firmware engineering and HIL testing harness comparing **ESP-IDF** (native dual-slot OTA + RSA-3072 Secure Boot v2) and **Zephyr** (MCUboot + mcumgr SMP OTA) on identical ESP32-S3 hardware.
+<div align="center">
+
+[![Live Web Hub](https://img.shields.io/badge/🌐_Live_Web_Hub-Interactive_Lab-10b981?style=for-the-badge&logo=github)](https://mohamed-soubhi.github.io/bootlab-esp/)
+[![Slide Deck](https://img.shields.io/badge/🖥️_Slide_Deck-Acceptance_Presentation-38bdf8?style=for-the-badge&logo=reveal.js)](https://mohamed-soubhi.github.io/bootlab-esp/presentation.html)
+[![400 Soak Cycles](https://img.shields.io/badge/Soak_Cycles-400_Parallel_(100%25_Pass)-00ff88?style=for-the-badge&logo=espressif)](docs/presentation/evidence/RESULTS_INDEX.md)
+[![Zero eFuse Risk](https://img.shields.io/badge/eFuse_Risk-Zero_(100%25_Reversible)-blue?style=for-the-badge&logo=shield)](PLAN.md)
+[![CI Matrix](https://img.shields.io/badge/CI_Matrix-5%2F5_Green-brightgreen?style=for-the-badge&logo=githubactions)](https://github.com/mohamed-soubhi/bootlab-esp/actions)
+
+<p align="center">
+  A production-proven dual-stack firmware engineering and Hardware-in-the-Loop (HIL) testbed comparing<br/>
+  <strong>ESP-IDF</strong> (native dual-slot OTA + anti-rollback + Secure Boot v2) and <strong>Zephyr RTOS</strong> (MCUboot swap-with-revert + MCUmgr SMP)<br/>
+  on dual physical ESP32-S3 target silicon.
+</p>
+
+</div>
+
+---
+
+## 🎯 Interactive Demo & Showcase Links
+
+| Asset | Description | Direct Link |
+| :--- | :--- | :--- |
+| 🌐 **Interactive Web Hub** | Full system overview, dual-OS matrix, and interactive engineering war-story deep dives. | [**mohamed-soubhi.github.io/bootlab-esp/**](https://mohamed-soubhi.github.io/bootlab-esp/) |
+| 🖥️ **Presentation Deck** | 12-slide acceptance slide deck with target architecture, LABID framing, and test pyramid. | [**Open Standalone Deck**](https://mohamed-soubhi.github.io/bootlab-esp/presentation.html) |
+| 🔬 **Raw Silicon Evidence Index** | Auditable hardware logs, JSONL execution records, and terminal captures for every soak cycle. | [**docs/presentation/evidence/RESULTS_INDEX.md**](docs/presentation/evidence/RESULTS_INDEX.md) |
+| 📑 **35 Technical Traps & Lessons** | Low-level engineering retrospectives on WinRT GATT caching, COM port locks, and serial reset traps. | [**docs/LESSONS_LEARNED.md**](docs/LESSONS_LEARNED.md) |
+
+---
+
+## 📊 Hardware Verification & Soak Test Results
+
+Every claim in this repository is backed by raw hardware logs recorded on real silicon (Board 1 `UID E072A1AA2390`, Board 2 `UID ACA7042C3B04`):
+
+| # | Milestone & Scope | Execution Target | Outcome | Evidence Directory |
+|---|---|---|---|---|
+| **1** | **BL-060 Initial Soak** (100 cycles) | 50 WiFi HTTPS + 50 BLE OTA (v1 $\leftrightarrow$ v2) | **100 / 100 cycles (100% pass)**, 0 aborts, 3h 48m runtime | [`scripts/evidence/bl060_soak_2026-09-23d/`](scripts/evidence/bl060_soak_2026-09-23d/) |
+| **2** | **BL-069 Signed Image Pool** | 13 signed images (9 valid, 2 trailers, 2 boundary) | **Signed off**: Both OTA slots verified over WiFi & BLE | [`scripts/evidence/bl069_pool_2026-09-25/`](scripts/evidence/bl069_pool_2026-09-25/) |
+| **3** | **BL-067 Heavy Randomized Soak** | 200 random cycles (WiFi/BLE, valid + corrupt + hang) | **200 / 200 cycles matched model**, 100% recovery to golden slot | [`scripts/evidence/bl067_20260925/`](scripts/evidence/bl067_20260925/) |
+| **4** | **BL-072 Dual-Board Parallel Soak** | 400 cycles (200 cycles per board simultaneously) | **400 / 400 cycles passed (200/200 on BOTH boards)**, 0 retries | [`scripts/evidence/bl072_two_boards_2026-09-26/`](scripts/evidence/bl072_two_boards_2026-09-26/) |
+| **5** | **OTA Reset Mid-Download Root Cause** | Serial open pulsed DTR/RTS during OTA stream | **Root cause fixed**: 4/4 installs verified cleanly (Traps 34–35) | [`scripts/evidence/bl069_followup_ota_root_cause_2026-09-26/`](scripts/evidence/bl069_followup_ota_root_cause_2026-09-26/) |
+
+---
+
+## 🏛️ Dual-OS Architecture Comparison
+
+| Architectural Dimension | ESP-IDF (FreeRTOS Track) | Zephyr RTOS (MCUboot Track) |
+| :--- | :--- | :--- |
+| **Bootloader** | Espressif 2nd-stage bootloader | MCUboot (Swap with Revert mode) |
+| **App Partition Layout** | Dual 2.5 MB slots (`ota_0`, `ota_1`) | Primary + Secondary slot swap mechanics |
+| **Cryptographic Signatures** | RSA-3072 / RSA-PSS (Secure Boot v2) | ECDSA P-256 (`imgtool` signed) |
+| **Broadband Wi-Fi OTA** | HTTPS pull with Bearer token authentication | MCUmgr SMP over UDP (port 1337) |
+| **Enclosure Bluetooth OTA** | NimBLE GATT push (UUID-based data chunks) | MCUmgr SMP over BLE |
+| **Wire Telemetry Protocol** | LABID C99 ASCII framing (`$LAB,CMD*CS\n`) | Shared identical LABID C99 wire engine |
+| **Rollback Handshake** | Boot self-test confirms via `esp_ota_mark_app_valid_cancel_rollback()` | `mcumgr image test` $\rightarrow$ self-test $\rightarrow$ `confirm` |
+| **eFuse Policy** | **Zero eFuses burned** (100% lab reversible) | **Zero eFuses burned** (100% lab reversible) |
 
 ---
 
@@ -116,8 +170,11 @@ PYTHONPATH="host:." pytest tests_hil -v
 
 ---
 
-## 📚 Documentation
+## 📚 Documentation & Technical References
+
 - [PLAN.md](PLAN.md) — Comprehensive technical master plan and architecture decisions.
+- [docs/LESSONS_LEARNED.md](docs/LESSONS_LEARNED.md) — 35 real-world traps, hardware bugs, and permanent defenses.
+- [docs/presentation/evidence/RESULTS_INDEX.md](docs/presentation/evidence/RESULTS_INDEX.md) — Full hardware evidence catalog.
 - [docs/recovery.md](docs/recovery.md) — Full raw flash recovery runbook.
 - [docs/adding-a-board.md](docs/adding-a-board.md) — Guide to adding and characterizing a new board.
 - [tickets/TICKETS.md](tickets/TICKETS.md) — Live project roadmap and per-track status.
